@@ -114,6 +114,8 @@ struct RootView: View {
         NavigationStack {
           ActiveWorkoutView(session: session) {
             close(session)
+          } onDelete: {
+            delete(session)
           }
         }
       } else {
@@ -143,6 +145,11 @@ struct RootView: View {
     session.endedAt = .now
     session.isActive = false
     updateRoutineDefaults(from: session)
+    try? context.save()
+  }
+
+  private func delete(_ session: WorkoutSession) {
+    context.delete(session)
     try? context.save()
   }
 

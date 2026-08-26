@@ -5,10 +5,13 @@ struct HomeView: View {
   @Environment(\.modelContext) private var context
   @Query(filter: #Predicate<Routine> { $0.deletedAt == nil }, sort: \Routine.createdAt)
   private var routines: [Routine]
+  @Query private var allRoutines: [Routine]
   @Query(sort: \WorkoutSession.startedAt, order: .reverse) private var sessions: [WorkoutSession]
   @Query(filter: #Predicate<PersonProfile> { !$0.isArchived }, sort: \PersonProfile.sortOrder)
   private var people: [PersonProfile]
   @State private var routineToStart: Routine?
+  @State private var pendingDeletion: WorkoutSession?
+  @State private var showingDeleteConfirmation = false
 
   private var workoutsThisMonth: Int {
     let threshold =
@@ -28,6 +31,20 @@ struct HomeView: View {
     .background(Color(.systemGroupedBackground))
     .navigationTitle("Workout")
     .toolbarTitleDisplayMode(.large)
+    .confirmationDialog(
+      "Delete workout?",
+      isPresented: $showingDeleteConfirmation,
+      titleVisibility: .visible
+    ) {
+      Button("Delete Workout", role: .destructive, action: deletePending)
+      Button("Cancel", role: .cancel) { pendingDeletion = nil }
+    } message: {
+      if let session = pendingDeletion {
+        Text(
+          "This permanently deletes the \(routineName(for: session)) workout from \(session.startedAt.formatted(date: .abbreviated, time: .shortened))."
+        )
+      }
+    }
     .sheet(item: $routineToStart) { routine in
       StartRoutineSheet(routine: routine, people: people)
         .presentationDetents([.medium])
@@ -127,7 +144,7 @@ struct HomeView: View {
                 .frame(width: 38, height: 38)
                 .background(Theme.mint.opacity(0.24), in: Circle())
               VStack(alignment: .leading, spacing: 3) {
-                Text(session.routineName)
+                Text(routineName(for: session))
                   .font(.headline)
                   .foregroundStyle(.primary)
                 Text(session.startedAt.formatted(date: .abbreviated, time: .shortened))
@@ -147,6 +164,11 @@ struct HomeView: View {
             .contentShape(Rectangle())
           }
           .buttonStyle(.plain)
+          .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+            Button("Delete", systemImage: "trash", role: .destructive) {
+              requestDelete(session)
+            }
+          }
 
           if index < min(sessions.count, 3) - 1 {
             Divider().padding(.leading, 64)
@@ -161,6 +183,22 @@ struct HomeView: View {
     session.endedAt = nil
     session.isActive = true
     try? context.save()
+  }
+
+  private func requestDelete(_ session: WorkoutSession) {
+    pendingDeletion = session
+    showingDeleteConfirmation = true
+  }
+
+  private func deletePending() {
+    guard let session = pendingDeletion else { return }
+    context.delete(session)
+    try? context.save()
+    pendingDeletion = nil
+  }
+
+  private func routineName(for session: WorkoutSession) -> String {
+    allRoutines.first(where: { $0.id == session.routineID })?.name ?? "Unknown Routine"
   }
 }
 

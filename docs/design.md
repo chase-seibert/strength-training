@@ -19,6 +19,7 @@ StrengthLog should feel energetic and fast without adopting the dense, black-and
 - Participant selection happens when starting and can be changed from the live screen without deleting hidden data.
 - Change People, Reorder, and Add Exercise sit in the scrollable footer of an open workout, leaving the top bar focused on Done.
 - Workout logs save continuously. Close is lightweight navigation, and reopening is immediate; neither requires confirmation.
+- Workout history supports swipe-to-delete from Progress and recent workouts on the Workout tab, plus confirmed delete actions from session details and the bottom of an open workout. Deleting a workout removes its session logs but never its routine or catalog exercises.
 - CSV import begins with routine selection. The complete exercise list then filters to those routines, defaults to frequency order, can be sorted by recency or name, and can be displayed for all history or the last 30, 60, or 90 days relative to the newest selected workout. The display filter does not change import scope. Each exercise opens a name-only searchable mapping override with explicit skip and create-custom options.
 - Exercise search matches exercise names only. Muscle and equipment remain explicit filters or metadata rather than implicit search terms.
 

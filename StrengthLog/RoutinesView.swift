@@ -940,7 +940,7 @@ struct StartRoutineSheet: View {
     }
     context.insert(
       WorkoutSession(
-        routineID: routine.id, routineName: routine.name, participantNames: selected,
+        routineID: routine.id, participantNames: selected,
         exercises: logs))
     try? context.save()
     dismiss()

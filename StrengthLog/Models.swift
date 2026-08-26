@@ -243,6 +243,8 @@ final class WorkoutSession {
   var externalID: String?
   var notes: String?
   var routineID: UUID
+  // Legacy schema field retained for compatibility; new sessions leave it blank and resolve
+  // the current routine name from routineID.
   var routineName: String
   var startedAt: Date
   var endedAt: Date?
@@ -251,7 +253,7 @@ final class WorkoutSession {
   @Relationship(deleteRule: .cascade) var exercises: [ExerciseLog]
 
   init(
-    routineID: UUID, routineName: String, participantNames: [String], exercises: [ExerciseLog],
+    routineID: UUID, participantNames: [String], exercises: [ExerciseLog],
     startedAt: Date = .now, endedAt: Date? = nil, isActive: Bool = true,
     externalID: String? = nil, notes: String? = nil
   ) {
@@ -259,7 +261,7 @@ final class WorkoutSession {
     self.externalID = externalID
     self.notes = notes
     self.routineID = routineID
-    self.routineName = routineName
+    self.routineName = ""
     self.startedAt = startedAt
     self.endedAt = endedAt
     self.isActive = isActive

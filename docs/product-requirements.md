@@ -26,6 +26,7 @@
 ## Persistence and progress
 
 - As a lifter, I want each session to preserve participant, exercise, measurement, reps, and completion, so that progress analysis has accurate source data.
+- As a lifter, I want to delete an unwanted workout from history or while it is open, so that my progress reflects the sessions I want to keep.
 - As a lifter, I want the last session configuration to become the next routine defaults, so that progressive overload needs minimal setup.
 - As a lifter, I want a 30-day activity calendar, so that consistency is visible at a glance.
 - As a lifter, I want pounds-only total-volume charts for routines and history, so that weight-training trends are not mixed with incompatible units.

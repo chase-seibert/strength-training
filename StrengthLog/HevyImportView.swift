@@ -684,7 +684,6 @@ enum HevyImporter {
       let logs = makeExerciseLogs(workout, person: person, resolved: resolved)
       let session = WorkoutSession(
         routineID: routine.id,
-        routineName: routine.name,
         participantNames: [person.name],
         exercises: logs,
         startedAt: workout.startedAt,

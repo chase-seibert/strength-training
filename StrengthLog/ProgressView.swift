@@ -3,7 +3,11 @@ import SwiftData
 import SwiftUI
 
 struct ProgressView: View {
+  @Environment(\.modelContext) private var context
+  @Query private var routines: [Routine]
   @Query(sort: \WorkoutSession.startedAt, order: .reverse) private var sessions: [WorkoutSession]
+  @State private var pendingDeletion: WorkoutSession?
+  @State private var showingDeleteConfirmation = false
 
   private var chronological: [WorkoutSession] { sessions.sorted { $0.startedAt < $1.startedAt } }
 
@@ -35,7 +39,7 @@ struct ProgressView: View {
               } label: {
                 HStack {
                   VStack(alignment: .leading, spacing: 4) {
-                    Text(session.routineName).font(.headline)
+                    Text(routineName(for: session)).font(.headline)
                     Text(session.startedAt.formatted(date: .abbreviated, time: .shortened))
                       .font(.caption).foregroundStyle(.secondary)
                   }
@@ -44,13 +48,33 @@ struct ProgressView: View {
                     .font(.caption).foregroundStyle(.secondary)
                 }
               }
+              .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                Button("Delete", systemImage: "trash", role: .destructive) {
+                  requestDelete(session)
+                }
+              }
             }
+            .onDelete(perform: requestDelete)
           }
         }
         .listStyle(.insetGrouped)
       }
     }
     .navigationTitle("Progress")
+    .confirmationDialog(
+      "Delete workout?",
+      isPresented: $showingDeleteConfirmation,
+      titleVisibility: .visible
+    ) {
+      Button("Delete Workout", role: .destructive, action: deletePending)
+      Button("Cancel", role: .cancel) { pendingDeletion = nil }
+    } message: {
+      if let session = pendingDeletion {
+        Text(
+          "This permanently deletes the \(routineName(for: session)) workout from \(session.startedAt.formatted(date: .abbreviated, time: .shortened))."
+        )
+      }
+    }
   }
 
   private func volume(_ session: WorkoutSession) -> Double {
@@ -62,11 +86,35 @@ struct ProgressView: View {
         }
     }
   }
+
+  private func requestDelete(_ offsets: IndexSet) {
+    guard let offset = offsets.first, sessions.indices.contains(offset) else { return }
+    requestDelete(sessions[offset])
+  }
+
+  private func requestDelete(_ session: WorkoutSession) {
+    pendingDeletion = session
+    showingDeleteConfirmation = true
+  }
+
+  private func deletePending() {
+    guard let session = pendingDeletion else { return }
+    context.delete(session)
+    try? context.save()
+    pendingDeletion = nil
+  }
+
+  private func routineName(for session: WorkoutSession) -> String {
+    routines.first(where: { $0.id == session.routineID })?.name ?? "Unknown Routine"
+  }
 }
 
 struct SessionDetailView: View {
+  @Environment(\.dismiss) private var dismiss
   @Environment(\.modelContext) private var context
+  @Query private var routines: [Routine]
   @Bindable var session: WorkoutSession
+  @State private var showingDeleteConfirmation = false
 
   var body: some View {
     List {
@@ -94,11 +142,28 @@ struct SessionDetailView: View {
         }
       }
     }
-    .navigationTitle(session.routineName)
+    .navigationTitle(routineName)
     .toolbar {
       ToolbarItem(placement: .primaryAction) {
         Button("Open", systemImage: "arrow.right") { open() }
       }
+      ToolbarItem(placement: .topBarTrailing) {
+        Button("Delete Workout", systemImage: "trash", role: .destructive) {
+          showingDeleteConfirmation = true
+        }
+      }
+    }
+    .confirmationDialog(
+      "Delete workout?",
+      isPresented: $showingDeleteConfirmation,
+      titleVisibility: .visible
+    ) {
+      Button("Delete Workout", role: .destructive, action: delete)
+      Button("Cancel", role: .cancel) {}
+    } message: {
+      Text(
+        "This permanently deletes the \(routineName) workout from \(session.startedAt.formatted(date: .abbreviated, time: .shortened))."
+      )
     }
   }
 
@@ -106,6 +171,16 @@ struct SessionDetailView: View {
     session.endedAt = nil
     session.isActive = true
     try? context.save()
+  }
+
+  private func delete() {
+    context.delete(session)
+    try? context.save()
+    dismiss()
+  }
+
+  private var routineName: String {
+    routines.first(where: { $0.id == session.routineID })?.name ?? "Unknown Routine"
   }
 
   private func setSummary(_ participant: ParticipantLog, unit: TrackingUnit) -> String {

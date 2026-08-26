@@ -29,3 +29,5 @@
 - Changed routine deletion to a recoverable soft delete, with a Deleted Routines list and restore actions that preserve workout history.
 - Moved Deleted Routines from the toolbar menu to a conditional link at the bottom of the Routines list, and fixed existing-routine appearance editing while list reordering mode is active.
 - Added exercise selection to routine edit mode, with additions participating in the existing Save and Cancel draft.
+- Added confirmed workout deletion from progress history and session details.
+- Added swipe-to-delete for Workout-tab recent workouts and a confirmed delete button at the bottom of open workouts.

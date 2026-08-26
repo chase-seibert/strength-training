@@ -20,7 +20,7 @@ In Debug builds, Settings also links to a Developer menu. Its replay action clea
 
 `PersonProfile.sortOrder` preserves the order established during onboarding across Settings, routine editing, workout setup, and participant visibility. The primary onboarding profile is therefore always presented first. Existing stores are migrated once using the original onboarding color sequence before persisting explicit order values.
 
-Starting a routine immediately snapshots that graph into a persisted `WorkoutSession`. Session logs are independent objects, so changing a routine later does not rewrite history. During a workout the app edits session measurement, reps, completion, visibility, and added sets directly. Closing the editor copies its current prescriptions back to the matching routine as next-time defaults.
+Starting a routine immediately snapshots that graph into a persisted `WorkoutSession`. Session logs are independent objects, so changing a routine later does not rewrite exercise history; the current routine name is resolved from the session's stable `routineID` whenever history is displayed. During a workout the app edits session measurement, reps, completion, visibility, and added sets directly. Closing the editor copies its current prescriptions back to the matching routine as next-time defaults.
 
 Only one session can be open in the app UI. When one is open, the root replaces the entire tab interface with its workout editor. Done returns to the five resting tabs and performs the save/default-update path. Any log can be reopened directly from Workout or Progress without confirmation. The persisted `isActive` and `endedAt` fields remain as presentation and migration plumbing, not as workout completion or timing concepts.
 

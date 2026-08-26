@@ -5,12 +5,15 @@ struct ActiveWorkoutView: View {
   @Environment(\.modelContext) private var context
   @Query(filter: #Predicate<PersonProfile> { !$0.isArchived }, sort: \PersonProfile.sortOrder)
   private var people: [PersonProfile]
+  @Query private var routines: [Routine]
   @Query private var catalog: [Exercise]
   @Bindable var session: WorkoutSession
   let onDone: () -> Void
+  let onDelete: () -> Void
   @State private var showingPeople = false
   @State private var showingExercisePicker = false
   @State private var editMode: EditMode = .inactive
+  @State private var showingDeleteConfirmation = false
 
   var body: some View {
     List {
@@ -51,13 +54,39 @@ struct ActiveWorkoutView: View {
     .scrollContentBackground(.hidden)
     .environment(\.editMode, $editMode)
     .background(Color(.systemGroupedBackground))
-    .navigationTitle(session.routineName)
+    .navigationTitle(routineName)
     .navigationBarTitleDisplayMode(.inline)
     .toolbar {
       ToolbarItem(placement: .topBarTrailing) {
         Button("Done") { onDone() }
           .fontWeight(.bold)
       }
+    }
+    .safeAreaInset(edge: .bottom) {
+      Button(role: .destructive) {
+        showingDeleteConfirmation = true
+      } label: {
+        Label("Delete Workout", systemImage: "trash")
+          .font(.headline)
+          .frame(maxWidth: .infinity)
+          .padding(.vertical, 14)
+      }
+      .buttonStyle(.bordered)
+      .tint(.red)
+      .padding()
+      .background(.bar)
+    }
+    .confirmationDialog(
+      "Delete workout?",
+      isPresented: $showingDeleteConfirmation,
+      titleVisibility: .visible
+    ) {
+      Button("Delete Workout", role: .destructive, action: onDelete)
+      Button("Cancel", role: .cancel) {}
+    } message: {
+      Text(
+        "This permanently deletes the \(routineName) workout from \(session.startedAt.formatted(date: .abbreviated, time: .shortened))."
+      )
     }
     .sheet(isPresented: $showingPeople) {
       ParticipantVisibilitySheet(session: session, people: people)
@@ -70,6 +99,10 @@ struct ActiveWorkoutView: View {
 
   private var catalogByName: [String: Exercise] {
     Dictionary(uniqueKeysWithValues: catalog.map { ($0.name, $0) })
+  }
+
+  private var routineName: String {
+    routines.first(where: { $0.id == session.routineID })?.name ?? "Unknown Routine"
   }
 
   private func workoutAction(
