@@ -21,7 +21,7 @@ struct ActiveWorkoutView: View {
         ActiveExerciseCard(
           exercise: exercise,
           catalogExercise: catalogByName[exercise.exerciseName],
-          visiblePeople: session.participantNames,
+          visiblePeople: PersonProfile.orderedNames(session.participantNames, using: people),
           colors: Dictionary(uniqueKeysWithValues: people.map { ($0.name, $0.colorHex) })
         )
         .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
@@ -192,7 +192,11 @@ struct ActiveExerciseCard: View {
   @State private var showingImages = false
 
   private var visibleLogs: [ParticipantLog] {
-    exercise.participants.filter { visiblePeople.contains($0.participantName) }
+    visiblePeople.compactMap { name in
+      exercise.participants.first {
+        $0.participantName.caseInsensitiveCompare(name) == .orderedSame
+      }
+    }
   }
 
   private var allVisibleSetsDone: Bool {
@@ -337,7 +341,7 @@ struct ParticipantVisibilitySheet: View {
 
   var body: some View {
     NavigationStack {
-      List(people) { person in
+      List(PersonProfile.ordered(people)) { person in
         Button {
           toggle(person.name)
         } label: {
@@ -387,7 +391,8 @@ struct ParticipantVisibilitySheet: View {
         remove(name)
       }
     } else {
-      session.participantNames.append(name)
+      session.participantNames = PersonProfile.orderedNames(
+        session.participantNames + [name], using: people)
       for exercise in session.exercises
       where !exercise.participants.contains(where: {
         $0.participantName.caseInsensitiveCompare(name) == .orderedSame

@@ -758,7 +758,7 @@ struct StartRoutineSheet: View {
           Text("Choose today's crew")
             .font(.title.bold())
         }
-        ForEach(people) { person in
+        ForEach(orderedPeople) { person in
           Button {
             if selectedNames.contains(person.name) {
               selectedNames.remove(person.name)
@@ -799,16 +799,16 @@ struct StartRoutineSheet: View {
       .onAppear {
         let lastNames = lastSession?.participantNames ?? routine.configuredParticipantNames
         let lastKeys = Set(lastNames.map { $0.lowercased() })
-        let matchingNames = people.map(\.name).filter {
+        let matchingNames = orderedPeople.map(\.name).filter {
           lastKeys.isEmpty || lastKeys.contains($0.lowercased())
         }
-        selectedNames = Set(matchingNames.isEmpty ? people.map(\.name) : matchingNames)
+        selectedNames = Set(matchingNames.isEmpty ? orderedPeople.map(\.name) : matchingNames)
       }
     }
   }
 
   private func start() {
-    let selected = people.map(\.name).filter(selectedNames.contains)
+    let selected = orderedPeople.map(\.name).filter(selectedNames.contains)
     let history = routineSessions
     let knownNames = orderedKnownNames(from: history)
     let logs = routine.exercises.sorted(by: { $0.sortOrder < $1.sortOrder }).map { item in
@@ -844,13 +844,17 @@ struct StartRoutineSheet: View {
   private func orderedKnownNames(from history: [WorkoutSession]) -> [String] {
     var result: [String] = []
     var seen = Set<String>()
-    for name in history.flatMap(\.participantNames) + people.map(\.name)
+    for name in history.flatMap(\.participantNames) + orderedPeople.map(\.name)
       + routine.configuredParticipantNames
     {
       if seen.insert(name.lowercased()).inserted { result.append(name) }
     }
     if result.isEmpty { result = routine.configuredParticipantNames }
-    return result
+    return PersonProfile.orderedNames(result, using: orderedPeople)
+  }
+
+  private var orderedPeople: [PersonProfile] {
+    PersonProfile.ordered(people)
   }
 
   private func participantLog(

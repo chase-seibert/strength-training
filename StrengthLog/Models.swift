@@ -50,6 +50,39 @@ final class PersonProfile {
   }
 }
 
+extension PersonProfile {
+  static func ordered(_ people: [PersonProfile]) -> [PersonProfile] {
+    people.sorted { lhs, rhs in
+      if lhs.sortOrder != rhs.sortOrder { return lhs.sortOrder < rhs.sortOrder }
+      let nameComparison = lhs.name.localizedCaseInsensitiveCompare(rhs.name)
+      if nameComparison != .orderedSame { return nameComparison == .orderedAscending }
+      return lhs.id.uuidString < rhs.id.uuidString
+    }
+  }
+
+  /// Orders snapshot participant names by their current profile order while retaining
+  /// the original spelling and position of names that no longer have a profile.
+  static func orderedNames(_ names: [String], using people: [PersonProfile]) -> [String] {
+    var firstNameByKey: [String: String] = [:]
+    for name in names {
+      firstNameByKey[name.lowercased()] = firstNameByKey[name.lowercased()] ?? name
+    }
+
+    var orderedNames: [String] = []
+    var usedKeys = Set<String>()
+    for person in ordered(people) {
+      let key = person.name.lowercased()
+      if let name = firstNameByKey[key], usedKeys.insert(key).inserted {
+        orderedNames.append(name)
+      }
+    }
+    for name in names {
+      if usedKeys.insert(name.lowercased()).inserted { orderedNames.append(name) }
+    }
+    return orderedNames
+  }
+}
+
 @Model
 final class Exercise {
   var id: UUID

@@ -270,7 +270,7 @@ struct OnboardingView: View {
   }
 
   private var orderedExistingPeople: [PersonProfile] {
-    existingPeople.filter { !$0.isArchived }.sorted { $0.sortOrder < $1.sortOrder }
+    PersonProfile.ordered(existingPeople.filter { !$0.isArchived })
   }
 
   private var existingStarterIDs: Set<String> {

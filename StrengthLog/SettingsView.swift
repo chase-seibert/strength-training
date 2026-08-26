@@ -12,7 +12,7 @@ struct SettingsView: View {
   var body: some View {
     List {
       Section {
-        ForEach(people.filter { !$0.isArchived }) { person in
+        ForEach(PersonProfile.ordered(people.filter { !$0.isArchived })) { person in
           NavigationLink {
             PersonEditor(person: person)
           } label: {
@@ -34,7 +34,7 @@ struct SettingsView: View {
 
       if people.contains(where: \.isArchived) {
         Section("Archived") {
-          ForEach(people.filter(\.isArchived)) { person in
+          ForEach(PersonProfile.ordered(people.filter(\.isArchived))) { person in
             Button {
               person.isArchived = false
             } label: {
