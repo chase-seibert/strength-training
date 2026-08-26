@@ -251,7 +251,7 @@ struct OnboardingView: View {
     }
     for template in StarterRoutineTemplate.all
     where selectedStarterIDs.contains(template.id) && !existingStarterIDs.contains(template.id) {
-      context.insert(template.makeRoutine(participantNames: uniqueNames))
+      context.insert(template.makeRoutine())
     }
     try? context.save()
     hasCompletedOnboarding = true

@@ -140,8 +140,6 @@ struct AddExerciseFromLibrarySheet: View {
   @Environment(\.modelContext) private var context
   @Query(filter: #Predicate<Routine> { $0.deletedAt == nil }, sort: \Routine.createdAt)
   private var routines: [Routine]
-  @Query(filter: #Predicate<PersonProfile> { !$0.isArchived }, sort: \PersonProfile.sortOrder)
-  private var people: [PersonProfile]
   let exercise: Exercise
   @State private var showingNewRoutine = false
 
@@ -197,7 +195,7 @@ struct AddExerciseFromLibrarySheet: View {
   }
 
   private func add(to routine: Routine) {
-    guard routine.add(exercise, for: people) else { return }
+    guard routine.add(exercise) else { return }
     try? context.save()
     dismiss()
   }

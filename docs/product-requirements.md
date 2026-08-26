@@ -3,6 +3,8 @@
 ## Routines and catalog
 
 - As a lifter, I want to create and rename routines, choose an icon and color for each one, and recover deleted routines, so that my recurring sessions match how I train without risking accidental loss.
+- As a lifter, I want routines to be person-agnostic, so that each workout can choose its own crew.
+- As a lifter, I want a new workout to remember each person's latest weights, reps, and sets for a routine, so that setup is fast without storing workout data on the routine.
 - As a new lifter, I want optional Upper Body, Lower Body, and Core starters, so that I can begin quickly without being forced into sample data.
 - As a lifter, I want a broad searchable exercise catalog with equipment, muscle, form notes, and imagery, so that I can build routines quickly and recognize unfamiliar movements.
 - As a lifter, I want to add an exercise to a routine directly from its catalog detail, so that browsing naturally turns into routine building.
@@ -38,9 +40,9 @@
 
 - First launch presents onboarding, requests the primary user's first name with the system given-name AutoFill hint, offers editable “Person 2” and “Person 3” defaults, offers optional starter routines, and imports 873 catalog exercises.
 - Upper Body, Lower Body, and Core starters are explicit opt-in templates, create editable copies for the current people, and remain available from Routines later.
-- Routine setup exposes two prescription controls per person: sets × reps (or rounds) and load/target.
+- Routine setup edits exercise structure only; workout prescriptions are seeded per person from the latest session.
 - Each imported exercise retains both available source images for swipeable offline viewing.
-- Starting a routine snapshots selected people and all routine prescriptions.
+- Starting a routine snapshots the latest routine exercise structure and selected people, seeding each person's values from their latest session.
 - A session is persisted when it starts; closing it requires no confirmation and does not change its workout meaning.
 - No path in the normal UI can start a second session while another is active.
 - The primary navigation is Workout, Routines, Exercises, Progress, and Settings; Settings contains People. Workout presents routine choice first, 30-day activity second, and recent workouts third.

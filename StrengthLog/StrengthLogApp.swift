@@ -144,7 +144,6 @@ struct RootView: View {
     guard session.isActive else { return }
     session.endedAt = .now
     session.isActive = false
-    updateRoutineDefaults(from: session)
     try? context.save()
   }
 
@@ -153,34 +152,4 @@ struct RootView: View {
     try? context.save()
   }
 
-  private func updateRoutineDefaults(from session: WorkoutSession) {
-    let targetID = session.routineID
-    var descriptor = FetchDescriptor<Routine>(
-      predicate: #Predicate { $0.id == targetID && $0.deletedAt == nil })
-    descriptor.fetchLimit = 1
-    guard let routine = try? context.fetch(descriptor).first else { return }
-    for exerciseLog in session.exercises {
-      guard
-        let routineExercise = routine.exercises.first(where: {
-          $0.exerciseName == exerciseLog.exerciseName
-        })
-      else { continue }
-      for participantLog in exerciseLog.participants {
-        let templates = participantLog.sets.sorted(by: { $0.sortOrder < $1.sortOrder }).map {
-          SetTemplate(sortOrder: $0.sortOrder, reps: $0.reps)
-        }
-        if let prescription = routineExercise.prescriptions.first(where: {
-          $0.participantName == participantLog.participantName
-        }) {
-          prescription.measurement = participantLog.measurement
-          prescription.sets = templates
-        } else {
-          routineExercise.prescriptions.append(
-            Prescription(
-              participantName: participantLog.participantName,
-              measurement: participantLog.measurement, sets: templates))
-        }
-      }
-    }
-  }
 }

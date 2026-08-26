@@ -332,6 +332,8 @@ struct ParticipantVisibilitySheet: View {
   @Environment(\.dismiss) private var dismiss
   @Bindable var session: WorkoutSession
   let people: [PersonProfile]
+  @State private var pendingRemoval: String?
+  @State private var showingRemovalConfirmation = false
 
   var body: some View {
     NavigationStack {
@@ -355,22 +357,52 @@ struct ParticipantVisibilitySheet: View {
       .navigationTitle("Change People")
       .navigationBarTitleDisplayMode(.inline)
       .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
+      .confirmationDialog(
+        "Hide \(pendingRemoval ?? "person") from this workout?",
+        isPresented: $showingRemovalConfirmation,
+        titleVisibility: .visible
+      ) {
+        Button("Hide Person", role: .destructive) {
+          if let pendingRemoval { remove(pendingRemoval) }
+          pendingRemoval = nil
+        }
+        Button("Cancel", role: .cancel) { pendingRemoval = nil }
+      } message: {
+        Text("Completed sets will be kept. You can turn this person back on later in this workout.")
+      }
     }
   }
 
   private func toggle(_ name: String) {
     if session.participantNames.contains(name) {
       guard session.participantNames.count > 1 else { return }
-      session.participantNames.removeAll { $0 == name }
+      let hasCompletedSets = session.exercises.flatMap(\.participants).contains {
+        $0.participantName.caseInsensitiveCompare(name) == .orderedSame
+          && $0.sets.contains(where: \.isCompleted)
+      }
+      if hasCompletedSets {
+        pendingRemoval = name
+        showingRemovalConfirmation = true
+      } else {
+        remove(name)
+      }
     } else {
       session.participantNames.append(name)
       for exercise in session.exercises
-      where !exercise.participants.contains(where: { $0.participantName == name }) {
+      where !exercise.participants.contains(where: {
+        $0.participantName.caseInsensitiveCompare(name) == .orderedSame
+      }) {
         exercise.participants.append(
           ParticipantLog(
             participantName: name, measurement: 0,
             sets: (0..<3).map { WorkoutSet(sortOrder: $0, reps: 10) }))
       }
+    }
+  }
+
+  private func remove(_ name: String) {
+    session.participantNames.removeAll {
+      $0.caseInsensitiveCompare(name) == .orderedSame
     }
   }
 }

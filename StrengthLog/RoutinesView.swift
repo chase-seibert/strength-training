@@ -278,9 +278,8 @@ struct StarterRoutinePicker: View {
   }
 
   private func addSelected() {
-    let names = people.map(\.name)
     for template in availableTemplates where selectedIDs.contains(template.id) {
-      context.insert(template.makeRoutine(participantNames: names))
+      context.insert(template.makeRoutine())
     }
     try? context.save()
     dismiss()
@@ -506,7 +505,7 @@ struct RoutineDetailView: View {
       Section {
         ForEach(displayedExercises) { item in
           NavigationLink {
-            RoutineExerciseEditor(exercise: item, people: people)
+            RoutineExerciseEditor(exercise: item)
           } label: {
             VStack(alignment: .leading, spacing: 5) {
               Text(item.exerciseName).font(.headline)
@@ -527,7 +526,7 @@ struct RoutineDetailView: View {
         Text(
           editMode.isEditing
             ? "Exercise additions, deletions, and ordering changes are applied only when you tap Save."
-            : "Open an exercise to change its unit, load, reps, or number of sets for each person."
+            : "Open an exercise to change its tracking unit. Workout weights, reps, and sets are saved per person in each workout."
         )
       }
     }
@@ -614,9 +613,7 @@ struct RoutineDetailView: View {
   }
 
   private func summary(_ item: RoutineExercise) -> String {
-    let first = item.prescriptions.first
-    return
-      "\(first?.sets.count ?? 0) sets · \(first?.measurement.tidy ?? "0") \(item.unit.label) · \(item.prescriptions.count) people"
+    "\(item.unit.title) · configured per person when you start a workout"
   }
 
   private func moveExercises(from source: IndexSet, to destination: Int) {
@@ -637,8 +634,8 @@ struct RoutineDetailView: View {
         })
       else { return }
       draftExercises.append(
-        RoutineExercise.make(exercise: exercise, for: people, sortOrder: draftExercises.count))
-    } else if routine.add(exercise, for: people) {
+        RoutineExercise.make(exercise: exercise, sortOrder: draftExercises.count))
+    } else if routine.add(exercise) {
       try? context.save()
     }
   }
@@ -681,7 +678,8 @@ struct RoutineDetailView: View {
   private func poundsVolume(_ session: WorkoutSession) -> Double {
     var total = 0.0
     for exercise in session.exercises where exercise.unit == .pounds {
-      for person in exercise.participants {
+      for person in exercise.participants where session.isParticipantActive(person.participantName)
+      {
         for set in person.sets where set.isCompleted {
           total += (set.measurement ?? person.measurement) * Double(set.reps)
         }
@@ -693,7 +691,6 @@ struct RoutineDetailView: View {
 
 struct RoutineExerciseEditor: View {
   @Bindable var exercise: RoutineExercise
-  let people: [PersonProfile]
 
   var body: some View {
     Form {
@@ -702,117 +699,9 @@ struct RoutineExerciseEditor: View {
           ForEach(TrackingUnit.allCases) { Text($0.title).tag($0) }
         }
       }
-      ForEach(people) { person in
-        Section {
-          if let prescription = prescription(for: person.name) {
-            PrescriptionSchemeMenu(prescription: prescription, unit: exercise.unit)
-            MeasurementField(
-              value: Binding(
-                get: { prescription.measurement }, set: { prescription.measurement = $0 }),
-              unit: exercise.unit)
-          }
-        } header: {
-          Text(person.name)
-        } footer: {
-          Text(
-            "The scheme applies the same reps to every set. You can still adjust individual sets while training."
-          )
-        }
-      }
     }
     .navigationTitle(exercise.exerciseName)
     .navigationBarTitleDisplayMode(.inline)
-    .onAppear {
-      for person in people { _ = prescription(for: person.name) }
-    }
-  }
-
-  private func prescription(for name: String) -> Prescription? {
-    if let value = exercise.prescriptions.first(where: { $0.participantName == name }) {
-      return value
-    }
-    let newValue = Prescription(
-      participantName: name, measurement: 0,
-      sets: (0..<3).map { SetTemplate(sortOrder: $0, reps: 10) })
-    exercise.prescriptions.append(newValue)
-    return newValue
-  }
-}
-
-struct PrescriptionSchemeMenu: View {
-  @Bindable var prescription: Prescription
-  let unit: TrackingUnit
-
-  private var sharedReps: Int {
-    prescription.sets.sorted(by: { $0.sortOrder < $1.sortOrder }).first?.reps ?? 10
-  }
-  private var setCounts: [Int] {
-    Array(Set(Array(1...12) + [max(1, prescription.sets.count)])).sorted()
-  }
-  private var repCounts: [Int] {
-    Array(Set(Array(1...30) + [40, 50, 60, 75, 90, 100, 120, sharedReps])).sorted()
-  }
-
-  var body: some View {
-    Menu {
-      Picker(
-        "Sets", selection: Binding(get: { max(1, prescription.sets.count) }, set: updateSetCount)
-      ) {
-        ForEach(setCounts, id: \.self) { Text("\($0) sets").tag($0) }
-      }
-      Picker(
-        unit.usesReps ? "Reps" : "Rounds", selection: Binding(get: { sharedReps }, set: updateReps)
-      ) {
-        ForEach(repCounts, id: \.self) {
-          Text("\($0)\(unit.usesReps ? " reps" : " rounds")").tag($0)
-        }
-      }
-    } label: {
-      LabeledContent("Sets × \(unit.usesReps ? "reps" : "rounds")") {
-        Text("\(max(1, prescription.sets.count)) × \(sharedReps)")
-          .foregroundStyle(.secondary)
-      }
-      .contentShape(Rectangle())
-    }
-  }
-
-  private func updateSetCount(_ newCount: Int) {
-    let sorted = prescription.sets.sorted(by: { $0.sortOrder < $1.sortOrder })
-    if newCount < sorted.count {
-      prescription.sets = Array(sorted.prefix(newCount))
-    } else if newCount > sorted.count {
-      for index in sorted.count..<newCount {
-        prescription.sets.append(SetTemplate(sortOrder: index, reps: sharedReps))
-      }
-    }
-    for (index, set) in prescription.sets.sorted(by: { $0.sortOrder < $1.sortOrder }).enumerated() {
-      set.sortOrder = index
-    }
-  }
-
-  private func updateReps(_ reps: Int) {
-    if prescription.sets.isEmpty {
-      prescription.sets.append(SetTemplate(sortOrder: 0, reps: reps))
-    } else {
-      for set in prescription.sets { set.reps = reps }
-    }
-  }
-}
-
-struct MeasurementField: View {
-  @Binding var value: Double
-  let unit: TrackingUnit
-
-  var body: some View {
-    HStack {
-      Text("Load / target")
-      Spacer()
-      TextField("0", value: $value, format: .number)
-        .keyboardType(.decimalPad)
-        .multilineTextAlignment(.trailing)
-        .frame(width: 80)
-      Text(unit.label).foregroundStyle(.secondary)
-    }
   }
 }
 
@@ -866,6 +755,7 @@ struct AddExerciseToRoutineSheet: View {
 struct StartRoutineSheet: View {
   @Environment(\.dismiss) private var dismiss
   @Environment(\.modelContext) private var context
+  @Query(sort: \WorkoutSession.startedAt, order: .reverse) private var sessions: [WorkoutSession]
   let routine: Routine
   let people: [PersonProfile]
   @State private var selectedNames: Set<String> = []
@@ -916,23 +806,24 @@ struct StartRoutineSheet: View {
       .navigationTitle("Start Routine")
       .navigationBarTitleDisplayMode(.inline)
       .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }
-      .onAppear { selectedNames = Set(people.map(\.name)) }
+      .onAppear {
+        let lastNames = lastSession?.participantNames ?? routine.configuredParticipantNames
+        let lastKeys = Set(lastNames.map { $0.lowercased() })
+        let matchingNames = people.map(\.name).filter {
+          lastKeys.isEmpty || lastKeys.contains($0.lowercased())
+        }
+        selectedNames = Set(matchingNames.isEmpty ? people.map(\.name) : matchingNames)
+      }
     }
   }
 
   private func start() {
     let selected = people.map(\.name).filter(selectedNames.contains)
+    let history = routineSessions
+    let knownNames = orderedKnownNames(from: history)
     let logs = routine.exercises.sorted(by: { $0.sortOrder < $1.sortOrder }).map { item in
-      let participantLogs = selected.map { name -> ParticipantLog in
-        let prescription = item.prescriptions.first(where: { $0.participantName == name })
-        let sets =
-          (prescription?.sets.sorted(by: { $0.sortOrder < $1.sortOrder }) ?? [
-            SetTemplate(sortOrder: 0, reps: 10)
-          ]).map {
-            WorkoutSet(sortOrder: $0.sortOrder, reps: $0.reps)
-          }
-        return ParticipantLog(
-          participantName: name, measurement: prescription?.measurement ?? 0, sets: sets)
+      let participantLogs = knownNames.map {
+        participantLog(for: $0, exercise: item, history: history)
       }
       return ExerciseLog(
         exerciseName: item.exerciseName, unit: item.unit, sortOrder: item.sortOrder,
@@ -944,5 +835,59 @@ struct StartRoutineSheet: View {
         exercises: logs))
     try? context.save()
     dismiss()
+  }
+
+  private var routineSessions: [WorkoutSession] {
+    sessions.filter { $0.routineID == routine.id }.sorted { $0.startedAt > $1.startedAt }
+  }
+
+  private var lastSession: WorkoutSession? { routineSessions.first }
+
+  private func orderedKnownNames(from history: [WorkoutSession]) -> [String] {
+    var result: [String] = []
+    var seen = Set<String>()
+    for name in history.flatMap(\.participantNames) + people.map(\.name)
+      + routine.configuredParticipantNames
+    {
+      if seen.insert(name.lowercased()).inserted { result.append(name) }
+    }
+    if result.isEmpty { result = routine.configuredParticipantNames }
+    return result
+  }
+
+  private func participantLog(
+    for name: String, exercise: RoutineExercise, history: [WorkoutSession]
+  ) -> ParticipantLog {
+    let previous = history.lazy
+      .flatMap(\.exercises)
+      .filter {
+        $0.exerciseName.caseInsensitiveCompare(exercise.exerciseName) == .orderedSame
+      }
+      .flatMap(\.participants)
+      .first {
+        $0.participantName.caseInsensitiveCompare(name) == .orderedSame
+      }
+    if let previous {
+      return ParticipantLog(
+        participantName: name, measurement: previous.measurement,
+        sets: previous.sets.sorted(by: { $0.sortOrder < $1.sortOrder }).map {
+          WorkoutSet(
+            sortOrder: $0.sortOrder, reps: $0.reps, measurement: $0.measurement,
+            distanceMiles: $0.distanceMiles, durationSeconds: $0.durationSeconds, rpe: $0.rpe,
+            setType: $0.setTypeRaw)
+        })
+    }
+    if let legacy = exercise.prescriptions.first(where: {
+      $0.participantName.caseInsensitiveCompare(name) == .orderedSame
+    }) {
+      return ParticipantLog(
+        participantName: name, measurement: legacy.measurement,
+        sets: legacy.sets.sorted(by: { $0.sortOrder < $1.sortOrder }).map {
+          WorkoutSet(sortOrder: $0.sortOrder, reps: $0.reps)
+        })
+    }
+    return ParticipantLog(
+      participantName: name, measurement: 0,
+      sets: (0..<3).map { WorkoutSet(sortOrder: $0, reps: 10) })
   }
 }

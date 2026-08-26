@@ -10,7 +10,8 @@ StrengthLog should feel energetic and fast without adopting the dense, black-and
 - The brand hero belongs to the welcome step. Workout presents routine choice first, the 30-day activity card second, and recent workout reopening last.
 - Onboarding offers three unselected starter-routine cards after people setup; continuing without templates is equally prominent.
 - One participant occupies one compact row per exercise, even with several sets.
-- Routine setup uses only two top-level controls per person: a shared sets × reps scheme and load/target.
+- Routines are person-agnostic and contain exercise structure only; weights, reps, and sets are configured per person from the latest workout.
+- Starting a workout defaults to its most recent crew. People can be toggled on and off quickly; turning off someone with completed sets warns first and keeps their data available if they are turned back on.
 - Set buttons remain individually visible; there is no picker or menu for common completion actions.
 - Measurement and reps remain editable in place, and add-set is adjacent to existing sets.
 - Exercise thumbnails are visible in the workout; tapping one opens a full-size, swipeable position gallery.

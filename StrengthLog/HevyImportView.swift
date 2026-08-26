@@ -656,7 +656,7 @@ enum HevyImporter {
       else { continue }
       let importedName = uniqueRoutineName(basedOn: routineName, usedNames: &usedRoutineNames)
       let routineExercises = makeRoutineExercises(
-        sourceWorkouts, person: person, resolved: resolved)
+        sourceWorkouts, resolved: resolved)
       let routine = Routine(
         name: importedName,
         symbol: "square.and.arrow.down.fill",
@@ -746,7 +746,6 @@ enum HevyImporter {
 
   private static func makeRoutineExercises(
     _ workouts: [HevyCSVWorkout],
-    person: PersonProfile,
     resolved: [String: Exercise]
   ) -> [RoutineExercise] {
     var sourceExercises: [HevyCSVExercise] = []
@@ -761,17 +760,10 @@ enum HevyImporter {
     return sourceExercises.enumerated().compactMap { index, sourceExercise in
       let key = HevyExerciseMatcher.normalize(sourceExercise.title)
       guard let localExercise = resolved[key] else { return nil }
-      let measurement = commonWeight(sourceExercise.sets) ?? 0
-      let templates = sourceExercise.sets.enumerated().map { setIndex, set in
-        SetTemplate(sortOrder: setIndex, reps: set.reps ?? target(for: set))
-      }
       return RoutineExercise(
         exerciseName: localExercise.name,
         unit: inferredUnit([sourceExercise], fallback: localExercise.unit),
         sortOrder: index,
-        prescriptions: [
-          Prescription(participantName: person.name, measurement: measurement, sets: templates)
-        ],
         notes: sourceExercise.notes,
         supersetID: sourceExercise.supersetID)
     }

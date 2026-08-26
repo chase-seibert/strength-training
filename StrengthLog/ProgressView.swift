@@ -80,7 +80,8 @@ struct ProgressView: View {
   private func volume(_ session: WorkoutSession) -> Double {
     session.exercises.filter { $0.unit == .pounds }.flatMap(\.participants).reduce(0) {
       total, participant in
-      total
+      guard session.isParticipantActive(participant.participantName) else { return total }
+      return total
         + participant.sets.filter(\.isCompleted).reduce(0) {
           $0 + Double($1.reps) * ($1.measurement ?? participant.measurement)
         }
@@ -132,7 +133,9 @@ struct SessionDetailView: View {
           if let notes = exercise.notes, !notes.isEmpty {
             Text(notes).font(.caption).foregroundStyle(.secondary)
           }
-          ForEach(exercise.participants) { participant in
+          ForEach(exercise.participants.filter { session.isParticipantActive($0.participantName) })
+          {
+            participant in
             VStack(alignment: .leading, spacing: 5) {
               Text(participant.participantName).font(.subheadline.bold())
               Text(setSummary(participant, unit: exercise.unit))

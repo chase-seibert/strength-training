@@ -133,11 +133,14 @@ final class Routine {
   var colorHex: String
   var createdAt: Date
   var deletedAt: Date?
+  // Legacy field retained so existing stores can be opened; new workouts own participants.
+  var participantNames: [String] = []
   @Relationship(deleteRule: .cascade) var exercises: [RoutineExercise]
 
   init(
     name: String, symbol: String = "dumbbell.fill", colorHex: String = "FF5A45",
-    exercises: [RoutineExercise] = [], externalID: String? = nil, notes: String? = nil,
+    exercises: [RoutineExercise] = [],
+    externalID: String? = nil, notes: String? = nil,
     deletedAt: Date? = nil
   ) {
     id = UUID()
@@ -151,15 +154,32 @@ final class Routine {
     self.exercises = exercises
   }
 
+  /// Returns the routine's configured people, inferring them for routines created before
+  /// participantNames was added to the model.
+  var configuredParticipantNames: [String] {
+    let source =
+      participantNames.isEmpty
+      ? exercises.sorted(by: { $0.sortOrder < $1.sortOrder }).flatMap(\.prescriptions).map(
+        \.participantName)
+      : participantNames
+    var names: [String] = []
+    var seen = Set<String>()
+    for name in source {
+      let key = name.lowercased()
+      if seen.insert(key).inserted { names.append(name) }
+    }
+    return names
+  }
+
   func contains(_ exercise: Exercise) -> Bool {
     exercises.contains { $0.exerciseName.caseInsensitiveCompare(exercise.name) == .orderedSame }
   }
 
   @discardableResult
-  func add(_ exercise: Exercise, for people: [PersonProfile]) -> Bool {
+  func add(_ exercise: Exercise) -> Bool {
     guard !contains(exercise) else { return false }
     exercises.append(
-      RoutineExercise.make(exercise: exercise, for: people, sortOrder: exercises.count))
+      RoutineExercise.make(exercise: exercise, sortOrder: exercises.count))
     return true
   }
 }
@@ -172,11 +192,12 @@ final class RoutineExercise {
   var supersetID: String?
   var unitRaw: String
   var sortOrder: Int
+  // Legacy routine defaults retained for migration from the earlier schema. New routines leave it empty.
   @Relationship(deleteRule: .cascade) var prescriptions: [Prescription]
 
   init(
     exerciseName: String, unit: TrackingUnit, sortOrder: Int,
-    prescriptions: [Prescription], notes: String? = nil, supersetID: String? = nil
+    prescriptions: [Prescription] = [], notes: String? = nil, supersetID: String? = nil
   ) {
     id = UUID()
     self.exerciseName = exerciseName
@@ -192,20 +213,11 @@ final class RoutineExercise {
     set { unitRaw = newValue.rawValue }
   }
 
-  static func make(
-    exercise: Exercise, for people: [PersonProfile], sortOrder: Int
-  ) -> RoutineExercise {
-    let prescriptions = people.map { person in
-      Prescription(
-        participantName: person.name,
-        measurement: 0,
-        sets: (0..<3).map { SetTemplate(sortOrder: $0, reps: 10) })
-    }
+  static func make(exercise: Exercise, sortOrder: Int) -> RoutineExercise {
     return RoutineExercise(
       exerciseName: exercise.name,
       unit: exercise.unit,
-      sortOrder: sortOrder,
-      prescriptions: prescriptions)
+      sortOrder: sortOrder)
   }
 }
 
@@ -270,9 +282,17 @@ final class WorkoutSession {
   }
 
   var completedSetCount: Int {
-    exercises.flatMap(\.participants).flatMap(\.sets).filter(\.isCompleted).count
+    exercises.flatMap(\.participants).filter { isParticipantActive($0.participantName) }
+      .flatMap(\.sets).filter(\.isCompleted).count
   }
-  var totalSetCount: Int { exercises.flatMap(\.participants).flatMap(\.sets).count }
+  var totalSetCount: Int {
+    exercises.flatMap(\.participants).filter { isParticipantActive($0.participantName) }
+      .flatMap(\.sets).count
+  }
+
+  func isParticipantActive(_ name: String) -> Bool {
+    participantNames.contains { $0.caseInsensitiveCompare(name) == .orderedSame }
+  }
 
   func contains(_ exercise: Exercise) -> Bool {
     exercises.contains { $0.exerciseName.caseInsensitiveCompare(exercise.name) == .orderedSame }
@@ -439,25 +459,18 @@ struct StarterRoutineTemplate: Identifiable {
       ]),
   ]
 
-  func makeRoutine(participantNames: [String]) -> Routine {
-    Routine(
+  func makeRoutine() -> Routine {
+    let routineExercises = exercises.enumerated().map { index, plan in
+      RoutineExercise(
+        exerciseName: plan.name,
+        unit: plan.unit,
+        sortOrder: index)
+    }
+    return Routine(
       name: name,
       symbol: symbol,
       colorHex: colorHex,
-      exercises: exercises.enumerated().map { index, plan in
-        RoutineExercise(
-          exerciseName: plan.name,
-          unit: plan.unit,
-          sortOrder: index,
-          prescriptions: participantNames.map { participantName in
-            Prescription(
-              participantName: participantName,
-              measurement: 0,
-              sets: (0..<plan.setCount).map {
-                SetTemplate(sortOrder: $0, reps: plan.target)
-              })
-          })
-      })
+      exercises: routineExercises)
   }
 }
 
