@@ -2,6 +2,8 @@
 
 StrengthLog is an offline-first iPhone app for tracking strength routines alone or with a configurable training crew. It combines quick, one-row-per-person set logging with resumable sessions, remembered routine defaults, an 873-exercise catalog, activity history, and pounds-volume charts.
 
+![StrengthLog Workout screen](docs/images/codex-clipboard-5d9429f5-5ab8-44ed-8186-78cf5a271af1.jpg)
+
 ## Included in the MVP
 
 - Optionally add editable Upper Body, Lower Body, and Core starter routines, or create routines from scratch.
