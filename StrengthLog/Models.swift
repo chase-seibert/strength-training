@@ -187,9 +187,11 @@ final class Routine {
 @Model
 final class RoutineExercise {
   var id: UUID
+  var exerciseID: UUID?
   var exerciseName: String
   var notes: String?
   var supersetID: String?
+  // Legacy cached unit retained for older stores; UI and new sessions resolve Exercise.unit.
   var unitRaw: String
   var sortOrder: Int
   // Legacy routine defaults retained for migration from the earlier schema. New routines leave it empty.
@@ -197,9 +199,11 @@ final class RoutineExercise {
 
   init(
     exerciseName: String, unit: TrackingUnit, sortOrder: Int,
+    exerciseID: UUID? = nil,
     prescriptions: [Prescription] = [], notes: String? = nil, supersetID: String? = nil
   ) {
     id = UUID()
+    self.exerciseID = exerciseID
     self.exerciseName = exerciseName
     self.notes = notes
     self.supersetID = supersetID
@@ -208,16 +212,14 @@ final class RoutineExercise {
     self.prescriptions = prescriptions
   }
 
-  var unit: TrackingUnit {
-    get { TrackingUnit(rawValue: unitRaw) ?? .pounds }
-    set { unitRaw = newValue.rawValue }
-  }
+  var legacyUnit: TrackingUnit { TrackingUnit(rawValue: unitRaw) ?? .pounds }
 
   static func make(exercise: Exercise, sortOrder: Int) -> RoutineExercise {
     return RoutineExercise(
       exerciseName: exercise.name,
       unit: exercise.unit,
-      sortOrder: sortOrder)
+      sortOrder: sortOrder,
+      exerciseID: exercise.id)
   }
 }
 

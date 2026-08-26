@@ -762,8 +762,9 @@ enum HevyImporter {
       guard let localExercise = resolved[key] else { return nil }
       return RoutineExercise(
         exerciseName: localExercise.name,
-        unit: inferredUnit([sourceExercise], fallback: localExercise.unit),
+        unit: localExercise.unit,
         sortOrder: index,
+        exerciseID: localExercise.id,
         notes: sourceExercise.notes,
         supersetID: sourceExercise.supersetID)
     }
@@ -791,7 +792,7 @@ enum HevyImporter {
       }
       return ExerciseLog(
         exerciseName: localExercise.name,
-        unit: inferredUnit([sourceExercise], fallback: localExercise.unit),
+        unit: localExercise.unit,
         sortOrder: exerciseIndex,
         participants: [
           ParticipantLog(participantName: person.name, measurement: measurement, sets: sets)

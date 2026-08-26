@@ -19,9 +19,9 @@ StrengthLog bundles a compact normalized derivative containing all 873 entries a
 | [RepDB free dataset](https://github.com/RepDB/exercise-dataset) | 250+ curated records in the current public free tier; multilingual instructions, equipment, muscles, MET | Consistent 512 px WebP start/peak illustrations | Static files under a custom in-app-use license requiring attribution and restricting redistribution/AI derivation | Higher visual consistency, but smaller and not open data in the conventional sense. Consider only after a legal/product review. |
 | ExerciseDB-derived GitHub mirrors | Often claim 1,300+ records with animated GIFs | GIF/animation is the main attraction | Many mirrors disclaim ownership or point to separate commercial API terms | Do not ship from a mirror. Provenance and redistribution rights are too ambiguous. |
 
-## Normalization and inferred units
+## Normalization and default units
 
-The catalog does not provide the requested tracking measurement. StrengthLog adds an editable default with transparent deterministic rules:
+The catalog does not provide the requested tracking measurement. StrengthLog seeds each master exercise with an editable default unit using transparent deterministic rules:
 
 - weighted strength/strongman/equipment work → pounds;
 - body-only and plyometric work → repetitions;
@@ -40,7 +40,7 @@ Current generated distribution:
 | Steps | 2 |
 | **Total** | **873** |
 
-These are starting suggestions, not claims about the only valid way to track an exercise. A person can edit the catalog default, and a routine can override it independently.
+These are deliberate defaults rather than claims about the only valid way to track an exercise. The current distribution is 600 pounds, 136 repetitions, 123 seconds, 8 minutes, 4 miles, and 2 steps. Confidence is high for weighted strength and stretching categories, moderate for bodyweight/plyometric classifications, and lower for a small number of mixed cardio or unusual movements. The master exercise unit can be corrected in exercise detail; routines never override it.
 
 ## Media findings
 

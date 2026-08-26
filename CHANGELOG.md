@@ -32,3 +32,4 @@
 - Added confirmed workout deletion from progress history and session details.
 - Added swipe-to-delete for Workout-tab recent workouts and a confirmed delete button at the bottom of open workouts.
 - Made routines person-agnostic: workouts own their participant set, and each person's latest workout values seed the next session.
+- Made catalog exercise units the source of truth, restored master-exercise unit editing, and removed routine-level unit customization.

@@ -437,6 +437,7 @@ struct RoutineDetailView: View {
   @Environment(\.modelContext) private var context
   @Query(filter: #Predicate<PersonProfile> { !$0.isArchived }, sort: \PersonProfile.sortOrder)
   private var people: [PersonProfile]
+  @Query private var catalog: [Exercise]
   @Query(sort: \WorkoutSession.startedAt) private var sessions: [WorkoutSession]
   @Bindable var routine: Routine
   @State private var showingExercisePicker = false
@@ -504,16 +505,12 @@ struct RoutineDetailView: View {
 
       Section {
         ForEach(displayedExercises) { item in
-          NavigationLink {
-            RoutineExerciseEditor(exercise: item)
-          } label: {
-            VStack(alignment: .leading, spacing: 5) {
-              Text(item.exerciseName).font(.headline)
-              Text(summary(item))
-                .font(.caption).foregroundStyle(.secondary)
-            }
-            .padding(.vertical, 3)
+          VStack(alignment: .leading, spacing: 5) {
+            Text(item.exerciseName).font(.headline)
+            Text(summary(item))
+              .font(.caption).foregroundStyle(.secondary)
           }
+          .padding(.vertical, 3)
         }
         .onDelete(perform: deleteExercises)
         .onMove(perform: moveExercises)
@@ -526,7 +523,7 @@ struct RoutineDetailView: View {
         Text(
           editMode.isEditing
             ? "Exercise additions, deletions, and ordering changes are applied only when you tap Save."
-            : "Open an exercise to change its tracking unit. Workout weights, reps, and sets are saved per person in each workout."
+            : "Change an exercise's tracking unit from the Exercises tab. Workout weights, reps, and sets are saved per person in each workout."
         )
       }
     }
@@ -613,7 +610,15 @@ struct RoutineDetailView: View {
   }
 
   private func summary(_ item: RoutineExercise) -> String {
-    "\(item.unit.title) · configured per person when you start a workout"
+    "\(unit(for: item).title) · configured per person when you start a workout"
+  }
+
+  private func unit(for item: RoutineExercise) -> TrackingUnit {
+    catalog.first(where: { $0.id == item.exerciseID })?.unit
+      ?? catalog.first(where: {
+        $0.name.caseInsensitiveCompare(item.exerciseName) == .orderedSame
+      })?.unit
+      ?? item.legacyUnit
   }
 
   private func moveExercises(from source: IndexSet, to destination: Int) {
@@ -689,22 +694,6 @@ struct RoutineDetailView: View {
   }
 }
 
-struct RoutineExerciseEditor: View {
-  @Bindable var exercise: RoutineExercise
-
-  var body: some View {
-    Form {
-      Section("Tracking") {
-        Picker("Unit", selection: Binding(get: { exercise.unit }, set: { exercise.unit = $0 })) {
-          ForEach(TrackingUnit.allCases) { Text($0.title).tag($0) }
-        }
-      }
-    }
-    .navigationTitle(exercise.exerciseName)
-    .navigationBarTitleDisplayMode(.inline)
-  }
-}
-
 struct AddExerciseToRoutineSheet: View {
   @Environment(\.dismiss) private var dismiss
   @Query(sort: \Exercise.name) private var exercises: [Exercise]
@@ -756,6 +745,7 @@ struct StartRoutineSheet: View {
   @Environment(\.dismiss) private var dismiss
   @Environment(\.modelContext) private var context
   @Query(sort: \WorkoutSession.startedAt, order: .reverse) private var sessions: [WorkoutSession]
+  @Query private var catalog: [Exercise]
   let routine: Routine
   let people: [PersonProfile]
   @State private var selectedNames: Set<String> = []
@@ -826,7 +816,7 @@ struct StartRoutineSheet: View {
         participantLog(for: $0, exercise: item, history: history)
       }
       return ExerciseLog(
-        exerciseName: item.exerciseName, unit: item.unit, sortOrder: item.sortOrder,
+        exerciseName: item.exerciseName, unit: unit(for: item), sortOrder: item.sortOrder,
         participants: participantLogs)
     }
     context.insert(
@@ -842,6 +832,14 @@ struct StartRoutineSheet: View {
   }
 
   private var lastSession: WorkoutSession? { routineSessions.first }
+
+  private func unit(for item: RoutineExercise) -> TrackingUnit {
+    catalog.first(where: { $0.id == item.exerciseID })?.unit
+      ?? catalog.first(where: {
+        $0.name.caseInsensitiveCompare(item.exerciseName) == .orderedSame
+      })?.unit
+      ?? item.legacyUnit
+  }
 
   private func orderedKnownNames(from history: [WorkoutSession]) -> [String] {
     var result: [String] = []

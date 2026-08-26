@@ -16,7 +16,7 @@ In Debug builds, Settings also links to a Developer menu. Its replay action clea
 
 ## Data flow
 
-`Routine` owns only ordered exercise structure (`RoutineExercise` objects); it is independent of people and contains no workout weights, reps, or sets. `WorkoutSession` owns the selected participant set and its per-person exercise logs. When a new session starts, those logs are copied from each person's latest session for that routine, with legacy routine prescriptions used only as a migration fallback. An optional `deletedAt` timestamp implements lightweight soft deletion: active-routine queries exclude deleted rows, while Deleted Routines can clear the timestamp to restore the same routine graph.
+`Routine` owns only ordered exercise structure (`RoutineExercise` objects); it is independent of people and contains no workout weights, reps, sets, or customizable units. Units resolve from the saved main catalog `Exercise` record and are snapshotted into each workout log. The unit can be corrected from exercise detail, while routines never override it. `WorkoutSession` owns the selected participant set and its per-person exercise logs. When a new session starts, those logs are copied from each person's latest session for that routine, with legacy routine prescriptions used only as a migration fallback. An optional `deletedAt` timestamp implements lightweight soft deletion: active-routine queries exclude deleted rows, while Deleted Routines can clear the timestamp to restore the same routine graph.
 
 `PersonProfile.sortOrder` preserves the order established during onboarding across Settings, routine editing, workout setup, and participant visibility. The primary onboarding profile is therefore always presented first. Existing stores are migrated once using the original onboarding color sequence before persisting explicit order values.
 
@@ -34,7 +34,7 @@ StrengthLog registers `public.comma-separated-values` as a document type and rou
 
 Before persistence, the user selects which source routines to import. Only exercises and workouts belonging to those routines proceed. Every distinct relevant exercise is visible in the review UI and resolves through a remembered `ExternalExerciseMapping`, normalized catalog-name scoring, or an explicit local/custom choice. Unmapped exercises are skipped in both routine templates and history. Confirmed mappings are reusable on later imports. A Hevy account is assigned to one selected `PersonProfile`.
 
-The importer always creates a new routine for every selected source title and never updates an existing one. Name collisions receive a numeric suffix. Each routine includes the union of mapped exercises found across all exported workouts for that title, using the most recent occurrence for its default prescription. As a secondary operation, the importer snapshots selected workouts as inactive history, retains per-set load, reps, distance, duration, RPE, type, notes, and superset identifiers, and uses a stable source key to skip re-imported workouts. All inserts and mapping updates are saved together; a failure rolls back the model context.
+The importer always creates a new routine for every selected source title and never updates an existing one. Name collisions receive a numeric suffix. Each routine includes the union of mapped exercises found across all exported workouts for that title; units come from the mapped catalog exercise. As a secondary operation, the importer snapshots selected workouts as inactive history, retains per-set load, reps, distance, duration, RPE, type, notes, and superset identifiers, and uses a stable source key to skip re-imported workouts. All inserts and mapping updates are saved together; a failure rolls back the model context.
 
 ## Catalog
 
@@ -43,6 +43,6 @@ The importer always creates a new routine for every selected source title and ne
 ## Tradeoffs
 
 - Participant references are snapshot names rather than mutable foreign keys. This intentionally keeps history readable after a profile rename or archive.
-- Routine default reconciliation currently matches exercise names inside a stable routine ID. A later migration should store the routine-exercise UUID in each exercise log.
+- Latest-value seeding currently matches exercise names inside a stable routine ID. A later migration should store the routine-exercise UUID in each exercise log.
 - The first seed inserts 873 records on the main model context. It passed the first-launch smoke test, but a background staged import would be appropriate if the catalog grows substantially.
 - Sync, outbound sharing, HealthKit, rest timers, live superset behavior, and cloud backup are outside the first version.

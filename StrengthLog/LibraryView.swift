@@ -88,12 +88,12 @@ struct ExerciseDetailView: View {
         }
 
         VStack(alignment: .leading, spacing: 10) {
-          Text("Default tracking").font(.headline)
+          Text("Tracking unit").font(.headline)
           Picker("Unit", selection: Binding(get: { exercise.unit }, set: { exercise.unit = $0 })) {
             ForEach(TrackingUnit.allCases) { Text($0.title).tag($0) }
           }
           .pickerStyle(.menu)
-          Text("This can also be changed for an individual routine.")
+          Text("This saved exercise value is used everywhere, including routines.")
             .font(.caption).foregroundStyle(.secondary)
         }
         .padding()

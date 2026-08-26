@@ -9,7 +9,7 @@
 - As a lifter, I want a broad searchable exercise catalog with equipment, muscle, form notes, and imagery, so that I can build routines quickly and recognize unfamiliar movements.
 - As a lifter, I want to add an exercise to a routine directly from its catalog detail, so that browsing naturally turns into routine building.
 - As a lifter, I want to add, remove, and reorder exercises while editing routines, so that their contents and workout order match my plan.
-- As a lifter, I want to create custom exercises and change units on catalog exercises, so that the app does not constrain how I measure work.
+- As a lifter, I want custom exercises and editable catalog-unit defaults, so that routines use one consistent measurement per exercise while I can correct an inaccurate default.
 - As a lifter, I want measurement units for pounds, kilograms, reps, time, distance, and steps, so that strength and conditioning movements share one model.
 
 ## Workout execution
