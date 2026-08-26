@@ -1,0 +1,26 @@
+# macOS
+.DS_Store
+
+# Xcode build products
+build/
+build-*/
+DerivedData/
+*.xcresult
+*.dSYM
+*.dSYM.zip
+*.ipa
+
+# Xcode user-specific state
+xcuserdata/
+*.xcuserstate
+*.xcscmblueprint
+*.xccheckout
+*.moved-aside
+
+# Swift Package Manager
+.build/
+.swiftpm/xcode/package.xcworkspace/xcuserdata/
+
+# Local editor settings
+.idea/
+.vscode/

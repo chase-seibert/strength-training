@@ -1,0 +1,239 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A10000000000000000000001 /* StrengthLogApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000001 /* StrengthLogApp.swift */; };
+		A10000000000000000000002 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000002 /* Models.swift */; };
+		A10000000000000000000003 /* SeedData.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000003 /* SeedData.swift */; };
+		A10000000000000000000004 /* Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000004 /* Components.swift */; };
+		A10000000000000000000005 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000005 /* HomeView.swift */; };
+		A10000000000000000000006 /* RoutinesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000006 /* RoutinesView.swift */; };
+		A10000000000000000000007 /* ActiveWorkoutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000007 /* ActiveWorkoutView.swift */; };
+		A10000000000000000000008 /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000008 /* LibraryView.swift */; };
+		A10000000000000000000009 /* ProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000009 /* ProgressView.swift */; };
+		A1000000000000000000000A /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000A /* SettingsView.swift */; };
+		A1000000000000000000000B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000B /* Assets.xcassets */; };
+		A1000000000000000000000C /* exercise-catalog.json in Resources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000C /* exercise-catalog.json */; };
+		A1000000000000000000000E /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000E /* OnboardingView.swift */; };
+		A1000000000000000000000F /* HevyCSVParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000F /* HevyCSVParser.swift */; };
+		A10000000000000000000010 /* HevyImportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000010 /* HevyImportView.swift */; };
+		A10000000000000000000011 /* HevyImportSmokeTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000012 /* HevyImportSmokeTest.swift */; };
+		A10000000000000000000012 /* ExerciseImages in Resources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000013 /* ExerciseImages */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		A20000000000000000000001 /* StrengthLogApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrengthLogApp.swift; sourceTree = "<group>"; };
+		A20000000000000000000002 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		A20000000000000000000003 /* SeedData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeedData.swift; sourceTree = "<group>"; };
+		A20000000000000000000004 /* Components.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Components.swift; sourceTree = "<group>"; };
+		A20000000000000000000005 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		A20000000000000000000006 /* RoutinesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutinesView.swift; sourceTree = "<group>"; };
+		A20000000000000000000007 /* ActiveWorkoutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveWorkoutView.swift; sourceTree = "<group>"; };
+		A20000000000000000000008 /* LibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryView.swift; sourceTree = "<group>"; };
+		A20000000000000000000009 /* ProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressView.swift; sourceTree = "<group>"; };
+		A2000000000000000000000A /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		A2000000000000000000000B /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A2000000000000000000000C /* exercise-catalog.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "exercise-catalog.json"; sourceTree = "<group>"; };
+		A2000000000000000000000D /* StrengthLog.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = StrengthLog.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A2000000000000000000000E /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		A2000000000000000000000F /* HevyCSVParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HevyCSVParser.swift; sourceTree = "<group>"; };
+		A20000000000000000000010 /* HevyImportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HevyImportView.swift; sourceTree = "<group>"; };
+		A20000000000000000000011 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A20000000000000000000012 /* HevyImportSmokeTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HevyImportSmokeTest.swift; sourceTree = "<group>"; };
+		A20000000000000000000013 /* ExerciseImages */ = {isa = PBXFileReference; lastKnownFileType = folder; path = ExerciseImages; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A30000000000000000000001 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		A40000000000000000000001 = {
+			isa = PBXGroup;
+			children = (
+				A40000000000000000000002 /* StrengthLog */,
+				A40000000000000000000004 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		A40000000000000000000002 /* StrengthLog */ = {
+			isa = PBXGroup;
+			children = (
+				A20000000000000000000001 /* StrengthLogApp.swift */,
+				A20000000000000000000002 /* Models.swift */,
+				A20000000000000000000003 /* SeedData.swift */,
+				A20000000000000000000004 /* Components.swift */,
+				A20000000000000000000005 /* HomeView.swift */,
+				A20000000000000000000006 /* RoutinesView.swift */,
+				A20000000000000000000007 /* ActiveWorkoutView.swift */,
+				A20000000000000000000008 /* LibraryView.swift */,
+				A20000000000000000000009 /* ProgressView.swift */,
+				A2000000000000000000000A /* SettingsView.swift */,
+				A2000000000000000000000E /* OnboardingView.swift */,
+				A2000000000000000000000F /* HevyCSVParser.swift */,
+				A20000000000000000000010 /* HevyImportView.swift */,
+				A20000000000000000000011 /* Info.plist */,
+				A20000000000000000000012 /* HevyImportSmokeTest.swift */,
+				A2000000000000000000000B /* Assets.xcassets */,
+				A40000000000000000000003 /* Resources */,
+			);
+			path = StrengthLog;
+			sourceTree = "<group>";
+		};
+		A40000000000000000000003 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				A2000000000000000000000C /* exercise-catalog.json */,
+				A20000000000000000000013 /* ExerciseImages */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		A40000000000000000000004 /* Products */ = {
+			isa = PBXGroup;
+			children = (A2000000000000000000000D /* StrengthLog.app */,);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A50000000000000000000001 /* StrengthLog */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A60000000000000000000002 /* Build configuration list for PBXNativeTarget "StrengthLog" */;
+			buildPhases = (
+				A30000000000000000000002 /* Sources */,
+				A30000000000000000000001 /* Frameworks */,
+				A30000000000000000000003 /* Resources */,
+			);
+			buildRules = ();
+			dependencies = ();
+			name = StrengthLog;
+			productName = StrengthLog;
+			productReference = A2000000000000000000000D /* StrengthLog.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		A70000000000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2660;
+				LastUpgradeCheck = 2660;
+				TargetAttributes = { A50000000000000000000001 = { CreatedOnToolsVersion = 26.6; }; };
+			};
+			buildConfigurationList = A60000000000000000000001 /* Build configuration list for PBXProject "StrengthLog" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (en, Base);
+			mainGroup = A40000000000000000000001;
+			productRefGroup = A40000000000000000000004 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (A50000000000000000000001 /* StrengthLog */,);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A30000000000000000000003 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (A1000000000000000000000B /* Assets.xcassets in Resources */, A1000000000000000000000C /* exercise-catalog.json in Resources */, A10000000000000000000012 /* ExerciseImages in Resources */,); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		A30000000000000000000002 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10000000000000000000001 /* StrengthLogApp.swift in Sources */,
+				A10000000000000000000002 /* Models.swift in Sources */,
+				A10000000000000000000003 /* SeedData.swift in Sources */,
+				A10000000000000000000004 /* Components.swift in Sources */,
+				A10000000000000000000005 /* HomeView.swift in Sources */,
+				A10000000000000000000006 /* RoutinesView.swift in Sources */,
+				A10000000000000000000007 /* ActiveWorkoutView.swift in Sources */,
+				A10000000000000000000008 /* LibraryView.swift in Sources */,
+				A10000000000000000000009 /* ProgressView.swift in Sources */,
+				A1000000000000000000000A /* SettingsView.swift in Sources */,
+				A1000000000000000000000E /* OnboardingView.swift in Sources */,
+				A1000000000000000000000F /* HevyCSVParser.swift in Sources */,
+				A10000000000000000000010 /* HevyImportView.swift in Sources */,
+				A10000000000000000000011 /* HevyImportSmokeTest.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		A80000000000000000000001 /* Debug */ = {isa = XCBuildConfiguration; buildSettings = {CLANG_ENABLE_MODULES = YES; IPHONEOS_DEPLOYMENT_TARGET = 17.0; SDKROOT = iphoneos; SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)"; SWIFT_OPTIMIZATION_LEVEL = "-Onone"; }; name = Debug; };
+		A80000000000000000000002 /* Release */ = {isa = XCBuildConfiguration; buildSettings = {CLANG_ENABLE_MODULES = YES; IPHONEOS_DEPLOYMENT_TARGET = 17.0; SDKROOT = iphoneos; SWIFT_COMPILATION_MODE = wholemodule; SWIFT_OPTIMIZATION_LEVEL = "-O"; }; name = Release; };
+		A80000000000000000000003 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 96NAC4VTEN;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = StrengthLog/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = StrengthLog;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.cseibert.StrengthLog;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		A80000000000000000000004 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 96NAC4VTEN;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = StrengthLog/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = StrengthLog;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.cseibert.StrengthLog;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A60000000000000000000001 /* Build configuration list for PBXProject "StrengthLog" */ = {isa = XCConfigurationList; buildConfigurations = (A80000000000000000000001 /* Debug */, A80000000000000000000002 /* Release */,); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		A60000000000000000000002 /* Build configuration list for PBXNativeTarget "StrengthLog" */ = {isa = XCConfigurationList; buildConfigurations = (A80000000000000000000003 /* Debug */, A80000000000000000000004 /* Release */,); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+/* End XCConfigurationList section */
+	};
+	rootObject = A70000000000000000000001 /* Project object */;
+}
