@@ -28,3 +28,4 @@
 - Added a dedicated routine appearance picker with 18 activity icons and 10 app-coordinated colors for new and existing routines.
 - Changed routine deletion to a recoverable soft delete, with a Deleted Routines list and restore actions that preserve workout history.
 - Moved Deleted Routines from the toolbar menu to a conditional link at the bottom of the Routines list, and fixed existing-routine appearance editing while list reordering mode is active.
+- Added exercise selection to routine edit mode, with additions participating in the existing Save and Cancel draft.

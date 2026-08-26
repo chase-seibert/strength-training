@@ -520,15 +520,13 @@ struct RoutineDetailView: View {
         .onMove(perform: moveExercises)
         .deleteDisabled(!editMode.isEditing)
 
-        if !editMode.isEditing {
-          Button("Add exercise", systemImage: "plus.circle.fill") { showingExercisePicker = true }
-        }
+        Button("Add exercise", systemImage: "plus.circle.fill") { showingExercisePicker = true }
       } header: {
         Text("Exercises")
       } footer: {
         Text(
           editMode.isEditing
-            ? "Exercise deletions and ordering changes are applied only when you tap Save."
+            ? "Exercise additions, deletions, and ordering changes are applied only when you tap Save."
             : "Open an exercise to change its unit, load, reps, or number of sets for each person."
         )
       }
@@ -580,7 +578,11 @@ struct RoutineDetailView: View {
       }
     }
     .sheet(isPresented: $showingExercisePicker) {
-      AddExerciseToRoutineSheet(routine: routine, people: people)
+      AddExerciseToRoutineSheet(
+        existingExerciseNames: displayedExercises.map(\.exerciseName),
+        onAdd: addExercise
+      )
+      .environment(\.editMode, .constant(.inactive))
     }
     .sheet(isPresented: $showingStart) {
       StartRoutineSheet(routine: routine, people: people)
@@ -625,6 +627,20 @@ struct RoutineDetailView: View {
   private func deleteExercises(at offsets: IndexSet) {
     guard editMode.isEditing else { return }
     draftExercises.remove(atOffsets: offsets)
+  }
+
+  private func addExercise(_ exercise: Exercise) {
+    if editMode.isEditing {
+      guard
+        !draftExercises.contains(where: {
+          $0.exerciseName.caseInsensitiveCompare(exercise.name) == .orderedSame
+        })
+      else { return }
+      draftExercises.append(
+        RoutineExercise.make(exercise: exercise, for: people, sortOrder: draftExercises.count))
+    } else if routine.add(exercise, for: people) {
+      try? context.save()
+    }
   }
 
   private func beginEditing() {
@@ -802,10 +818,9 @@ struct MeasurementField: View {
 
 struct AddExerciseToRoutineSheet: View {
   @Environment(\.dismiss) private var dismiss
-  @Environment(\.modelContext) private var context
   @Query(sort: \Exercise.name) private var exercises: [Exercise]
-  let routine: Routine
-  let people: [PersonProfile]
+  let existingExerciseNames: [String]
+  let onAdd: (Exercise) -> Void
   @State private var searchText = ""
 
   private var results: [Exercise] {
@@ -818,10 +833,8 @@ struct AddExerciseToRoutineSheet: View {
     NavigationStack {
       List(results) { exercise in
         Button {
-          if routine.add(exercise, for: people) {
-            try? context.save()
-            dismiss()
-          }
+          onAdd(exercise)
+          dismiss()
         } label: {
           HStack {
             VStack(alignment: .leading, spacing: 3) {
@@ -830,16 +843,22 @@ struct AddExerciseToRoutineSheet: View {
                 .font(.caption).foregroundStyle(.secondary)
             }
             Spacer()
-            if routine.contains(exercise) {
+            if contains(exercise) {
               Image(systemName: "checkmark.circle.fill").foregroundStyle(Theme.mint)
             }
           }
         }
-        .disabled(routine.contains(exercise))
+        .disabled(contains(exercise))
       }
       .searchable(text: $searchText, prompt: "Exercise name")
       .navigationTitle("Add Exercise")
       .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }
+    }
+  }
+
+  private func contains(_ exercise: Exercise) -> Bool {
+    existingExerciseNames.contains {
+      $0.caseInsensitiveCompare(exercise.name) == .orderedSame
     }
   }
 }

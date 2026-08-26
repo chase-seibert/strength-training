@@ -158,18 +158,8 @@ final class Routine {
   @discardableResult
   func add(_ exercise: Exercise, for people: [PersonProfile]) -> Bool {
     guard !contains(exercise) else { return false }
-    let prescriptions = people.map { person in
-      Prescription(
-        participantName: person.name,
-        measurement: 0,
-        sets: (0..<3).map { SetTemplate(sortOrder: $0, reps: 10) })
-    }
     exercises.append(
-      RoutineExercise(
-        exerciseName: exercise.name,
-        unit: exercise.unit,
-        sortOrder: exercises.count,
-        prescriptions: prescriptions))
+      RoutineExercise.make(exercise: exercise, for: people, sortOrder: exercises.count))
     return true
   }
 }
@@ -200,6 +190,22 @@ final class RoutineExercise {
   var unit: TrackingUnit {
     get { TrackingUnit(rawValue: unitRaw) ?? .pounds }
     set { unitRaw = newValue.rawValue }
+  }
+
+  static func make(
+    exercise: Exercise, for people: [PersonProfile], sortOrder: Int
+  ) -> RoutineExercise {
+    let prescriptions = people.map { person in
+      Prescription(
+        participantName: person.name,
+        measurement: 0,
+        sets: (0..<3).map { SetTemplate(sortOrder: $0, reps: 10) })
+    }
+    return RoutineExercise(
+      exerciseName: exercise.name,
+      unit: exercise.unit,
+      sortOrder: sortOrder,
+      prescriptions: prescriptions)
   }
 }
 
