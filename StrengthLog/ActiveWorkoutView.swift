@@ -200,7 +200,8 @@ struct ActiveExerciseCard: View {
   }
 
   private var allVisibleSetsDone: Bool {
-    !visibleLogs.isEmpty && visibleLogs.flatMap(\.sets).allSatisfy(\.isCompleted)
+    let sets = visibleLogs.flatMap(\.sets)
+    return !sets.isEmpty && sets.allSatisfy(\.isCompleted)
   }
 
   var body: some View {
@@ -257,6 +258,7 @@ struct ActiveExerciseCard: View {
 }
 
 struct ParticipantQuickRow: View {
+  @Environment(\.modelContext) private var context
   @Bindable var participant: ParticipantLog
   let unit: TrackingUnit
   let colorHex: String
@@ -285,10 +287,13 @@ struct ParticipantQuickRow: View {
       }
       ScrollView(.horizontal, showsIndicators: false) {
         HStack(spacing: 9) {
-          ForEach(participant.sets.sorted(by: { $0.sortOrder < $1.sortOrder })) { set in
+          ForEach(participant.orderedSets) { set in
             VStack(spacing: 5) {
               Button {
-                withAnimation(.snappy) { set.isCompleted.toggle() }
+                withAnimation(.snappy) {
+                  participant.toggleCompletion(of: set).forEach(context.delete)
+                }
+                try? context.save()
               } label: {
                 Image(
                   systemName: set.isCompleted ? "checkmark" : "\(set.sortOrder + 1).circle.fill"
@@ -301,6 +306,12 @@ struct ParticipantQuickRow: View {
                   in: RoundedRectangle(cornerRadius: 11))
               }
               .buttonStyle(.plain)
+              .disabled(!participant.canToggleCompletion(of: set))
+              .opacity(participant.canToggleCompletion(of: set) ? 1 : 0.45)
+              .accessibilityLabel(
+                set.isCompleted
+                  ? "Remove set \(set.sortOrder + 1)" : "Complete set \(set.sortOrder + 1)"
+              )
               TextField(
                 "reps", value: Binding(get: { set.reps }, set: { set.reps = max(1, $0) }),
                 format: .number
@@ -313,17 +324,34 @@ struct ParticipantQuickRow: View {
                 .font(.caption2).foregroundStyle(.secondary)
             }
           }
+
           Button {
-            participant.sets.append(
-              WorkoutSet(sortOrder: participant.sets.count, reps: participant.sets.last?.reps ?? 10)
-            )
+            withAnimation(.snappy) {
+              _ = participant.completeNextSet()
+            }
+            try? context.save()
           } label: {
-            Image(systemName: "plus")
-              .frame(width: 42, height: 38)
-              .background(Color.secondary.opacity(0.1), in: RoundedRectangle(cornerRadius: 11))
+            VStack(spacing: 5) {
+              Image(systemName: "\(participant.nextSetNumber).circle.fill")
+                .font(.headline)
+                .foregroundStyle(Color(hex: colorHex))
+                .frame(width: 42, height: 38)
+                .background(
+                  Color(hex: colorHex).opacity(0.12),
+                  in: RoundedRectangle(cornerRadius: 11))
+              Text("\(participant.nextSetReps)")
+                .font(.caption.monospacedDigit())
+                .frame(width: 42)
+              Text(unit.usesReps ? "reps" : "target")
+                .font(.caption2).foregroundStyle(.secondary)
+            }
           }
           .buttonStyle(.plain)
-          .accessibilityLabel("Add set for \(participant.participantName)")
+          .disabled(!participant.canCompleteNextSet)
+          .opacity(participant.canCompleteNextSet ? 1 : 0.45)
+          .accessibilityLabel(
+            "Complete set \(participant.nextSetNumber) for \(participant.participantName)"
+          )
         }
       }
     }

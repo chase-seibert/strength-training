@@ -12,8 +12,8 @@ StrengthLog should feel energetic and fast without adopting the dense, black-and
 - One participant occupies one compact row per exercise, even with several sets.
 - Routines are person-agnostic and contain exercise structure only; weights, reps, and sets are configured per person from the latest workout.
 - Starting a workout defaults to its most recent crew. People can be toggled on and off quickly; turning off someone with completed sets warns first and keeps their data available if they are turned back on.
-- Set buttons remain individually visible; there is no picker or menu for common completion actions.
-- Measurement and reps remain editable in place, and add-set is adjacent to existing sets.
+- Set buttons remain individually visible; there is no picker or menu for common completion actions. Completion proceeds in order, and only the latest completed set can be removed.
+- Measurement and reps remain editable in place. A numbered next-set control follows the existing sets and completes the extra set in one tap; removing a completed set also clears every later incomplete set.
 - Exercise thumbnails are visible in the workout; tapping one opens a full-size, swipeable position gallery.
 - An open workout becomes a distraction-free app root with no tab bar; Done restores normal navigation.
 - Routine and open-workout exercise lists expose standard edit-mode reordering. Routine edit mode exposes name, exercise addition, and a dedicated appearance sheet with a curated icon and color grid, plus a bottom destructive action, while hiding Start Routine. The sheet remains interactive while the exercise list is in reorder mode. Exercise addition, deletion, reordering, and appearance changes refresh the draft immediately but persist only through Save; Cancel restores the stored routine. Routine deletion moves it out of active views into Deleted Routines, which appears as a conditional link at the bottom of the Routines list and offers an explicit Restore action.

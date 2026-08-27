@@ -19,7 +19,8 @@
 - As a lifter, I want a separate measurement and sets for every participant, so that everyone can progress independently in one routine.
 - As a lifter, I want exercise form thumbnails and optional full-size position images during a workout, so that I can check technique without leaving the session.
 - As a lifter, I want one compact row per exercise and person with visible set checkmarks, so that repeated sets take one tap each.
-- As a lifter, I want to edit measurement/reps and add sets while training, so that the log matches what actually happened.
+- As a lifter, I want to edit measurement/reps and add or remove sets while training, so that the log matches what actually happened.
+- As a lifter, I want sets completed and removed in order, so that a workout never contains gaps such as a completed third set without a completed second set.
 - As a lifter, I want to add and reorder exercises while a workout is open, so that I can adapt the session without leaving it.
 - As a lifter, I want an open workout to replace the app navigation, so that tabs do not compete with the task at hand.
 - As a lifter, I want every workout edit saved as I make it and the freedom to close at any point, so that logging never depends on a finish ceremony.
@@ -43,6 +44,7 @@
 - Routine setup edits exercise structure only; workout prescriptions are seeded per person from the latest session.
 - Each imported exercise retains both available source images for swipeable offline viewing.
 - Starting a routine snapshots the latest routine exercise structure and selected people, seeding each person's values from their latest session.
+- Active-workout set controls allow only the first incomplete set to be completed and only the latest completed set to be removed. Removing a set also removes every later incomplete set, while a numbered next-set control replaces the add icon.
 - A session is persisted when it starts; closing it requires no confirmation and does not change its workout meaning.
 - No path in the normal UI can start a second session while another is active.
 - The primary navigation is Workout, Routines, Exercises, Progress, and Settings; Settings contains People. Workout presents routine choice first, 30-day activity second, and recent workouts third.

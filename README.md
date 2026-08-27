@@ -11,7 +11,7 @@ StrengthLog is an offline-first iPhone app for tracking strength routines alone 
 - Use each exercise's saved catalog unit consistently across routines and workouts, with corrections made from exercise detail.
 - Start exactly one live routine with a selected subset of people.
 - While a workout is open it replaces the tab interface, keeping the entire app focused on logging.
-- Check sets, edit load/reps, add sets or exercises, reorder exercises, and hide people in a continuously saved workout log.
+- Complete sets in order, remove an accidental latest set, edit load/reps, add exercises, reorder exercises, and hide people in a continuously saved workout log.
 - Close a workout whenever you like and reopen any of the three most recent logs directly from Workout—there is no timer or finish step.
 - Persist every participant's completed sets and use each person's latest configuration as next-time defaults.
 - Browse/search 873 offline exercise records and swipe through two-position form imagery on demand, including from a live workout.

@@ -393,6 +393,66 @@ final class ParticipantLog {
     self.measurement = measurement
     self.sets = sets
   }
+
+  var orderedSets: [WorkoutSet] {
+    sets.sorted { $0.sortOrder < $1.sortOrder }
+  }
+
+  var canCompleteNextSet: Bool {
+    orderedSets.allSatisfy(\.isCompleted)
+  }
+
+  var nextSetNumber: Int {
+    orderedSets.count + 1
+  }
+
+  var nextSetReps: Int {
+    orderedSets.last?.reps ?? 10
+  }
+
+  func canToggleCompletion(of set: WorkoutSet) -> Bool {
+    let ordered = orderedSets
+    guard let index = ordered.firstIndex(where: { $0.id == set.id }) else { return false }
+    if set.isCompleted {
+      return !ordered.dropFirst(index + 1).contains(where: \.isCompleted)
+    }
+    return ordered.prefix(index).allSatisfy(\.isCompleted)
+  }
+
+  @discardableResult
+  func toggleCompletion(of set: WorkoutSet) -> [WorkoutSet] {
+    guard canToggleCompletion(of: set) else { return [] }
+    if !set.isCompleted {
+      set.isCompleted = true
+      return []
+    }
+
+    let ordered = orderedSets
+    guard let index = ordered.firstIndex(where: { $0.id == set.id }) else { return [] }
+    let removed = Array(ordered[index...])
+    let removedIDs = Set(removed.map(\.id))
+    sets.removeAll { removedIDs.contains($0.id) }
+    normalizeSetOrder()
+    return removed
+  }
+
+  @discardableResult
+  func completeNextSet() -> WorkoutSet? {
+    guard canCompleteNextSet else { return nil }
+    normalizeSetOrder()
+    let set = WorkoutSet(
+      sortOrder: sets.count,
+      reps: sets.sorted(by: { $0.sortOrder < $1.sortOrder }).last?.reps ?? 10,
+      isCompleted: true)
+    sets.append(set)
+    return set
+  }
+
+  private func normalizeSetOrder() {
+    for (index, set) in orderedSets.enumerated() {
+      set.sortOrder = index
+    }
+  }
 }
 
 @Model
