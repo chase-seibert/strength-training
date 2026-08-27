@@ -52,8 +52,10 @@ struct ActiveWorkoutView: View {
     }
     .listStyle(.plain)
     .scrollContentBackground(.hidden)
+    .scrollDismissesKeyboard(.interactively)
     .environment(\.editMode, $editMode)
     .background(Color(.systemGroupedBackground))
+    .background(DismissKeyboardOnTap())
     .navigationTitle(routineName)
     .navigationBarTitleDisplayMode(.inline)
     .toolbar {
@@ -262,6 +264,8 @@ struct ParticipantQuickRow: View {
   @Bindable var participant: ParticipantLog
   let unit: TrackingUnit
   let colorHex: String
+  @State private var measurementText = ""
+  @State private var measurementFocused = false
 
   var body: some View {
     VStack(alignment: .leading, spacing: 10) {
@@ -269,26 +273,51 @@ struct ParticipantQuickRow: View {
         InitialBadge(name: participant.participantName, colorHex: colorHex, size: 30)
         Text(participant.participantName).font(.subheadline.bold())
         Spacer()
-        TextField(
-          "0",
-          value: Binding(
-            get: { participant.measurement },
-            set: { value in
-              participant.measurement = value
-              for set in participant.sets { set.measurement = nil }
-            }),
-          format: .number
+        SelectAllTextField(
+          text: $measurementText,
+          isFocused: $measurementFocused,
+          keyboardType: .decimalPad,
+          textAlignment: .right,
+          font: .monospacedDigitSystemFont(ofSize: 17, weight: .semibold),
+          accessibilityLabel: "\(unit.title) for \(participant.participantName)",
+          step: unit == .pounds ? 5 : 1,
+          minimumValue: 0
         )
-        .keyboardType(.decimalPad)
-        .multilineTextAlignment(.trailing)
-        .font(.headline.monospacedDigit())
-        .frame(width: 68)
+        .frame(width: 68, height: 30)
+        .padding(.horizontal, 9)
+        .padding(.vertical, 5)
+        .background(Color(hex: colorHex).opacity(0.10), in: RoundedRectangle(cornerRadius: 9))
+        .overlay {
+          RoundedRectangle(cornerRadius: 9)
+            .stroke(Color(hex: colorHex).opacity(0.30), lineWidth: 1)
+        }
+        .onAppear { measurementText = participant.measurement.tidy }
+        .onChange(of: measurementText) { _, newValue in
+          guard let value = Double(newValue) else { return }
+          participant.measurement = value
+          for set in participant.sets { set.measurement = nil }
+          try? context.save()
+        }
+        .onChange(of: measurementFocused) { _, isFocused in
+          if !isFocused, measurementText.isEmpty {
+            measurementText = participant.measurement.tidy
+          }
+        }
         Text(unit.label).font(.caption).foregroundStyle(.secondary)
       }
+      HStack(spacing: 12) {
+        Label("Tap a set to complete", systemImage: "checkmark.circle")
+        Label("Tap reps to edit", systemImage: "pencil")
+      }
+      .font(.caption2.weight(.semibold))
+      .foregroundStyle(.secondary)
       ScrollView(.horizontal, showsIndicators: false) {
         HStack(spacing: 9) {
           ForEach(participant.orderedSets) { set in
             VStack(spacing: 5) {
+              Text("SET")
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(.secondary)
               Button {
                 withAnimation(.snappy) {
                   participant.toggleCompletion(of: set).forEach(context.delete)
@@ -312,16 +341,10 @@ struct ParticipantQuickRow: View {
                 set.isCompleted
                   ? "Remove set \(set.sortOrder + 1)" : "Complete set \(set.sortOrder + 1)"
               )
-              TextField(
-                "reps", value: Binding(get: { set.reps }, set: { set.reps = max(1, $0) }),
-                format: .number
-              )
-              .keyboardType(.numberPad)
-              .multilineTextAlignment(.center)
-              .font(.caption.monospacedDigit())
-              .frame(width: 42)
-              Text(unit.usesReps ? "reps" : "target")
-                .font(.caption2).foregroundStyle(.secondary)
+              Text(unit.usesReps ? "REPS" : "TARGET")
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(.secondary)
+              WorkoutRepsField(set: set, unit: unit)
             }
           }
 
@@ -332,6 +355,9 @@ struct ParticipantQuickRow: View {
             try? context.save()
           } label: {
             VStack(spacing: 5) {
+              Text("NEXT SET")
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(.secondary)
               Image(systemName: "\(participant.nextSetNumber).circle.fill")
                 .font(.headline)
                 .foregroundStyle(Color(hex: colorHex))
@@ -342,8 +368,8 @@ struct ParticipantQuickRow: View {
               Text("\(participant.nextSetReps)")
                 .font(.caption.monospacedDigit())
                 .frame(width: 42)
-              Text(unit.usesReps ? "reps" : "target")
-                .font(.caption2).foregroundStyle(.secondary)
+              Text(unit.usesReps ? "REPS" : "TARGET")
+                .font(.caption2.weight(.bold)).foregroundStyle(.secondary)
             }
           }
           .buttonStyle(.plain)
@@ -360,8 +386,47 @@ struct ParticipantQuickRow: View {
   }
 }
 
+struct WorkoutRepsField: View {
+  @Environment(\.modelContext) private var context
+  @Bindable var set: WorkoutSet
+  let unit: TrackingUnit
+  @State private var text = ""
+  @State private var isFocused = false
+
+  var body: some View {
+    SelectAllTextField(
+      text: $text,
+      isFocused: $isFocused,
+      keyboardType: .numberPad,
+      textAlignment: .center,
+      font: .monospacedDigitSystemFont(ofSize: 14, weight: .semibold),
+      accessibilityLabel: unit.usesReps ? "Reps" : "Target",
+      step: 1,
+      minimumValue: 1
+    )
+    .frame(width: 42, height: 25)
+    .padding(.horizontal, 5)
+    .padding(.vertical, 4)
+    .background(.background, in: RoundedRectangle(cornerRadius: 8))
+    .overlay {
+      RoundedRectangle(cornerRadius: 8)
+        .stroke(Color.secondary.opacity(0.35), lineWidth: 1)
+    }
+    .onAppear { text = "\(set.reps)" }
+    .onChange(of: text) { _, newValue in
+      guard let reps = Int(newValue), reps > 0 else { return }
+      set.reps = reps
+      try? context.save()
+    }
+    .onChange(of: isFocused) { _, focused in
+      if !focused, text.isEmpty { text = "\(set.reps)" }
+    }
+  }
+}
+
 struct ParticipantVisibilitySheet: View {
   @Environment(\.dismiss) private var dismiss
+  @Environment(\.modelContext) private var context
   @Bindable var session: WorkoutSession
   let people: [PersonProfile]
   @State private var pendingRemoval: String?
@@ -431,11 +496,13 @@ struct ParticipantVisibilitySheet: View {
             sets: (0..<3).map { WorkoutSet(sortOrder: $0, reps: 10) }))
       }
     }
+    try? context.save()
   }
 
   private func remove(_ name: String) {
     session.participantNames.removeAll {
       $0.caseInsensitiveCompare(name) == .orderedSame
     }
+    try? context.save()
   }
 }

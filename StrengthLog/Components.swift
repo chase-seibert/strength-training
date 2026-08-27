@@ -27,6 +27,252 @@ struct InitialBadge: View {
   }
 }
 
+struct SelectAllTextField: UIViewRepresentable {
+  @Binding var text: String
+  @Binding var isFocused: Bool
+  let keyboardType: UIKeyboardType
+  let textAlignment: NSTextAlignment
+  let font: UIFont
+  let accessibilityLabel: String
+  let step: Double
+  let minimumValue: Double
+
+  func makeCoordinator() -> Coordinator {
+    Coordinator(self)
+  }
+
+  func makeUIView(context: Context) -> UITextField {
+    let textField = UITextField()
+    textField.delegate = context.coordinator
+    textField.keyboardType = keyboardType
+    textField.textAlignment = textAlignment
+    textField.font = font
+    textField.accessibilityLabel = accessibilityLabel
+    textField.inputAccessoryView = KeyboardAccessoryToolbar(
+      textField: textField, step: step, minimumValue: minimumValue)
+    textField.addTarget(
+      context.coordinator, action: #selector(Coordinator.textDidChange(_:)),
+      for: .editingChanged)
+    return textField
+  }
+
+  func updateUIView(_ textField: UITextField, context: Context) {
+    if textField.text != text {
+      textField.text = text
+    }
+
+    if isFocused, !textField.isFirstResponder {
+      textField.becomeFirstResponder()
+    } else if !isFocused, textField.isFirstResponder {
+      textField.resignFirstResponder()
+    }
+  }
+
+  final class Coordinator: NSObject, UITextFieldDelegate {
+    private var parent: SelectAllTextField
+    private weak var textField: UITextField?
+    private var keyboardObserver: NSObjectProtocol?
+
+    init(_ parent: SelectAllTextField) {
+      self.parent = parent
+      super.init()
+      keyboardObserver = NotificationCenter.default.addObserver(
+        forName: UIResponder.keyboardWillChangeFrameNotification,
+        object: nil,
+        queue: .main
+      ) { [weak self] _ in
+        guard let self, let textField = self.textField, textField.isFirstResponder else { return }
+        self.reveal(textField, animated: true)
+      }
+    }
+
+    deinit {
+      if let keyboardObserver {
+        NotificationCenter.default.removeObserver(keyboardObserver)
+      }
+    }
+
+    @objc func textDidChange(_ textField: UITextField) {
+      parent.text = textField.text ?? ""
+    }
+
+    func textFieldDidBeginEditing(_ textField: UITextField) {
+      self.textField = textField
+      parent.isFocused = true
+      DispatchQueue.main.async {
+        textField.selectAll(nil)
+        self.reveal(textField, animated: false)
+      }
+      DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { [weak self, weak textField] in
+        guard let self, let textField, textField.isFirstResponder else { return }
+        self.reveal(textField, animated: true)
+      }
+    }
+
+    func textFieldDidEndEditing(_ textField: UITextField) {
+      parent.isFocused = false
+    }
+
+    private func reveal(_ textField: UITextField, animated: Bool) {
+      var ancestor = textField.superview
+      while let view = ancestor {
+        if let scrollView = view as? UIScrollView {
+          let rect = textField.convert(
+            textField.bounds.insetBy(dx: 0, dy: -24), to: scrollView)
+          scrollView.scrollRectToVisible(rect, animated: animated)
+        }
+        ancestor = view.superview
+      }
+    }
+  }
+}
+
+private final class KeyboardAccessoryToolbar: UIToolbar {
+  private weak var textField: UITextField?
+  private let step: Double
+  private let minimumValue: Double
+
+  init(textField: UITextField, step: Double, minimumValue: Double) {
+    self.textField = textField
+    self.step = step
+    self.minimumValue = minimumValue
+    super.init(frame: .zero)
+
+    let decrease = UIBarButtonItem(
+      image: UIImage(systemName: "minus"),
+      style: .plain,
+      target: self,
+      action: #selector(decreaseValue)
+    )
+    decrease.accessibilityLabel = "Decrease value"
+
+    let increase = UIBarButtonItem(
+      image: UIImage(systemName: "plus"),
+      style: .plain,
+      target: self,
+      action: #selector(increaseValue)
+    )
+    increase.accessibilityLabel = "Increase value"
+
+    let hideKeyboard = UIBarButtonItem(
+      image: UIImage(systemName: "keyboard.chevron.compact.down"),
+      style: .plain,
+      target: self,
+      action: #selector(hideKeyboard)
+    )
+    hideKeyboard.accessibilityLabel = "Hide keyboard"
+    items = [
+      decrease,
+      increase,
+      UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil),
+      hideKeyboard,
+    ]
+    sizeToFit()
+  }
+
+  required init?(coder: NSCoder) {
+    fatalError("init(coder:) has not been implemented")
+  }
+
+  @objc private func hideKeyboard() {
+    textField?.resignFirstResponder()
+  }
+
+  @objc private func decreaseValue() {
+    adjustValue(by: -step)
+  }
+
+  @objc private func increaseValue() {
+    adjustValue(by: step)
+  }
+
+  private func adjustValue(by delta: Double) {
+    guard let textField, let value = Double(textField.text ?? "") else { return }
+    let adjustedValue = max(minimumValue, value + delta)
+    textField.text =
+      adjustedValue.rounded() == adjustedValue
+      ? String(Int(adjustedValue))
+      : String(adjustedValue)
+    textField.sendActions(for: .editingChanged)
+  }
+}
+
+struct DismissKeyboardOnTap: UIViewRepresentable {
+  func makeUIView(context: Context) -> DismissKeyboardView {
+    DismissKeyboardView()
+  }
+
+  func updateUIView(_ view: DismissKeyboardView, context: Context) {}
+}
+
+final class DismissKeyboardView: UIView, UIGestureRecognizerDelegate {
+  private weak var attachedWindow: UIWindow?
+  private lazy var tapGesture: UITapGestureRecognizer = {
+    let gesture = UITapGestureRecognizer(target: self, action: #selector(handleTap))
+    gesture.cancelsTouchesInView = false
+    gesture.delegate = self
+    return gesture
+  }()
+
+  override func didMoveToWindow() {
+    super.didMoveToWindow()
+    if let window {
+      guard attachedWindow !== window else { return }
+      attachedWindow?.removeGestureRecognizer(tapGesture)
+      attachedWindow = window
+      window.addGestureRecognizer(tapGesture)
+    } else if let attachedWindow {
+      attachedWindow.removeGestureRecognizer(tapGesture)
+      self.attachedWindow = nil
+    }
+  }
+
+  @objc private func handleTap() {
+    attachedWindow?.endEditing(true)
+  }
+
+  func gestureRecognizer(
+    _ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch
+  ) -> Bool {
+    guard let firstResponder = attachedWindow?.rootViewController?.view.currentFirstResponder,
+      let touchedView = touch.view
+    else {
+      return true
+    }
+
+    // SwiftUI can put private wrapper views between the touch target and the
+    // UIKit text field. Ignore the field and its descendants, but not an
+    // ancestor such as the enclosing List or card.
+    return firstResponder !== touchedView
+      && !touchedView.isDescendant(of: firstResponder)
+  }
+
+  func gestureRecognizer(
+    _ gestureRecognizer: UIGestureRecognizer,
+    shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer
+  ) -> Bool {
+    true
+  }
+
+  deinit {
+    attachedWindow?.removeGestureRecognizer(tapGesture)
+  }
+}
+
+extension UIView {
+  fileprivate var currentFirstResponder: UIView? {
+    if isFirstResponder { return self }
+
+    for subview in subviews {
+      if let responder = subview.currentFirstResponder {
+        return responder
+      }
+    }
+
+    return nil
+  }
+}
+
 struct MetricTile: View {
   let value: String
   let label: String
