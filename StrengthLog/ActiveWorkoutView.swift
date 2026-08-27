@@ -49,6 +49,38 @@ struct ActiveWorkoutView: View {
       .listRowInsets(EdgeInsets(top: 16, leading: 16, bottom: 24, trailing: 16))
       .listRowSeparator(.hidden)
       .listRowBackground(Color.clear)
+
+      VStack(spacing: 12) {
+        Button("Complete Workout", action: onDone)
+          .font(.headline)
+          .frame(maxWidth: 240)
+          .padding(.vertical, 13)
+          .buttonStyle(.borderedProminent)
+          .tint(Theme.coral)
+
+        Button("Delete Workout", role: .destructive) {
+          showingDeleteConfirmation = true
+        }
+        .font(.body.weight(.semibold))
+        .buttonStyle(.plain)
+        .foregroundStyle(.red)
+        .confirmationDialog(
+          "Delete workout?",
+          isPresented: $showingDeleteConfirmation,
+          titleVisibility: .visible
+        ) {
+          Button("Delete Workout", role: .destructive, action: onDelete)
+          Button("Cancel", role: .cancel) {}
+        } message: {
+          Text(
+            "This permanently deletes the \(routineName) workout from \(session.startedAt.formatted(date: .abbreviated, time: .shortened))."
+          )
+        }
+      }
+      .frame(maxWidth: .infinity)
+      .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 32, trailing: 16))
+      .listRowSeparator(.hidden)
+      .listRowBackground(Color.clear)
     }
     .listStyle(.plain)
     .scrollContentBackground(.hidden)
@@ -58,38 +90,6 @@ struct ActiveWorkoutView: View {
     .background(DismissKeyboardOnTap())
     .navigationTitle(routineName)
     .navigationBarTitleDisplayMode(.inline)
-    .toolbar {
-      ToolbarItem(placement: .topBarTrailing) {
-        Button("Done") { onDone() }
-          .fontWeight(.bold)
-      }
-    }
-    .safeAreaInset(edge: .bottom) {
-      Button(role: .destructive) {
-        showingDeleteConfirmation = true
-      } label: {
-        Label("Delete Workout", systemImage: "trash")
-          .font(.headline)
-          .frame(maxWidth: .infinity)
-          .padding(.vertical, 14)
-      }
-      .buttonStyle(.bordered)
-      .tint(.red)
-      .padding()
-      .background(.bar)
-    }
-    .confirmationDialog(
-      "Delete workout?",
-      isPresented: $showingDeleteConfirmation,
-      titleVisibility: .visible
-    ) {
-      Button("Delete Workout", role: .destructive, action: onDelete)
-      Button("Cancel", role: .cancel) {}
-    } message: {
-      Text(
-        "This permanently deletes the \(routineName) workout from \(session.startedAt.formatted(date: .abbreviated, time: .shortened))."
-      )
-    }
     .sheet(isPresented: $showingPeople) {
       ParticipantVisibilitySheet(session: session, people: people)
         .presentationDetents([.medium])

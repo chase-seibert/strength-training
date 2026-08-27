@@ -3,15 +3,22 @@ import SwiftUI
 
 struct HomeView: View {
   @Environment(\.modelContext) private var context
+  let onResume: () -> Void
   @Query(filter: #Predicate<Routine> { $0.deletedAt == nil }, sort: \Routine.createdAt)
   private var routines: [Routine]
   @Query private var allRoutines: [Routine]
+  @Query(filter: #Predicate<WorkoutSession> { $0.isActive })
+  private var activeSessions: [WorkoutSession]
   @Query(sort: \WorkoutSession.startedAt, order: .reverse) private var sessions: [WorkoutSession]
   @Query(filter: #Predicate<PersonProfile> { !$0.isArchived }, sort: \PersonProfile.sortOrder)
   private var people: [PersonProfile]
   @State private var routineToStart: Routine?
   @State private var pendingDeletion: WorkoutSession?
   @State private var showingDeleteConfirmation = false
+
+  init(onResume: @escaping () -> Void = {}) {
+    self.onResume = onResume
+  }
 
   private var workoutsThisMonth: Int {
     let threshold =
@@ -22,6 +29,9 @@ struct HomeView: View {
   var body: some View {
     ScrollView {
       VStack(alignment: .leading, spacing: 24) {
+        if let activeSession = activeSessions.first {
+          activeWorkoutCard(activeSession)
+        }
         routineSection
         activityCard
         if !sessions.isEmpty { recentWorkoutsSection }
@@ -49,6 +59,33 @@ struct HomeView: View {
       StartRoutineSheet(routine: routine, people: people)
         .presentationDetents([.medium])
     }
+  }
+
+  private func activeWorkoutCard(_ session: WorkoutSession) -> some View {
+    Button(action: onResume) {
+      HStack(spacing: 12) {
+        Image(systemName: "figure.strengthtraining.traditional")
+          .font(.title3)
+          .foregroundStyle(.white)
+          .frame(width: 44, height: 44)
+          .background(Theme.coral, in: Circle())
+        VStack(alignment: .leading, spacing: 3) {
+          Text("Active workout")
+            .font(.headline)
+            .foregroundStyle(.primary)
+          Text(routineName(for: session))
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+        }
+        Spacer()
+        Image(systemName: "chevron.up")
+          .font(.caption.bold())
+          .foregroundStyle(.secondary)
+      }
+      .padding(14)
+      .background(Theme.coral.opacity(0.10), in: RoundedRectangle(cornerRadius: 18))
+    }
+    .buttonStyle(.plain)
   }
 
   private var activityCard: some View {

@@ -107,37 +107,50 @@ struct RootView: View {
   @Environment(\.modelContext) private var context
   @Query(filter: #Predicate<WorkoutSession> { $0.isActive }) private var activeSessions:
     [WorkoutSession]
+  @State private var showingActiveWorkout = false
 
   var body: some View {
-    Group {
+    TabView {
+      NavigationStack {
+        HomeView(onResume: { showingActiveWorkout = true })
+      }
+      .tabItem { Label("Workout", systemImage: "dumbbell.fill") }
+
+      NavigationStack { RoutinesView() }
+        .tabItem { Label("Routines", systemImage: "list.bullet.clipboard.fill") }
+
+      NavigationStack { ExerciseLibraryView() }
+        .tabItem { Label("Exercises", systemImage: "figure.strengthtraining.traditional") }
+
+      NavigationStack { ProgressView() }
+        .tabItem { Label("Progress", systemImage: "chart.xyaxis.line") }
+
+      NavigationStack { SettingsView() }
+        .tabItem { Label("Settings", systemImage: "gearshape.fill") }
+    }
+    .tint(Theme.coral)
+    .onAppear {
+      showingActiveWorkout = activeSessions.first != nil
+    }
+    .onChange(of: activeSessions.first?.id) { _, newID in
+      if newID != nil { showingActiveWorkout = true } else { showingActiveWorkout = false }
+    }
+    .sheet(isPresented: $showingActiveWorkout) {
       if let session = activeSessions.first {
         NavigationStack {
           ActiveWorkoutView(session: session) {
+            showingActiveWorkout = false
             close(session)
           } onDelete: {
+            showingActiveWorkout = false
             delete(session)
           }
         }
-      } else {
-        TabView {
-          NavigationStack { HomeView() }
-            .tabItem { Label("Workout", systemImage: "dumbbell.fill") }
-
-          NavigationStack { RoutinesView() }
-            .tabItem { Label("Routines", systemImage: "list.bullet.clipboard.fill") }
-
-          NavigationStack { ExerciseLibraryView() }
-            .tabItem { Label("Exercises", systemImage: "figure.strengthtraining.traditional") }
-
-          NavigationStack { ProgressView() }
-            .tabItem { Label("Progress", systemImage: "chart.xyaxis.line") }
-
-          NavigationStack { SettingsView() }
-            .tabItem { Label("Settings", systemImage: "gearshape.fill") }
-        }
+        .presentationDetents([.fraction(0.97)])
+        .presentationDragIndicator(.visible)
+        .presentationCornerRadius(24)
       }
     }
-    .tint(Theme.coral)
   }
 
   private func close(_ session: WorkoutSession) {
