@@ -12,7 +12,7 @@ GENERIC_SIM_DESTINATION := generic/platform=iOS Simulator
 DEVICE_ID ?= 00008150-000E41422E40401C
 DEVELOPMENT_TEAM ?= 96NAC4VTEN
 
-.PHONY: setup build run format lint test catalog-check exercise-images-check bundle-exercise-images hevy-import-check sim-build sim-launch phone-build phone-install phone-launch phone-deploy clean
+.PHONY: setup build run format lint test catalog-check exercise-images-check bundle-exercise-images hevy-import-check sim-build sim-launch workout-navigation-ui-test phone-build phone-install phone-launch phone-deploy clean
 
 setup: catalog-check exercise-images-check
 
@@ -21,11 +21,11 @@ build: sim-build
 run: sim-launch
 
 format:
-	xcrun swift-format format --in-place --recursive StrengthLog
+	xcrun swift-format format --in-place --recursive StrengthLog StrengthLogUITests
 
 lint: catalog-check exercise-images-check hevy-import-check
 	plutil -lint $(PROJECT)/project.pbxproj
-	xcrun swift-format lint --recursive StrengthLog
+	xcrun swift-format lint --recursive StrengthLog StrengthLogUITests
 
 test: catalog-check exercise-images-check sim-build
 
@@ -69,6 +69,17 @@ sim-launch: sim-build
 	open -a Simulator --args -CurrentDeviceUDID "$$UDID"; \
 	xcrun simctl install "$$UDID" "$(DERIVED_DATA)/Build/Products/Debug-iphonesimulator/$(APP_NAME).app"; \
 	xcrun simctl launch "$$UDID" $(BUNDLE_ID)
+
+workout-navigation-ui-test:
+	xcodebuild \
+	  -project $(PROJECT) \
+	  -scheme $(SCHEME) \
+	  -configuration $(CONFIGURATION) \
+	  -destination '$(SIM_DESTINATION)' \
+	  -derivedDataPath build-ui-tests \
+	  CODE_SIGNING_ALLOWED=NO \
+	  -only-testing:StrengthLogUITests \
+	  test
 
 phone-build:
 	xcodebuild \

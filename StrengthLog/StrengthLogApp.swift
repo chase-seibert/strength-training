@@ -4,7 +4,9 @@ import SwiftUI
 @main
 struct StrengthLogApp: App {
   @State private var importCoordinator = HevyImportCoordinator()
-  private let container: ModelContainer = {
+  private let container: ModelContainer
+
+  init() {
     let schema = Schema([
       PersonProfile.self,
       Exercise.self,
@@ -18,13 +20,26 @@ struct StrengthLogApp: App {
       WorkoutSet.self,
       ExternalExerciseMapping.self,
     ])
-    let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+    #if DEBUG
+      let usesBasicWorkoutFixture = ProcessInfo.processInfo.arguments.contains(
+        "-basicWorkoutFixture")
+    #else
+      let usesBasicWorkoutFixture = false
+    #endif
+    let configuration = ModelConfiguration(
+      schema: schema, isStoredInMemoryOnly: usesBasicWorkoutFixture)
     do {
-      return try ModelContainer(for: schema, configurations: [configuration])
+      container = try ModelContainer(for: schema, configurations: [configuration])
     } catch {
       fatalError("Unable to create StrengthLog data store: \(error)")
     }
-  }()
+
+    #if DEBUG
+      if usesBasicWorkoutFixture {
+        BasicWorkoutFixture.install(in: container.mainContext)
+      }
+    #endif
+  }
 
   var body: some Scene {
     WindowGroup {
@@ -32,7 +47,13 @@ struct StrengthLogApp: App {
         .environment(importCoordinator)
         .onOpenURL { importCoordinator.open($0) }
         .task {
-          await SeedData.seedIfNeeded(in: container.mainContext)
+          #if DEBUG
+            if !ProcessInfo.processInfo.arguments.contains("-basicWorkoutFixture") {
+              await SeedData.seedIfNeeded(in: container.mainContext)
+            }
+          #else
+            await SeedData.seedIfNeeded(in: container.mainContext)
+          #endif
           #if DEBUG
             if ProcessInfo.processInfo.arguments.contains("-runHevyImportSmokeTest") {
               do {
@@ -59,16 +80,25 @@ struct AppRootView: View {
   @AppStorage("hasInitializedOnboardingState") private var hasInitializedOnboardingState = false
   @Query private var people: [PersonProfile]
 
+  private var usesBasicWorkoutFixture: Bool {
+    #if DEBUG
+      ProcessInfo.processInfo.arguments.contains("-basicWorkoutFixture")
+    #else
+      false
+    #endif
+  }
+
   var body: some View {
     @Bindable var importCoordinator = importCoordinator
     Group {
-      if hasCompletedOnboarding {
+      if hasCompletedOnboarding || usesBasicWorkoutFixture {
         RootView()
       } else {
         OnboardingView(hasCompletedOnboarding: $hasCompletedOnboarding)
       }
     }
     .onAppear {
+      guard !usesBasicWorkoutFixture else { return }
       normalizeLegacyPeopleOrderIfNeeded()
       guard !hasInitializedOnboardingState else { return }
       if !people.isEmpty { hasCompletedOnboarding = true }
@@ -104,53 +134,71 @@ struct AppRootView: View {
 }
 
 struct RootView: View {
+  private struct ActiveWorkoutRoute: Hashable {
+    let sessionID: PersistentIdentifier
+  }
+
   @Environment(\.modelContext) private var context
-  @Query(filter: #Predicate<WorkoutSession> { $0.isActive }) private var activeSessions:
-    [WorkoutSession]
-  @State private var showingActiveWorkout = false
+  @State private var navigationPath: [ActiveWorkoutRoute] = []
+  @State private var selectedTab = 0
 
   var body: some View {
-    TabView {
-      NavigationStack {
-        HomeView(onResume: { showingActiveWorkout = true })
+    TabView(selection: $selectedTab) {
+      NavigationStack(path: $navigationPath) {
+        HomeView(onOpenWorkout: presentActiveWorkout)
+          .navigationDestination(for: ActiveWorkoutRoute.self) { route in
+            if let session = context.model(for: route.sessionID) as? WorkoutSession {
+              ActiveWorkoutView(
+                session: session,
+                onDone: { completeAndDismiss(session) },
+                onDelete: { deleteAndDismiss(session) },
+                onClose: dismissActiveWorkout
+              )
+            }
+          }
       }
       .tabItem { Label("Workout", systemImage: "dumbbell.fill") }
+      .tag(0)
 
-      NavigationStack { RoutinesView() }
+      NavigationStack { RoutinesView(onOpenWorkout: presentActiveWorkout) }
         .tabItem { Label("Routines", systemImage: "list.bullet.clipboard.fill") }
+        .tag(1)
 
       NavigationStack { ExerciseLibraryView() }
         .tabItem { Label("Exercises", systemImage: "figure.strengthtraining.traditional") }
+        .tag(2)
 
       NavigationStack { ProgressView() }
         .tabItem { Label("Progress", systemImage: "chart.xyaxis.line") }
+        .tag(3)
 
       NavigationStack { SettingsView() }
         .tabItem { Label("Settings", systemImage: "gearshape.fill") }
+        .tag(4)
     }
     .tint(Theme.coral)
-    .onAppear {
-      showingActiveWorkout = activeSessions.first != nil
-    }
-    .onChange(of: activeSessions.first?.id) { _, newID in
-      if newID != nil { showingActiveWorkout = true } else { showingActiveWorkout = false }
-    }
-    .sheet(isPresented: $showingActiveWorkout) {
-      if let session = activeSessions.first {
-        NavigationStack {
-          ActiveWorkoutView(session: session) {
-            showingActiveWorkout = false
-            close(session)
-          } onDelete: {
-            showingActiveWorkout = false
-            delete(session)
-          }
-        }
-        .presentationDetents([.fraction(0.97)])
-        .presentationDragIndicator(.visible)
-        .presentationCornerRadius(24)
-      }
-    }
+  }
+
+  private func presentActiveWorkout(_ session: WorkoutSession) {
+    selectedTab = 0
+    let route = ActiveWorkoutRoute(sessionID: session.persistentModelID)
+    guard navigationPath.last != route else { return }
+    navigationPath = [route]
+  }
+
+  private func dismissActiveWorkout() {
+    guard !navigationPath.isEmpty else { return }
+    navigationPath.removeLast()
+  }
+
+  private func completeAndDismiss(_ session: WorkoutSession) {
+    close(session)
+    dismissActiveWorkout()
+  }
+
+  private func deleteAndDismiss(_ session: WorkoutSession) {
+    delete(session)
+    dismissActiveWorkout()
   }
 
   private func close(_ session: WorkoutSession) {
@@ -164,5 +212,4 @@ struct RootView: View {
     context.delete(session)
     try? context.save()
   }
-
 }

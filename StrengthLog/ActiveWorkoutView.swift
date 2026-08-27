@@ -10,6 +10,7 @@ struct ActiveWorkoutView: View {
   @Bindable var session: WorkoutSession
   let onDone: () -> Void
   let onDelete: () -> Void
+  let onClose: () -> Void
   @State private var showingExercisePicker = false
   @State private var editMode: EditMode = .inactive
   @State private var showingDeleteConfirmation = false
@@ -93,6 +94,28 @@ struct ActiveWorkoutView: View {
     .background(DismissKeyboardOnTap())
     .navigationTitle(routineName)
     .navigationBarTitleDisplayMode(.inline)
+    .navigationBarBackButtonHidden(true)
+    .toolbar {
+      ToolbarItem(placement: .topBarLeading) {
+        Button(action: onClose) {
+          Image(systemName: "chevron.left")
+            .font(.headline.weight(.bold))
+        }
+        .accessibilityLabel("Close workout")
+        .accessibilityIdentifier("close-active-workout")
+      }
+    }
+    .toolbar(.hidden, for: .tabBar)
+    .simultaneousGesture(
+      DragGesture(minimumDistance: 50)
+        .onEnded { value in
+          let isHorizontal = abs(value.translation.width) > abs(value.translation.height)
+          if isHorizontal, value.translation.width < -100 {
+            onClose()
+          }
+        }
+    )
+    .accessibilityIdentifier("active-workout-screen")
     .sheet(isPresented: $showingExercisePicker) {
       AddExerciseToWorkoutSheet(session: session)
     }

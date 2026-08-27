@@ -3,7 +3,7 @@ import SwiftUI
 
 struct HomeView: View {
   @Environment(\.modelContext) private var context
-  let onResume: () -> Void
+  let onOpenWorkout: (WorkoutSession) -> Void
   @Query(filter: #Predicate<Routine> { $0.deletedAt == nil }, sort: \Routine.createdAt)
   private var routines: [Routine]
   @Query private var allRoutines: [Routine]
@@ -16,8 +16,8 @@ struct HomeView: View {
   @State private var pendingDeletion: WorkoutSession?
   @State private var showingDeleteConfirmation = false
 
-  init(onResume: @escaping () -> Void = {}) {
-    self.onResume = onResume
+  init(onOpenWorkout: @escaping (WorkoutSession) -> Void = { _ in }) {
+    self.onOpenWorkout = onOpenWorkout
   }
 
   private var workoutsThisMonth: Int {
@@ -58,7 +58,9 @@ struct HomeView: View {
   }
 
   private func activeWorkoutCard(_ session: WorkoutSession) -> some View {
-    Button(action: onResume) {
+    Button {
+      onOpenWorkout(session)
+    } label: {
       HStack(spacing: 12) {
         Image(systemName: "figure.strengthtraining.traditional")
           .font(.title3)
@@ -82,6 +84,7 @@ struct HomeView: View {
       .background(Theme.coral.opacity(0.10), in: RoundedRectangle(cornerRadius: 18))
     }
     .buttonStyle(.plain)
+    .accessibilityIdentifier("resume-active-workout")
   }
 
   private var activityCard: some View {
@@ -104,12 +107,12 @@ struct HomeView: View {
       HStack {
         Text("Choose a routine").font(.title3.bold())
         Spacer()
-        NavigationLink("See all") { RoutinesView() }
+        NavigationLink("See all") { RoutinesView(onOpenWorkout: onOpenWorkout) }
           .font(.subheadline.weight(.semibold))
       }
       if routines.isEmpty {
         NavigationLink {
-          RoutinesView()
+          RoutinesView(onOpenWorkout: onOpenWorkout)
         } label: {
           HStack(spacing: 14) {
             Image(systemName: "plus")
@@ -132,8 +135,11 @@ struct HomeView: View {
       } else {
         ForEach(routines.prefix(3)) { routine in
           Button {
-            WorkoutSessionStarter.start(
+            if let session = WorkoutSessionStarter.start(
               routine: routine, people: people, sessions: sessions, catalog: catalog, in: context)
+            {
+              onOpenWorkout(session)
+            }
           } label: {
             HStack(spacing: 14) {
               Image(systemName: routine.symbol)
@@ -158,6 +164,7 @@ struct HomeView: View {
             .background(.background, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
           }
           .buttonStyle(.plain)
+          .accessibilityIdentifier("start-routine-\(routine.name)")
         }
       }
     }
@@ -198,6 +205,7 @@ struct HomeView: View {
             .contentShape(Rectangle())
           }
           .buttonStyle(.plain)
+          .accessibilityIdentifier("resume-recent-workout-\(routineName(for: session))")
           .swipeActions(edge: .trailing, allowsFullSwipe: false) {
             Button("Delete", systemImage: "trash", role: .destructive) {
               requestDelete(session)
@@ -214,9 +222,14 @@ struct HomeView: View {
   }
 
   private func open(_ session: WorkoutSession) {
+    for activeSession in activeSessions where activeSession.id != session.id {
+      activeSession.endedAt = activeSession.endedAt ?? .now
+      activeSession.isActive = false
+    }
     session.endedAt = nil
     session.isActive = true
     try? context.save()
+    onOpenWorkout(session)
   }
 
   private func requestDelete(_ session: WorkoutSession) {

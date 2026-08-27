@@ -38,6 +38,11 @@ struct RoutinesView: View {
   private var people: [PersonProfile]
   @State private var showingNewRoutine = false
   @State private var showingStarterRoutines = false
+  let onOpenWorkout: (WorkoutSession) -> Void
+
+  init(onOpenWorkout: @escaping (WorkoutSession) -> Void = { _ in }) {
+    self.onOpenWorkout = onOpenWorkout
+  }
 
   var body: some View {
     List {
@@ -56,7 +61,7 @@ struct RoutinesView: View {
       } else {
         ForEach(routines) { routine in
           NavigationLink {
-            RoutineDetailView(routine: routine)
+            RoutineDetailView(routine: routine, onOpenWorkout: onOpenWorkout)
           } label: {
             HStack(spacing: 14) {
               Image(systemName: routine.symbol)
@@ -440,6 +445,7 @@ struct RoutineDetailView: View {
   @Query private var catalog: [Exercise]
   @Query(sort: \WorkoutSession.startedAt) private var sessions: [WorkoutSession]
   @Bindable var routine: Routine
+  let onOpenWorkout: (WorkoutSession) -> Void
   @State private var showingExercisePicker = false
   @State private var showingDeleteConfirmation = false
   @State private var showingAppearanceEditor = false
@@ -448,6 +454,14 @@ struct RoutineDetailView: View {
   @State private var draftSymbol = "dumbbell.fill"
   @State private var draftColorHex = "FF5A45"
   @State private var draftExercises: [RoutineExercise] = []
+
+  init(
+    routine: Routine,
+    onOpenWorkout: @escaping (WorkoutSession) -> Void = { _ in }
+  ) {
+    self.routine = routine
+    self.onOpenWorkout = onOpenWorkout
+  }
 
   private var routineSessions: [WorkoutSession] {
     sessions.filter { $0.routineID == routine.id }
@@ -558,8 +572,11 @@ struct RoutineDetailView: View {
         .background(.bar)
       } else {
         Button {
-          WorkoutSessionStarter.start(
+          if let session = WorkoutSessionStarter.start(
             routine: routine, people: people, sessions: sessions, catalog: catalog, in: context)
+          {
+            onOpenWorkout(session)
+          }
         } label: {
           Label("Start Routine", systemImage: "play.fill")
             .font(.headline)
@@ -571,6 +588,7 @@ struct RoutineDetailView: View {
         .padding()
         .background(.bar)
         .disabled(routine.exercises.isEmpty)
+        .accessibilityIdentifier("start-routine-detail")
       }
     }
     .sheet(isPresented: $showingExercisePicker) {
@@ -738,13 +756,18 @@ struct AddExerciseToRoutineSheet: View {
 }
 
 enum WorkoutSessionStarter {
+  @discardableResult
   static func start(
     routine: Routine,
     people: [PersonProfile],
     sessions: [WorkoutSession],
     catalog: [Exercise],
     in context: ModelContext
-  ) {
+  ) -> WorkoutSession? {
+    if let activeSession = sessions.first(where: \.isActive) {
+      return activeSession
+    }
+
     let orderedPeople = PersonProfile.ordered(people)
     let history =
       sessions
@@ -756,7 +779,7 @@ enum WorkoutSessionStarter {
       lastKeys.isEmpty || lastKeys.contains($0.lowercased())
     }
     let participantNames = selectedNames.isEmpty ? orderedPeople.map(\.name) : selectedNames
-    guard !participantNames.isEmpty else { return }
+    guard !participantNames.isEmpty else { return nil }
 
     let knownNames = orderedKnownNames(
       history: history, routine: routine, orderedPeople: orderedPeople)
@@ -770,11 +793,16 @@ enum WorkoutSessionStarter {
         })
     }
 
-    context.insert(
-      WorkoutSession(
-        routineID: routine.id, participantNames: participantNames,
-        exercises: logs))
-    try? context.save()
+    let session = WorkoutSession(
+      routineID: routine.id, participantNames: participantNames,
+      exercises: logs)
+    context.insert(session)
+    do {
+      try context.save()
+      return session
+    } catch {
+      return nil
+    }
   }
 
   private static func orderedKnownNames(
