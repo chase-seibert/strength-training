@@ -10,13 +10,19 @@ struct ActiveWorkoutView: View {
   @Bindable var session: WorkoutSession
   let onDone: () -> Void
   let onDelete: () -> Void
-  @State private var showingPeople = false
   @State private var showingExercisePicker = false
   @State private var editMode: EditMode = .inactive
   @State private var showingDeleteConfirmation = false
+  @State private var pendingParticipantRemoval: String?
+  @State private var showingParticipantRemovalConfirmation = false
 
   var body: some View {
     List {
+      participantPills
+        .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+        .listRowSeparator(.hidden)
+        .listRowBackground(Color.clear)
+
       ForEach(session.exercises.sorted(by: { $0.sortOrder < $1.sortOrder })) { exercise in
         ActiveExerciseCard(
           exercise: exercise,
@@ -31,9 +37,6 @@ struct ActiveWorkoutView: View {
       .onMove(perform: moveExercises)
 
       HStack(spacing: 10) {
-        workoutAction("Change People", systemImage: "person.2.fill") {
-          showingPeople = true
-        }
         workoutAction(
           editMode.isEditing ? "Finish Reorder" : "Reorder",
           systemImage: editMode.isEditing ? "checkmark" : "arrow.up.arrow.down"
@@ -90,10 +93,6 @@ struct ActiveWorkoutView: View {
     .background(DismissKeyboardOnTap())
     .navigationTitle(routineName)
     .navigationBarTitleDisplayMode(.inline)
-    .sheet(isPresented: $showingPeople) {
-      ParticipantVisibilitySheet(session: session, people: people)
-        .presentationDetents([.medium])
-    }
     .sheet(isPresented: $showingExercisePicker) {
       AddExerciseToWorkoutSheet(session: session)
     }
@@ -105,6 +104,99 @@ struct ActiveWorkoutView: View {
 
   private var routineName: String {
     routines.first(where: { $0.id == session.routineID })?.name ?? "Unknown Routine"
+  }
+
+  private var participantPills: some View {
+    VStack(alignment: .leading, spacing: 8) {
+      Text("People")
+        .font(.caption.weight(.bold))
+        .foregroundStyle(.secondary)
+      ScrollView(.horizontal, showsIndicators: false) {
+        HStack(spacing: 8) {
+          ForEach(PersonProfile.ordered(people)) { person in
+            let isSelected = session.isParticipantActive(person.name)
+            Button {
+              toggleParticipant(person.name)
+            } label: {
+              HStack(spacing: 6) {
+                InitialBadge(name: person.name, colorHex: person.colorHex, size: 26)
+                Text(person.name)
+                  .font(.subheadline.weight(.semibold))
+                  .foregroundStyle(isSelected ? .primary : .secondary)
+                Image(systemName: isSelected ? "checkmark" : "plus")
+                  .font(.caption.bold())
+                  .foregroundStyle(isSelected ? Theme.coral : .secondary)
+              }
+              .padding(.horizontal, 10)
+              .padding(.vertical, 7)
+              .background(
+                isSelected ? Theme.coral.opacity(0.14) : Color.secondary.opacity(0.08),
+                in: Capsule()
+              )
+              .overlay {
+                Capsule()
+                  .stroke(
+                    isSelected ? Theme.coral.opacity(0.45) : Color.secondary.opacity(0.18),
+                    lineWidth: 1)
+              }
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("\(person.name), \(isSelected ? "included" : "excluded")")
+            .accessibilityHint("Double tap to \(isSelected ? "hide" : "include") this person")
+          }
+        }
+        .padding(.vertical, 2)
+      }
+    }
+    .confirmationDialog(
+      "Hide \(pendingParticipantRemoval ?? "person") from this workout?",
+      isPresented: $showingParticipantRemovalConfirmation,
+      titleVisibility: .visible
+    ) {
+      Button("Hide Person", role: .destructive) {
+        if let pendingParticipantRemoval { removeParticipant(pendingParticipantRemoval) }
+        pendingParticipantRemoval = nil
+      }
+      Button("Cancel", role: .cancel) { pendingParticipantRemoval = nil }
+    } message: {
+      Text("Completed sets will be kept. You can turn this person back on later in this workout.")
+    }
+  }
+
+  private func toggleParticipant(_ name: String) {
+    if session.isParticipantActive(name) {
+      guard session.participantNames.count > 1 else { return }
+      let hasCompletedSets = session.exercises.flatMap(\.participants).contains {
+        $0.participantName.caseInsensitiveCompare(name) == .orderedSame
+          && $0.sets.contains(where: \.isCompleted)
+      }
+      if hasCompletedSets {
+        pendingParticipantRemoval = name
+        showingParticipantRemovalConfirmation = true
+      } else {
+        removeParticipant(name)
+      }
+    } else {
+      session.participantNames = PersonProfile.orderedNames(
+        session.participantNames + [name], using: people)
+      for exercise in session.exercises
+      where !exercise.participants.contains(where: {
+        $0.participantName.caseInsensitiveCompare(name) == .orderedSame
+      }) {
+        exercise.participants.append(
+          ParticipantLog(
+            participantName: name, measurement: 0,
+            sets: (0..<3).map { WorkoutSet(sortOrder: $0, reps: 10) }))
+      }
+      try? context.save()
+    }
+  }
+
+  private func removeParticipant(_ name: String) {
+    session.participantNames.removeAll {
+      $0.caseInsensitiveCompare(name) == .orderedSame
+    }
+    try? context.save()
   }
 
   private func workoutAction(
@@ -421,88 +513,5 @@ struct WorkoutRepsField: View {
     .onChange(of: isFocused) { _, focused in
       if !focused, text.isEmpty { text = "\(set.reps)" }
     }
-  }
-}
-
-struct ParticipantVisibilitySheet: View {
-  @Environment(\.dismiss) private var dismiss
-  @Environment(\.modelContext) private var context
-  @Bindable var session: WorkoutSession
-  let people: [PersonProfile]
-  @State private var pendingRemoval: String?
-  @State private var showingRemovalConfirmation = false
-
-  var body: some View {
-    NavigationStack {
-      List(PersonProfile.ordered(people)) { person in
-        Button {
-          toggle(person.name)
-        } label: {
-          HStack {
-            InitialBadge(name: person.name, colorHex: person.colorHex)
-            Text(person.name).foregroundStyle(.primary)
-            Spacer()
-            Image(
-              systemName: session.participantNames.contains(person.name)
-                ? "checkmark.circle.fill" : "circle"
-            )
-            .foregroundStyle(
-              session.participantNames.contains(person.name) ? Theme.coral : .secondary)
-          }
-        }
-      }
-      .navigationTitle("Change People")
-      .navigationBarTitleDisplayMode(.inline)
-      .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
-      .confirmationDialog(
-        "Hide \(pendingRemoval ?? "person") from this workout?",
-        isPresented: $showingRemovalConfirmation,
-        titleVisibility: .visible
-      ) {
-        Button("Hide Person", role: .destructive) {
-          if let pendingRemoval { remove(pendingRemoval) }
-          pendingRemoval = nil
-        }
-        Button("Cancel", role: .cancel) { pendingRemoval = nil }
-      } message: {
-        Text("Completed sets will be kept. You can turn this person back on later in this workout.")
-      }
-    }
-  }
-
-  private func toggle(_ name: String) {
-    if session.participantNames.contains(name) {
-      guard session.participantNames.count > 1 else { return }
-      let hasCompletedSets = session.exercises.flatMap(\.participants).contains {
-        $0.participantName.caseInsensitiveCompare(name) == .orderedSame
-          && $0.sets.contains(where: \.isCompleted)
-      }
-      if hasCompletedSets {
-        pendingRemoval = name
-        showingRemovalConfirmation = true
-      } else {
-        remove(name)
-      }
-    } else {
-      session.participantNames = PersonProfile.orderedNames(
-        session.participantNames + [name], using: people)
-      for exercise in session.exercises
-      where !exercise.participants.contains(where: {
-        $0.participantName.caseInsensitiveCompare(name) == .orderedSame
-      }) {
-        exercise.participants.append(
-          ParticipantLog(
-            participantName: name, measurement: 0,
-            sets: (0..<3).map { WorkoutSet(sortOrder: $0, reps: 10) }))
-      }
-    }
-    try? context.save()
-  }
-
-  private func remove(_ name: String) {
-    session.participantNames.removeAll {
-      $0.caseInsensitiveCompare(name) == .orderedSame
-    }
-    try? context.save()
   }
 }

@@ -441,7 +441,6 @@ struct RoutineDetailView: View {
   @Query(sort: \WorkoutSession.startedAt) private var sessions: [WorkoutSession]
   @Bindable var routine: Routine
   @State private var showingExercisePicker = false
-  @State private var showingStart = false
   @State private var showingDeleteConfirmation = false
   @State private var showingAppearanceEditor = false
   @State private var editMode: EditMode = .inactive
@@ -559,7 +558,8 @@ struct RoutineDetailView: View {
         .background(.bar)
       } else {
         Button {
-          showingStart = true
+          WorkoutSessionStarter.start(
+            routine: routine, people: people, sessions: sessions, catalog: catalog, in: context)
         } label: {
           Label("Start Routine", systemImage: "play.fill")
             .font(.headline)
@@ -579,10 +579,6 @@ struct RoutineDetailView: View {
         onAdd: addExercise
       )
       .environment(\.editMode, .constant(.inactive))
-    }
-    .sheet(isPresented: $showingStart) {
-      StartRoutineSheet(routine: routine, people: people)
-        .presentationDetents([.medium])
     }
     .sheet(isPresented: $showingAppearanceEditor) {
       NavigationStack {
@@ -741,107 +737,49 @@ struct AddExerciseToRoutineSheet: View {
   }
 }
 
-struct StartRoutineSheet: View {
-  @Environment(\.dismiss) private var dismiss
-  @Environment(\.modelContext) private var context
-  @Query(sort: \WorkoutSession.startedAt, order: .reverse) private var sessions: [WorkoutSession]
-  @Query private var catalog: [Exercise]
-  let routine: Routine
-  let people: [PersonProfile]
-  @State private var selectedNames: Set<String> = []
-
-  var body: some View {
-    NavigationStack {
-      VStack(alignment: .leading, spacing: 22) {
-        VStack(alignment: .leading, spacing: 6) {
-          SectionEyebrow(text: "Who is training?")
-          Text("Choose today's crew")
-            .font(.title.bold())
-        }
-        ForEach(orderedPeople) { person in
-          Button {
-            if selectedNames.contains(person.name) {
-              selectedNames.remove(person.name)
-            } else {
-              selectedNames.insert(person.name)
-            }
-          } label: {
-            HStack(spacing: 12) {
-              InitialBadge(name: person.name, colorHex: person.colorHex, size: 42)
-              Text(person.name).font(.headline).foregroundStyle(.primary)
-              Spacer()
-              Image(
-                systemName: selectedNames.contains(person.name) ? "checkmark.circle.fill" : "circle"
-              )
-              .font(.title2).foregroundStyle(
-                selectedNames.contains(person.name) ? Theme.coral : .secondary)
-            }
-            .padding(12)
-            .background(Color.secondary.opacity(0.07), in: RoundedRectangle(cornerRadius: 16))
-          }
-          .buttonStyle(.plain)
-        }
-        Spacer()
-        Button {
-          start()
-        } label: {
-          Label("Start \(routine.name)", systemImage: "play.fill")
-            .font(.headline).frame(maxWidth: .infinity).padding(.vertical, 13)
-        }
-        .buttonStyle(.borderedProminent)
-        .tint(Theme.coral)
-        .disabled(selectedNames.isEmpty)
-      }
-      .padding()
-      .navigationTitle("Start Routine")
-      .navigationBarTitleDisplayMode(.inline)
-      .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }
-      .onAppear {
-        let lastNames = lastSession?.participantNames ?? routine.configuredParticipantNames
-        let lastKeys = Set(lastNames.map { $0.lowercased() })
-        let matchingNames = orderedPeople.map(\.name).filter {
-          lastKeys.isEmpty || lastKeys.contains($0.lowercased())
-        }
-        selectedNames = Set(matchingNames.isEmpty ? orderedPeople.map(\.name) : matchingNames)
-      }
+enum WorkoutSessionStarter {
+  static func start(
+    routine: Routine,
+    people: [PersonProfile],
+    sessions: [WorkoutSession],
+    catalog: [Exercise],
+    in context: ModelContext
+  ) {
+    let orderedPeople = PersonProfile.ordered(people)
+    let history =
+      sessions
+      .filter { $0.routineID == routine.id }
+      .sorted { $0.startedAt > $1.startedAt }
+    let lastNames = history.first?.participantNames ?? routine.configuredParticipantNames
+    let lastKeys = Set(lastNames.map { $0.lowercased() })
+    let selectedNames = orderedPeople.map(\.name).filter {
+      lastKeys.isEmpty || lastKeys.contains($0.lowercased())
     }
-  }
+    let participantNames = selectedNames.isEmpty ? orderedPeople.map(\.name) : selectedNames
+    guard !participantNames.isEmpty else { return }
 
-  private func start() {
-    let selected = orderedPeople.map(\.name).filter(selectedNames.contains)
-    let history = routineSessions
-    let knownNames = orderedKnownNames(from: history)
+    let knownNames = orderedKnownNames(
+      history: history, routine: routine, orderedPeople: orderedPeople)
     let logs = routine.exercises.sorted(by: { $0.sortOrder < $1.sortOrder }).map { item in
-      let participantLogs = knownNames.map {
-        participantLog(for: $0, exercise: item, history: history)
-      }
-      return ExerciseLog(
-        exerciseName: item.exerciseName, unit: unit(for: item), sortOrder: item.sortOrder,
-        participants: participantLogs)
+      ExerciseLog(
+        exerciseName: item.exerciseName,
+        unit: unit(for: item, catalog: catalog),
+        sortOrder: item.sortOrder,
+        participants: knownNames.map {
+          participantLog(for: $0, exercise: item, history: history)
+        })
     }
+
     context.insert(
       WorkoutSession(
-        routineID: routine.id, participantNames: selected,
+        routineID: routine.id, participantNames: participantNames,
         exercises: logs))
     try? context.save()
-    dismiss()
   }
 
-  private var routineSessions: [WorkoutSession] {
-    sessions.filter { $0.routineID == routine.id }.sorted { $0.startedAt > $1.startedAt }
-  }
-
-  private var lastSession: WorkoutSession? { routineSessions.first }
-
-  private func unit(for item: RoutineExercise) -> TrackingUnit {
-    catalog.first(where: { $0.id == item.exerciseID })?.unit
-      ?? catalog.first(where: {
-        $0.name.caseInsensitiveCompare(item.exerciseName) == .orderedSame
-      })?.unit
-      ?? item.legacyUnit
-  }
-
-  private func orderedKnownNames(from history: [WorkoutSession]) -> [String] {
+  private static func orderedKnownNames(
+    history: [WorkoutSession], routine: Routine, orderedPeople: [PersonProfile]
+  ) -> [String] {
     var result: [String] = []
     var seen = Set<String>()
     for name in history.flatMap(\.participantNames) + orderedPeople.map(\.name)
@@ -853,11 +791,15 @@ struct StartRoutineSheet: View {
     return PersonProfile.orderedNames(result, using: orderedPeople)
   }
 
-  private var orderedPeople: [PersonProfile] {
-    PersonProfile.ordered(people)
+  private static func unit(for item: RoutineExercise, catalog: [Exercise]) -> TrackingUnit {
+    catalog.first(where: { $0.id == item.exerciseID })?.unit
+      ?? catalog.first(where: {
+        $0.name.caseInsensitiveCompare(item.exerciseName) == .orderedSame
+      })?.unit
+      ?? item.legacyUnit
   }
 
-  private func participantLog(
+  private static func participantLog(
     for name: String, exercise: RoutineExercise, history: [WorkoutSession]
   ) -> ParticipantLog {
     let previous = history.lazy
@@ -883,7 +825,8 @@ struct StartRoutineSheet: View {
       $0.participantName.caseInsensitiveCompare(name) == .orderedSame
     }) {
       return ParticipantLog(
-        participantName: name, measurement: legacy.measurement,
+        participantName: name,
+        measurement: legacy.measurement,
         sets: legacy.sets.sorted(by: { $0.sortOrder < $1.sortOrder }).map {
           WorkoutSet(sortOrder: $0.sortOrder, reps: $0.reps)
         })

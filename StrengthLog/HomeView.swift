@@ -10,9 +10,9 @@ struct HomeView: View {
   @Query(filter: #Predicate<WorkoutSession> { $0.isActive })
   private var activeSessions: [WorkoutSession]
   @Query(sort: \WorkoutSession.startedAt, order: .reverse) private var sessions: [WorkoutSession]
+  @Query private var catalog: [Exercise]
   @Query(filter: #Predicate<PersonProfile> { !$0.isArchived }, sort: \PersonProfile.sortOrder)
   private var people: [PersonProfile]
-  @State private var routineToStart: Routine?
   @State private var pendingDeletion: WorkoutSession?
   @State private var showingDeleteConfirmation = false
 
@@ -54,10 +54,6 @@ struct HomeView: View {
           "This permanently deletes the \(routineName(for: session)) workout from \(session.startedAt.formatted(date: .abbreviated, time: .shortened))."
         )
       }
-    }
-    .sheet(item: $routineToStart) { routine in
-      StartRoutineSheet(routine: routine, people: people)
-        .presentationDetents([.medium])
     }
   }
 
@@ -136,7 +132,8 @@ struct HomeView: View {
       } else {
         ForEach(routines.prefix(3)) { routine in
           Button {
-            routineToStart = routine
+            WorkoutSessionStarter.start(
+              routine: routine, people: people, sessions: sessions, catalog: catalog, in: context)
           } label: {
             HStack(spacing: 14) {
               Image(systemName: routine.symbol)
