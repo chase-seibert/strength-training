@@ -77,7 +77,7 @@ struct ActiveWorkoutView: View {
           Button("Cancel", role: .cancel) {}
         } message: {
           Text(
-            "This permanently deletes the \(routineName) workout from \(session.startedAt.formatted(date: .abbreviated, time: .shortened))."
+            "This moves the \(routineName) workout from \(session.startedAt.formatted(date: .abbreviated, time: .shortened)) to Deleted Workouts, where it can be restored."
           )
         }
       }
@@ -255,7 +255,8 @@ struct ActiveWorkoutView: View {
 struct AddExerciseToWorkoutSheet: View {
   @Environment(\.dismiss) private var dismiss
   @Environment(\.modelContext) private var context
-  @Query(sort: \Exercise.name) private var exercises: [Exercise]
+  @Query(filter: #Predicate<Exercise> { $0.deletedAt == nil }, sort: \Exercise.name)
+  private var exercises: [Exercise]
   @Bindable var session: WorkoutSession
   @State private var searchText = ""
 

@@ -96,6 +96,7 @@ final class Exercise {
   var imagePath: String?
   var additionalImagePathsRaw: String?
   var isCustom: Bool
+  var deletedAt: Date?
 
   init(
     sourceID: String? = nil,
@@ -107,7 +108,8 @@ final class Exercise {
     instructions: String,
     imagePath: String? = nil,
     additionalImagePaths: [String] = [],
-    isCustom: Bool = false
+    isCustom: Bool = false,
+    deletedAt: Date? = nil
   ) {
     id = UUID()
     self.sourceID = sourceID
@@ -121,6 +123,7 @@ final class Exercise {
     additionalImagePathsRaw =
       additionalImagePaths.isEmpty ? nil : additionalImagePaths.joined(separator: "\n")
     self.isCustom = isCustom
+    self.deletedAt = deletedAt
   }
 
   var unit: TrackingUnit {
@@ -296,13 +299,14 @@ final class WorkoutSession {
   var startedAt: Date
   var endedAt: Date?
   var isActive: Bool
+  var deletedAt: Date?
   var participantNames: [String]
   @Relationship(deleteRule: .cascade) var exercises: [ExerciseLog]
 
   init(
     routineID: UUID, participantNames: [String], exercises: [ExerciseLog],
     startedAt: Date = .now, endedAt: Date? = nil, isActive: Bool = true,
-    externalID: String? = nil, notes: String? = nil
+    externalID: String? = nil, notes: String? = nil, deletedAt: Date? = nil
   ) {
     id = UUID()
     self.externalID = externalID
@@ -312,6 +316,7 @@ final class WorkoutSession {
     self.startedAt = startedAt
     self.endedAt = endedAt
     self.isActive = isActive
+    self.deletedAt = deletedAt
     self.participantNames = participantNames
     self.exercises = exercises
   }

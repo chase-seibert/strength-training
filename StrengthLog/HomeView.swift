@@ -7,15 +7,18 @@ struct HomeView: View {
   @Query(filter: #Predicate<Routine> { $0.deletedAt == nil }, sort: \Routine.createdAt)
   private var routines: [Routine]
   @Query private var allRoutines: [Routine]
-  @Query(filter: #Predicate<WorkoutSession> { $0.isActive })
+  @Query(filter: #Predicate<WorkoutSession> { $0.isActive && $0.deletedAt == nil })
   private var activeSessions: [WorkoutSession]
-  @Query(sort: \WorkoutSession.startedAt, order: .reverse) private var sessions: [WorkoutSession]
+  @Query(
+    filter: #Predicate<WorkoutSession> { $0.deletedAt == nil },
+    sort: \WorkoutSession.startedAt,
+    order: .reverse)
+  private var sessions: [WorkoutSession]
+  @Query(filter: #Predicate<WorkoutSession> { $0.deletedAt != nil })
+  private var deletedSessions: [WorkoutSession]
   @Query private var catalog: [Exercise]
   @Query(filter: #Predicate<PersonProfile> { !$0.isArchived }, sort: \PersonProfile.sortOrder)
   private var people: [PersonProfile]
-  @State private var pendingDeletion: WorkoutSession?
-  @State private var showingDeleteConfirmation = false
-
   init(onOpenWorkout: @escaping (WorkoutSession) -> Void = { _ in }) {
     self.onOpenWorkout = onOpenWorkout
   }
@@ -34,27 +37,13 @@ struct HomeView: View {
         }
         routineSection
         activityCard
-        if !sessions.isEmpty { recentWorkoutsSection }
+        if !sessions.isEmpty || !deletedSessions.isEmpty { recentWorkoutsSection }
       }
       .padding()
     }
     .background(Color(.systemGroupedBackground))
     .navigationTitle("Workout")
     .toolbarTitleDisplayMode(.large)
-    .confirmationDialog(
-      "Delete workout?",
-      isPresented: $showingDeleteConfirmation,
-      titleVisibility: .visible
-    ) {
-      Button("Delete Workout", role: .destructive, action: deletePending)
-      Button("Cancel", role: .cancel) { pendingDeletion = nil }
-    } message: {
-      if let session = pendingDeletion {
-        Text(
-          "This permanently deletes the \(routineName(for: session)) workout from \(session.startedAt.formatted(date: .abbreviated, time: .shortened))."
-        )
-      }
-    }
   }
 
   private func activeWorkoutCard(_ session: WorkoutSession) -> some View {
@@ -173,51 +162,34 @@ struct HomeView: View {
   private var recentWorkoutsSection: some View {
     VStack(alignment: .leading, spacing: 12) {
       Text("Recent workouts").font(.title3.bold())
-      VStack(spacing: 0) {
-        ForEach(Array(sessions.prefix(3).enumerated()), id: \.element.id) { index, session in
-          Button {
-            open(session)
-          } label: {
-            HStack(spacing: 12) {
-              Image(systemName: "clock.arrow.circlepath")
-                .font(.headline)
-                .foregroundStyle(Theme.navy)
-                .frame(width: 38, height: 38)
-                .background(Theme.mint.opacity(0.24), in: Circle())
-              VStack(alignment: .leading, spacing: 3) {
-                Text(routineName(for: session))
-                  .font(.headline)
-                  .foregroundStyle(.primary)
-                Text(session.startedAt.formatted(date: .abbreviated, time: .shortened))
-                  .font(.subheadline)
-                  .foregroundStyle(.secondary)
-              }
-              Spacer()
-              Text("\(session.completedSetCount)/\(session.totalSetCount)")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
-              Image(systemName: "chevron.right")
-                .font(.caption.bold())
-                .foregroundStyle(.tertiary)
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 12)
-            .contentShape(Rectangle())
-          }
-          .buttonStyle(.plain)
-          .accessibilityIdentifier("resume-recent-workout-\(routineName(for: session))")
-          .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-            Button("Delete", systemImage: "trash", role: .destructive) {
-              requestDelete(session)
-            }
-          }
+      if !sessions.isEmpty {
+        VStack(spacing: 0) {
+          ForEach(Array(sessions.prefix(3).enumerated()), id: \.element.id) { index, session in
+            RecentWorkoutRow(
+              session: session,
+              routineName: routineName(for: session),
+              onOpen: { open(session) },
+              onDelete: { softDelete(session) })
 
-          if index < min(sessions.count, 3) - 1 {
-            Divider().padding(.leading, 64)
+            if index < min(sessions.count, 3) - 1 {
+              Divider().padding(.leading, 64)
+            }
           }
         }
+        .background(.background, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
       }
-      .background(.background, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+
+      if !deletedSessions.isEmpty {
+        NavigationLink {
+          DeletedWorkoutsView()
+        } label: {
+          Label("Deleted Workouts (\(deletedSessions.count))", systemImage: "trash")
+            .font(.subheadline.weight(.semibold))
+            .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.bordered)
+      }
     }
   }
 
@@ -232,20 +204,187 @@ struct HomeView: View {
     onOpenWorkout(session)
   }
 
-  private func requestDelete(_ session: WorkoutSession) {
-    pendingDeletion = session
-    showingDeleteConfirmation = true
-  }
-
-  private func deletePending() {
-    guard let session = pendingDeletion else { return }
-    context.delete(session)
+  private func softDelete(_ session: WorkoutSession) {
+    session.deletedAt = .now
+    session.isActive = false
+    session.endedAt = session.endedAt ?? .now
     try? context.save()
-    pendingDeletion = nil
   }
 
   private func routineName(for session: WorkoutSession) -> String {
     allRoutines.first(where: { $0.id == session.routineID })?.name ?? "Unknown Routine"
+  }
+}
+
+private struct RecentWorkoutRow: View {
+  let session: WorkoutSession
+  let routineName: String
+  let onOpen: () -> Void
+  let onDelete: () -> Void
+  @State private var showingDeleteConfirmation = false
+  @State private var isDeleteRevealed = false
+  @State private var dragOffset: CGFloat = 0
+
+  private let deleteActionWidth: CGFloat = 92
+
+  var body: some View {
+    ZStack(alignment: .trailing) {
+      Button(role: .destructive) {
+        showingDeleteConfirmation = true
+      } label: {
+        Label("Delete", systemImage: "trash")
+          .labelStyle(.iconOnly)
+          .font(.headline)
+          .foregroundStyle(.white)
+          .frame(width: deleteActionWidth)
+          .frame(maxHeight: .infinity)
+          .background(.red)
+      }
+      .buttonStyle(.plain)
+      .accessibilityLabel("Delete \(routineName) workout")
+      .accessibilityIdentifier("delete-recent-workout-\(routineName)")
+      .confirmationDialog(
+        "Delete workout?",
+        isPresented: $showingDeleteConfirmation,
+        titleVisibility: .visible
+      ) {
+        Button("Delete Workout", role: .destructive) {
+          onDelete()
+          isDeleteRevealed = false
+        }
+        Button("Cancel", role: .cancel) {}
+      } message: {
+        Text(
+          "This moves the \(routineName) workout from \(session.startedAt.formatted(date: .abbreviated, time: .shortened)) to Deleted Workouts, where it can be restored."
+        )
+      }
+
+      HStack(spacing: 12) {
+        Image(systemName: "clock.arrow.circlepath")
+          .font(.headline)
+          .foregroundStyle(Theme.navy)
+          .frame(width: 38, height: 38)
+          .background(Theme.mint.opacity(0.24), in: Circle())
+        VStack(alignment: .leading, spacing: 3) {
+          Text(routineName)
+            .font(.headline)
+            .foregroundStyle(.primary)
+          Text(session.startedAt.formatted(date: .abbreviated, time: .shortened))
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+        }
+        Spacer()
+        Text("\(session.completedSetCount)/\(session.totalSetCount)")
+          .font(.caption.weight(.semibold))
+          .foregroundStyle(.secondary)
+        Image(systemName: "chevron.right")
+          .font(.caption.bold())
+          .foregroundStyle(.tertiary)
+      }
+      .padding(.horizontal, 14)
+      .padding(.vertical, 12)
+      .contentShape(Rectangle())
+      .background(.background)
+      .onTapGesture {
+        if isDeleteRevealed {
+          withAnimation(.snappy) { isDeleteRevealed = false }
+        } else {
+          onOpen()
+        }
+      }
+      .accessibilityElement(children: .ignore)
+      .accessibilityAddTraits(.isButton)
+      .accessibilityLabel(routineName)
+      .accessibilityValue(
+        "\(session.startedAt.formatted(date: .abbreviated, time: .shortened)), \(session.completedSetCount) of \(session.totalSetCount) sets"
+      )
+      .accessibilityIdentifier("resume-recent-workout-\(routineName)")
+      .accessibilityAction { onOpen() }
+      .offset(x: rowOffset)
+      .highPriorityGesture(
+        DragGesture(minimumDistance: 12)
+          .onChanged { value in
+            let startingOffset = isDeleteRevealed ? -deleteActionWidth : 0
+            dragOffset =
+              min(0, max(-deleteActionWidth, startingOffset + value.translation.width))
+              - startingOffset
+          }
+          .onEnded { value in
+            let horizontalTravel = min(value.translation.width, value.predictedEndTranslation.width)
+            withAnimation(.snappy) {
+              if isDeleteRevealed {
+                isDeleteRevealed = value.translation.width < deleteActionWidth / 2
+              } else {
+                isDeleteRevealed = horizontalTravel < -deleteActionWidth / 2
+              }
+              dragOffset = 0
+            }
+          })
+    }
+    .clipped()
+  }
+
+  private var rowOffset: CGFloat {
+    let base = isDeleteRevealed ? -deleteActionWidth : 0
+    return min(0, max(-deleteActionWidth, base + dragOffset))
+  }
+}
+
+struct DeletedWorkoutsView: View {
+  @Environment(\.modelContext) private var context
+  @Query private var routines: [Routine]
+  @Query(
+    filter: #Predicate<WorkoutSession> { $0.deletedAt != nil },
+    sort: \WorkoutSession.startedAt,
+    order: .reverse)
+  private var sessions: [WorkoutSession]
+
+  var body: some View {
+    Group {
+      if sessions.isEmpty {
+        ContentUnavailableView(
+          "No Deleted Workouts",
+          systemImage: "trash",
+          description: Text("Deleted workouts will appear here and can be restored."))
+      } else {
+        List(sessions) { session in
+          HStack(spacing: 12) {
+            Image(systemName: "clock.arrow.circlepath")
+              .foregroundStyle(Theme.navy)
+              .frame(width: 38, height: 38)
+              .background(Theme.mint.opacity(0.24), in: Circle())
+            VStack(alignment: .leading, spacing: 3) {
+              Text(routineName(for: session)).font(.headline)
+              if let deletedAt = session.deletedAt {
+                Text("Deleted \(deletedAt.formatted(date: .abbreviated, time: .omitted))")
+                  .font(.caption)
+                  .foregroundStyle(.secondary)
+              }
+            }
+            Spacer()
+            Button("Restore") { restore(session) }
+              .buttonStyle(.bordered)
+              .accessibilityIdentifier("restore-workout-\(routineName(for: session))")
+          }
+          .padding(.vertical, 3)
+          .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+            Button("Restore", systemImage: "arrow.uturn.backward") { restore(session) }
+              .tint(Theme.mint)
+          }
+        }
+        .listStyle(.insetGrouped)
+      }
+    }
+    .navigationTitle("Deleted Workouts")
+  }
+
+  private func restore(_ session: WorkoutSession) {
+    session.deletedAt = nil
+    try? context.save()
+  }
+
+  private func routineName(for session: WorkoutSession) -> String {
+    routines.first(where: { $0.id == session.routineID })?.name ?? "Unknown Routine"
   }
 }
 

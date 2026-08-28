@@ -64,7 +64,8 @@ struct HevyImportView: View {
   @Environment(\.modelContext) private var context
   @Query(filter: #Predicate<PersonProfile> { !$0.isArchived }, sort: \PersonProfile.sortOrder)
   private var people: [PersonProfile]
-  @Query(sort: \Exercise.name) private var exercises: [Exercise]
+  @Query(filter: #Predicate<Exercise> { $0.deletedAt == nil }, sort: \Exercise.name)
+  private var exercises: [Exercise]
   @Query private var savedMappings: [ExternalExerciseMapping]
 
   let document: HevyCSVDocument
@@ -437,7 +438,8 @@ private struct HevyMappingRequest: Identifiable {
 
 private struct HevyExerciseMappingPicker: View {
   @Environment(\.dismiss) private var dismiss
-  @Query(sort: \Exercise.name) private var exercises: [Exercise]
+  @Query(filter: #Predicate<Exercise> { $0.deletedAt == nil }, sort: \Exercise.name)
+  private var exercises: [Exercise]
   let externalName: String
   let currentChoice: HevyExerciseMappingChoice?
   let onSelect: (HevyExerciseMappingChoice?) -> Void

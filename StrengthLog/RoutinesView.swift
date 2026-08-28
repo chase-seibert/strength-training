@@ -443,7 +443,10 @@ struct RoutineDetailView: View {
   @Query(filter: #Predicate<PersonProfile> { !$0.isArchived }, sort: \PersonProfile.sortOrder)
   private var people: [PersonProfile]
   @Query private var catalog: [Exercise]
-  @Query(sort: \WorkoutSession.startedAt) private var sessions: [WorkoutSession]
+  @Query(
+    filter: #Predicate<WorkoutSession> { $0.deletedAt == nil },
+    sort: \WorkoutSession.startedAt)
+  private var sessions: [WorkoutSession]
   @Bindable var routine: Routine
   let onOpenWorkout: (WorkoutSession) -> Void
   @State private var showingExercisePicker = false
@@ -710,7 +713,8 @@ struct RoutineDetailView: View {
 
 struct AddExerciseToRoutineSheet: View {
   @Environment(\.dismiss) private var dismiss
-  @Query(sort: \Exercise.name) private var exercises: [Exercise]
+  @Query(filter: #Predicate<Exercise> { $0.deletedAt == nil }, sort: \Exercise.name)
+  private var exercises: [Exercise]
   let existingExerciseNames: [String]
   let onAdd: (Exercise) -> Void
   @State private var searchText = ""

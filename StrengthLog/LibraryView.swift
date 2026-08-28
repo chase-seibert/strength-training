@@ -2,7 +2,10 @@ import SwiftData
 import SwiftUI
 
 struct ExerciseLibraryView: View {
-  @Query(sort: \Exercise.name) private var exercises: [Exercise]
+  @Query(filter: #Predicate<Exercise> { $0.deletedAt == nil }, sort: \Exercise.name)
+  private var exercises: [Exercise]
+  @Query(filter: #Predicate<Exercise> { $0.isCustom && $0.deletedAt != nil })
+  private var deletedCustomExercises: [Exercise]
   @State private var searchText = ""
   @State private var selectedMuscle = "All"
   @State private var showingNewExercise = false
@@ -38,21 +41,18 @@ struct ExerciseLibraryView: View {
 
       Section("\(filtered.count) exercises") {
         ForEach(filtered) { exercise in
+          ExerciseLibraryRow(exercise: exercise)
+        }
+      }
+
+      if !deletedCustomExercises.isEmpty {
+        Section {
           NavigationLink {
-            ExerciseDetailView(exercise: exercise)
+            DeletedCustomExercisesView()
           } label: {
-            HStack(spacing: 12) {
-              ExerciseArtwork(exercise: exercise)
-                .frame(width: 58, height: 58)
-                .background(Color.secondary.opacity(0.08))
-                .clipShape(RoundedRectangle(cornerRadius: 13))
-              VStack(alignment: .leading, spacing: 4) {
-                Text(exercise.name).font(.headline)
-                Text("\(exercise.primaryMuscle.capitalized) · \(exercise.equipment.capitalized)")
-                  .font(.caption).foregroundStyle(.secondary).lineLimit(1)
-              }
-            }
-            .padding(.vertical, 2)
+            Label(
+              "Deleted Custom Exercises (\(deletedCustomExercises.count))",
+              systemImage: "trash")
           }
         }
       }
@@ -69,9 +69,48 @@ struct ExerciseLibraryView: View {
   }
 }
 
+private struct ExerciseLibraryRow: View {
+  @Environment(\.modelContext) private var context
+  let exercise: Exercise
+
+  var body: some View {
+    NavigationLink {
+      ExerciseDetailView(exercise: exercise)
+    } label: {
+      HStack(spacing: 12) {
+        ExerciseArtwork(exercise: exercise)
+          .frame(width: 58, height: 58)
+          .background(Color.secondary.opacity(0.08))
+          .clipShape(RoundedRectangle(cornerRadius: 13))
+        VStack(alignment: .leading, spacing: 4) {
+          Text(exercise.name).font(.headline)
+          Text("\(exercise.primaryMuscle.capitalized) · \(exercise.equipment.capitalized)")
+            .font(.caption).foregroundStyle(.secondary).lineLimit(1)
+        }
+      }
+      .padding(.vertical, 2)
+    }
+    .accessibilityIdentifier("exercise-\(exercise.name)")
+    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+      if exercise.isCustom {
+        Button("Delete", systemImage: "trash", role: .destructive, action: softDelete)
+          .accessibilityIdentifier("delete-custom-exercise-\(exercise.name)")
+      }
+    }
+  }
+
+  private func softDelete() {
+    exercise.deletedAt = .now
+    try? context.save()
+  }
+}
+
 struct ExerciseDetailView: View {
+  @Environment(\.dismiss) private var dismiss
+  @Environment(\.modelContext) private var context
   @Bindable var exercise: Exercise
   @State private var showingRoutinePicker = false
+  @State private var showingDeleteConfirmation = false
 
   var body: some View {
     ScrollView {
@@ -116,22 +155,99 @@ struct ExerciseDetailView: View {
     }
     .navigationBarTitleDisplayMode(.inline)
     .safeAreaInset(edge: .bottom) {
-      Button {
-        showingRoutinePicker = true
-      } label: {
-        Label("Add to Routine", systemImage: "plus.circle.fill")
-          .font(.headline)
-          .frame(maxWidth: .infinity)
-          .padding(.vertical, 13)
+      VStack(spacing: 10) {
+        Button {
+          showingRoutinePicker = true
+        } label: {
+          Label("Add to Routine", systemImage: "plus.circle.fill")
+            .font(.headline)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 13)
+        }
+        .buttonStyle(.borderedProminent)
+        .tint(Theme.coral)
+
+        if exercise.isCustom {
+          Button("Delete Custom Exercise", role: .destructive) {
+            showingDeleteConfirmation = true
+          }
+          .font(.subheadline.weight(.semibold))
+          .confirmationDialog(
+            "Delete custom exercise?",
+            isPresented: $showingDeleteConfirmation,
+            titleVisibility: .visible
+          ) {
+            Button("Delete Exercise", role: .destructive, action: softDelete)
+            Button("Cancel", role: .cancel) {}
+          } message: {
+            Text("\(exercise.name) will move to Deleted Custom Exercises and can be restored.")
+          }
+        }
       }
-      .buttonStyle(.borderedProminent)
-      .tint(Theme.coral)
       .padding()
       .background(.bar)
     }
     .sheet(isPresented: $showingRoutinePicker) {
       AddExerciseFromLibrarySheet(exercise: exercise)
     }
+  }
+
+  private func softDelete() {
+    exercise.deletedAt = .now
+    try? context.save()
+    dismiss()
+  }
+}
+
+struct DeletedCustomExercisesView: View {
+  @Environment(\.modelContext) private var context
+  @Query(
+    filter: #Predicate<Exercise> { $0.isCustom && $0.deletedAt != nil },
+    sort: \Exercise.name)
+  private var exercises: [Exercise]
+
+  var body: some View {
+    Group {
+      if exercises.isEmpty {
+        ContentUnavailableView(
+          "No Deleted Custom Exercises",
+          systemImage: "trash",
+          description: Text("Deleted custom exercises will appear here and can be restored."))
+      } else {
+        List(exercises) { exercise in
+          HStack(spacing: 12) {
+            ExerciseArtwork(exercise: exercise)
+              .frame(width: 50, height: 50)
+              .background(Color.secondary.opacity(0.08))
+              .clipShape(RoundedRectangle(cornerRadius: 12))
+            VStack(alignment: .leading, spacing: 3) {
+              Text(exercise.name).font(.headline)
+              if let deletedAt = exercise.deletedAt {
+                Text("Deleted \(deletedAt.formatted(date: .abbreviated, time: .omitted))")
+                  .font(.caption)
+                  .foregroundStyle(.secondary)
+              }
+            }
+            Spacer()
+            Button("Restore") { restore(exercise) }
+              .buttonStyle(.bordered)
+              .accessibilityIdentifier("restore-custom-exercise-\(exercise.name)")
+          }
+          .padding(.vertical, 3)
+          .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+            Button("Restore", systemImage: "arrow.uturn.backward") { restore(exercise) }
+              .tint(Theme.mint)
+          }
+        }
+        .listStyle(.insetGrouped)
+      }
+    }
+    .navigationTitle("Deleted Exercises")
+  }
+
+  private func restore(_ exercise: Exercise) {
+    exercise.deletedAt = nil
+    try? context.save()
   }
 }
 

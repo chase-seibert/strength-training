@@ -14,6 +14,14 @@
         primaryMuscle: "chest",
         unit: .pounds,
         instructions: "Lower the bar with control, then press it up.")
+      let customExercise = Exercise(
+        name: "Fixture Custom Curl",
+        category: "strength",
+        equipment: "dumbbell",
+        primaryMuscle: "biceps",
+        unit: .pounds,
+        instructions: "Keep the elbow still while curling.",
+        isCustom: true)
       let routineExercise = RoutineExercise(
         exerciseName: exercise.name,
         unit: .pounds,
@@ -55,6 +63,7 @@
 
       context.insert(person)
       context.insert(exercise)
+      context.insert(customExercise)
       context.insert(routine)
       context.insert(completedWorkout)
       try? context.save()

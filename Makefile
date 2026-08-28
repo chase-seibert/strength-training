@@ -78,6 +78,7 @@ workout-navigation-ui-test:
 	  -destination '$(SIM_DESTINATION)' \
 	  -derivedDataPath build-ui-tests \
 	  CODE_SIGNING_ALLOWED=NO \
+	  -parallel-testing-enabled NO \
 	  -only-testing:StrengthLogUITests \
 	  test
 

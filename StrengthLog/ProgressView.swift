@@ -5,7 +5,11 @@ import SwiftUI
 struct ProgressView: View {
   @Environment(\.modelContext) private var context
   @Query private var routines: [Routine]
-  @Query(sort: \WorkoutSession.startedAt, order: .reverse) private var sessions: [WorkoutSession]
+  @Query(
+    filter: #Predicate<WorkoutSession> { $0.deletedAt == nil },
+    sort: \WorkoutSession.startedAt,
+    order: .reverse)
+  private var sessions: [WorkoutSession]
   @State private var pendingDeletion: WorkoutSession?
   @State private var showingDeleteConfirmation = false
 
@@ -71,7 +75,7 @@ struct ProgressView: View {
     } message: {
       if let session = pendingDeletion {
         Text(
-          "This permanently deletes the \(routineName(for: session)) workout from \(session.startedAt.formatted(date: .abbreviated, time: .shortened))."
+          "This moves the \(routineName(for: session)) workout from \(session.startedAt.formatted(date: .abbreviated, time: .shortened)) to Deleted Workouts, where it can be restored."
         )
       }
     }
@@ -100,7 +104,9 @@ struct ProgressView: View {
 
   private func deletePending() {
     guard let session = pendingDeletion else { return }
-    context.delete(session)
+    session.deletedAt = .now
+    session.isActive = false
+    session.endedAt = session.endedAt ?? .now
     try? context.save()
     pendingDeletion = nil
   }
@@ -165,7 +171,7 @@ struct SessionDetailView: View {
       Button("Cancel", role: .cancel) {}
     } message: {
       Text(
-        "This permanently deletes the \(routineName) workout from \(session.startedAt.formatted(date: .abbreviated, time: .shortened))."
+        "This moves the \(routineName) workout from \(session.startedAt.formatted(date: .abbreviated, time: .shortened)) to Deleted Workouts, where it can be restored."
       )
     }
   }
@@ -177,7 +183,9 @@ struct SessionDetailView: View {
   }
 
   private func delete() {
-    context.delete(session)
+    session.deletedAt = .now
+    session.isActive = false
+    session.endedAt = session.endedAt ?? .now
     try? context.save()
     dismiss()
   }

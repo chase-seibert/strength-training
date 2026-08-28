@@ -84,7 +84,9 @@ struct SettingsView: View {
   }
 
   private var exerciseCount: Int {
-    (try? context.fetchCount(FetchDescriptor<Exercise>())) ?? 0
+    let descriptor = FetchDescriptor<Exercise>(
+      predicate: #Predicate<Exercise> { $0.deletedAt == nil })
+    return (try? context.fetchCount(descriptor)) ?? 0
   }
 }
 

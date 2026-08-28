@@ -209,7 +209,9 @@ struct RootView: View {
   }
 
   private func delete(_ session: WorkoutSession) {
-    context.delete(session)
+    session.deletedAt = .now
+    session.isActive = false
+    session.endedAt = session.endedAt ?? .now
     try? context.save()
   }
 }
