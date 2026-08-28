@@ -52,6 +52,7 @@ struct ProgressView: View {
                     .font(.caption).foregroundStyle(.secondary)
                 }
               }
+              .accessibilityIdentifier("workout-history-\(routineName(for: session))")
               .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                 Button("Delete", systemImage: "trash", role: .destructive) {
                   requestDelete(session)

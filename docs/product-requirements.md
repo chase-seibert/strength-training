@@ -30,8 +30,9 @@
 
 - As a lifter, I want each session to preserve participant, exercise, measurement, reps, and completion, so that progress analysis has accurate source data.
 - As a lifter, I want to delete an unwanted workout from history or while it is open, so that my progress reflects the sessions I want to keep.
+- As a lifter, I want to remove every uncompleted set from the completed workouts shown for a day, so that abandoned planned sets do not remain in history.
 - As a lifter, I want the last session configuration to become the next routine defaults, so that progressive overload needs minimal setup.
-- As a lifter, I want a 30-day activity calendar, so that consistency is visible at a glance.
+- As a lifter, I want a paged Sunday-through-Saturday four-week activity calendar with routine symbols, colors, fallback acronyms, multi-workout counts, multi-person indicators, and a complete per-day workout summary, so that consistency is visible at a glance and each day's people, sets, reps, and measurements remain easy to inspect.
 - As a lifter, I want pounds-only total-volume charts for routines and history, so that weight-training trends are not mixed with incompatible units.
 - As a Hevy user, I want to choose which first-column routine names to create before importing history into one local profile, so that only relevant workouts, sets, notes, and metrics become editable local data.
 - As a Hevy user, I want every exercise from my selected routines shown with a suggested local match, an override, and an explicit skip option, so that routines and history are not silently attached to the wrong movement.
@@ -45,9 +46,10 @@
 - Each imported exercise retains both available source images for swipeable offline viewing.
 - Starting a routine snapshots the latest routine exercise structure and selected people, seeding each person's values from their latest session.
 - Active-workout set controls allow only the first incomplete set to be completed and only the latest completed set to be removed. Removing a set also removes every later incomplete set, while a numbered next-set control replaces the add icon.
+- Completed-day details show one Delete Uncompleted Sets action at the very bottom whenever unfinished sets remain. Its confirmation appears in a popover anchored directly to the action, and removes unfinished sets from every exercise shown while preserving completed sets.
 - A session is persisted when it starts; closing it requires no confirmation and does not change its workout meaning.
 - No path in the normal UI can start a second session while another is active.
-- The primary navigation is Workout, Routines, Exercises, Progress, and Settings; Settings contains People. Workout presents routine choice first, 30-day activity second, and recent workouts third.
+- The primary navigation is Workout, Routines, Exercises, Progress, and Settings; Settings contains People. Workout presents routine choice first, four-week activity second, and a conditional Deleted Workouts link last. Deleted workouts never appear in the activity calendar.
 - Routine creation and editing offer a curated appearance picker with activity icons and app-coordinated colors. Deleting a routine hides it throughout the active app and moves it to Deleted Routines, where it can be restored without changing workout history.
 - The Debug onboarding replay preserves and prefills existing people and routines without changing workout history or exercise data.
 - Hevy CSV import is available from Settings and as an iOS CSV document handler. It filters exercises and history by selected source routines, supports frequency/recency/alphabetical exercise sorting, always creates uniquely named routines without updating existing ones, remembers confirmed exercise mappings, permits unmapped exercises to be skipped, reports completion, and skips previously imported workouts.

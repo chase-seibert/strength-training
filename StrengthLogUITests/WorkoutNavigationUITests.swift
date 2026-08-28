@@ -30,21 +30,60 @@ final class WorkoutNavigationUITests: XCTestCase {
     XCTAssertTrue(app.navigationBars["Basic Workout"].exists)
   }
 
-  func testResumeCompletedWorkout() {
-    let resumeButton = app.buttons["resume-recent-workout-Basic Workout"]
-    XCTAssertTrue(resumeButton.waitForExistence(timeout: 5))
-    resumeButton.tap()
+  func testCalendarOpensEveryWorkoutForSelectedDay() {
+    let multiWorkoutDay = app.buttons.matching(
+      NSPredicate(format: "label CONTAINS %@", "2 workouts")
+    ).firstMatch
+    XCTAssertTrue(multiWorkoutDay.waitForExistence(timeout: 5))
+    XCTAssertEqual(
+      multiWorkoutDay.value as? String, "Lower Body, Basic Workout; Multiple people")
+    multiWorkoutDay.tap()
 
-    XCTAssertTrue(app.buttons["close-active-workout"].waitForExistence(timeout: 5))
-    XCTAssertTrue(app.navigationBars["Basic Workout"].exists)
+    XCTAssertTrue(app.staticTexts["Lower Body"].waitForExistence(timeout: 5))
+    XCTAssertTrue(app.staticTexts["Basic Workout"].exists)
+    XCTAssertTrue(app.staticTexts["Alex"].exists)
+    XCTAssertTrue(app.staticTexts["Jordan"].exists)
+    XCTAssertTrue(app.staticTexts["145 lb × 5 reps"].exists)
+    XCTAssertTrue(app.staticTexts["65 lb × 10 reps"].exists)
+
+    let cleanupButton = app.buttons["delete-uncompleted-sets"]
+    scrollToHittable(cleanupButton)
+    cleanupButton.tap()
+
+    let confirmCleanupButton = app.buttons["confirm-delete-uncompleted-sets"]
+    XCTAssertTrue(confirmCleanupButton.waitForExistence(timeout: 2))
+    confirmCleanupButton.tap()
+    XCTAssertTrue(cleanupButton.waitForNonExistence(timeout: 2))
   }
 
-  func testSoftDeleteAndRestoreRecentWorkout() {
-    let workoutRow = app.buttons["resume-recent-workout-Basic Workout"]
+  func testCalendarNavigatesBetweenFourWeekPeriods() {
+    XCTAssertFalse(app.staticTexts["Recent workouts"].exists)
+    XCTAssertFalse(
+      app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "resume-recent-workout"))
+        .firstMatch.exists)
+
+    let previousButton = app.buttons["activity-previous-period"]
+    let nextButton = app.buttons["activity-next-period"]
+    XCTAssertTrue(previousButton.waitForExistence(timeout: 5))
+    XCTAssertTrue(nextButton.exists)
+    XCTAssertFalse(nextButton.isEnabled)
+
+    previousButton.tap()
+    XCTAssertTrue(nextButton.isEnabled)
+
+    nextButton.tap()
+    XCTAssertFalse(nextButton.isEnabled)
+  }
+
+  func testSoftDeleteFromProgressExcludesCalendarAndRestores() {
+    app.tabBars.buttons["Progress"].tap()
+
+    let workoutRow = app.buttons["workout-history-Basic Workout"].firstMatch
     XCTAssertTrue(workoutRow.waitForExistence(timeout: 5))
+    scrollToHittable(workoutRow)
     workoutRow.swipeLeft()
 
-    let deleteButton = app.buttons["delete-recent-workout-Basic Workout"]
+    let deleteButton = app.buttons["Delete"]
     XCTAssertTrue(deleteButton.waitForExistence(timeout: 2))
     deleteButton.tap()
 
@@ -52,8 +91,14 @@ final class WorkoutNavigationUITests: XCTestCase {
     XCTAssertTrue(confirmButton.waitForExistence(timeout: 2))
     confirmButton.tap()
 
-    XCTAssertTrue(app.buttons["Deleted Workouts (1)"].waitForExistence(timeout: 5))
-    app.buttons["Deleted Workouts (1)"].tap()
+    app.tabBars.buttons["Workout"].tap()
+    XCTAssertFalse(
+      app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "2 workouts")).firstMatch
+        .exists)
+    let deletedWorkoutsButton = app.buttons["Deleted Workouts (1)"]
+    XCTAssertTrue(deletedWorkoutsButton.waitForExistence(timeout: 5))
+    scrollToHittable(deletedWorkoutsButton)
+    deletedWorkoutsButton.tap()
 
     let restoreButton = app.buttons["restore-workout-Basic Workout"]
     XCTAssertTrue(restoreButton.waitForExistence(timeout: 5))
@@ -80,5 +125,12 @@ final class WorkoutNavigationUITests: XCTestCase {
     XCTAssertTrue(restoreButton.waitForExistence(timeout: 5))
     restoreButton.tap()
     XCTAssertFalse(restoreButton.exists)
+  }
+
+  private func scrollToHittable(_ element: XCUIElement) {
+    for _ in 0..<8 where !element.isHittable {
+      app.swipeUp()
+    }
+    XCTAssertTrue(element.isHittable)
   }
 }

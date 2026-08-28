@@ -23,12 +23,6 @@ struct HomeView: View {
     self.onOpenWorkout = onOpenWorkout
   }
 
-  private var workoutsThisMonth: Int {
-    let threshold =
-      Calendar.current.date(byAdding: .day, value: -29, to: .now.startOfDay) ?? .distantPast
-    return sessions.filter { $0.startedAt >= threshold }.count
-  }
-
   var body: some View {
     ScrollView {
       VStack(alignment: .leading, spacing: 24) {
@@ -37,7 +31,7 @@ struct HomeView: View {
         }
         routineSection
         activityCard
-        if !sessions.isEmpty || !deletedSessions.isEmpty { recentWorkoutsSection }
+        if !deletedSessions.isEmpty { deletedWorkoutsLink }
       }
       .padding()
     }
@@ -77,15 +71,8 @@ struct HomeView: View {
   }
 
   private var activityCard: some View {
-    VStack(alignment: .leading, spacing: 16) {
-      HStack {
-        VStack(alignment: .leading, spacing: 3) {
-          SectionEyebrow(text: "Last 30 days")
-          Text("\(workoutsThisMonth) workouts")
-            .font(.title3.bold())
-        }
-      }
-      ActivityGrid(sessions: sessions)
+    VStack(alignment: .leading, spacing: 12) {
+      ActivityGrid(sessions: sessions, routines: allRoutines)
     }
     .padding()
     .background(.background, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
@@ -159,174 +146,19 @@ struct HomeView: View {
     }
   }
 
-  private var recentWorkoutsSection: some View {
-    VStack(alignment: .leading, spacing: 12) {
-      Text("Recent workouts").font(.title3.bold())
-      if !sessions.isEmpty {
-        VStack(spacing: 0) {
-          ForEach(Array(sessions.prefix(3).enumerated()), id: \.element.id) { index, session in
-            RecentWorkoutRow(
-              session: session,
-              routineName: routineName(for: session),
-              onOpen: { open(session) },
-              onDelete: { softDelete(session) })
-
-            if index < min(sessions.count, 3) - 1 {
-              Divider().padding(.leading, 64)
-            }
-          }
-        }
-        .background(.background, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-      }
-
-      if !deletedSessions.isEmpty {
-        NavigationLink {
-          DeletedWorkoutsView()
-        } label: {
-          Label("Deleted Workouts (\(deletedSessions.count))", systemImage: "trash")
-            .font(.subheadline.weight(.semibold))
-            .frame(maxWidth: .infinity)
-        }
-        .buttonStyle(.bordered)
-      }
+  private var deletedWorkoutsLink: some View {
+    NavigationLink {
+      DeletedWorkoutsView()
+    } label: {
+      Label("Deleted Workouts (\(deletedSessions.count))", systemImage: "trash")
+        .font(.subheadline.weight(.semibold))
+        .frame(maxWidth: .infinity)
     }
-  }
-
-  private func open(_ session: WorkoutSession) {
-    for activeSession in activeSessions where activeSession.id != session.id {
-      activeSession.endedAt = activeSession.endedAt ?? .now
-      activeSession.isActive = false
-    }
-    session.endedAt = nil
-    session.isActive = true
-    try? context.save()
-    onOpenWorkout(session)
-  }
-
-  private func softDelete(_ session: WorkoutSession) {
-    session.deletedAt = .now
-    session.isActive = false
-    session.endedAt = session.endedAt ?? .now
-    try? context.save()
+    .buttonStyle(.bordered)
   }
 
   private func routineName(for session: WorkoutSession) -> String {
     allRoutines.first(where: { $0.id == session.routineID })?.name ?? "Unknown Routine"
-  }
-}
-
-private struct RecentWorkoutRow: View {
-  let session: WorkoutSession
-  let routineName: String
-  let onOpen: () -> Void
-  let onDelete: () -> Void
-  @State private var showingDeleteConfirmation = false
-  @State private var isDeleteRevealed = false
-  @State private var dragOffset: CGFloat = 0
-
-  private let deleteActionWidth: CGFloat = 92
-
-  var body: some View {
-    ZStack(alignment: .trailing) {
-      Button(role: .destructive) {
-        showingDeleteConfirmation = true
-      } label: {
-        Label("Delete", systemImage: "trash")
-          .labelStyle(.iconOnly)
-          .font(.headline)
-          .foregroundStyle(.white)
-          .frame(width: deleteActionWidth)
-          .frame(maxHeight: .infinity)
-          .background(.red)
-      }
-      .buttonStyle(.plain)
-      .accessibilityLabel("Delete \(routineName) workout")
-      .accessibilityIdentifier("delete-recent-workout-\(routineName)")
-      .confirmationDialog(
-        "Delete workout?",
-        isPresented: $showingDeleteConfirmation,
-        titleVisibility: .visible
-      ) {
-        Button("Delete Workout", role: .destructive) {
-          onDelete()
-          isDeleteRevealed = false
-        }
-        Button("Cancel", role: .cancel) {}
-      } message: {
-        Text(
-          "This moves the \(routineName) workout from \(session.startedAt.formatted(date: .abbreviated, time: .shortened)) to Deleted Workouts, where it can be restored."
-        )
-      }
-
-      HStack(spacing: 12) {
-        Image(systemName: "clock.arrow.circlepath")
-          .font(.headline)
-          .foregroundStyle(Theme.navy)
-          .frame(width: 38, height: 38)
-          .background(Theme.mint.opacity(0.24), in: Circle())
-        VStack(alignment: .leading, spacing: 3) {
-          Text(routineName)
-            .font(.headline)
-            .foregroundStyle(.primary)
-          Text(session.startedAt.formatted(date: .abbreviated, time: .shortened))
-            .font(.subheadline)
-            .foregroundStyle(.secondary)
-        }
-        Spacer()
-        Text("\(session.completedSetCount)/\(session.totalSetCount)")
-          .font(.caption.weight(.semibold))
-          .foregroundStyle(.secondary)
-        Image(systemName: "chevron.right")
-          .font(.caption.bold())
-          .foregroundStyle(.tertiary)
-      }
-      .padding(.horizontal, 14)
-      .padding(.vertical, 12)
-      .contentShape(Rectangle())
-      .background(.background)
-      .onTapGesture {
-        if isDeleteRevealed {
-          withAnimation(.snappy) { isDeleteRevealed = false }
-        } else {
-          onOpen()
-        }
-      }
-      .accessibilityElement(children: .ignore)
-      .accessibilityAddTraits(.isButton)
-      .accessibilityLabel(routineName)
-      .accessibilityValue(
-        "\(session.startedAt.formatted(date: .abbreviated, time: .shortened)), \(session.completedSetCount) of \(session.totalSetCount) sets"
-      )
-      .accessibilityIdentifier("resume-recent-workout-\(routineName)")
-      .accessibilityAction { onOpen() }
-      .offset(x: rowOffset)
-      .highPriorityGesture(
-        DragGesture(minimumDistance: 12)
-          .onChanged { value in
-            let startingOffset = isDeleteRevealed ? -deleteActionWidth : 0
-            dragOffset =
-              min(0, max(-deleteActionWidth, startingOffset + value.translation.width))
-              - startingOffset
-          }
-          .onEnded { value in
-            let horizontalTravel = min(value.translation.width, value.predictedEndTranslation.width)
-            withAnimation(.snappy) {
-              if isDeleteRevealed {
-                isDeleteRevealed = value.translation.width < deleteActionWidth / 2
-              } else {
-                isDeleteRevealed = horizontalTravel < -deleteActionWidth / 2
-              }
-              dragOffset = 0
-            }
-          })
-    }
-    .clipped()
-  }
-
-  private var rowOffset: CGFloat {
-    let base = isDeleteRevealed ? -deleteActionWidth : 0
-    return min(0, max(-deleteActionWidth, base + dragOffset))
   }
 }
 
@@ -390,29 +222,518 @@ struct DeletedWorkoutsView: View {
 
 struct ActivityGrid: View {
   let sessions: [WorkoutSession]
-  private let columns = Array(repeating: GridItem(.flexible(), spacing: 5), count: 10)
+  let routines: [Routine]
+  @State private var periodOffset = 0
+  private let calendar = Calendar.current
+  private let columns = Array(repeating: GridItem(.flexible(), spacing: 5), count: 7)
+  private let weekdayNames = [
+    (short: "S", full: "Sunday"),
+    (short: "M", full: "Monday"),
+    (short: "T", full: "Tuesday"),
+    (short: "W", full: "Wednesday"),
+    (short: "T", full: "Thursday"),
+    (short: "F", full: "Friday"),
+    (short: "S", full: "Saturday"),
+  ]
 
-  private var days: [Date] {
-    (0..<30).compactMap {
-      Calendar.current.date(byAdding: .day, value: $0 - 29, to: .now.startOfDay)
-    }
+  private var today: Date { calendar.startOfDay(for: .now) }
+
+  private var currentWeekStart: Date {
+    let daysFromSunday = calendar.component(.weekday, from: today) - 1
+    return calendar.date(byAdding: .day, value: -daysFromSunday, to: today) ?? today
+  }
+
+  private var periodStart: Date {
+    calendar.date(
+      byAdding: .day,
+      value: -21 + (periodOffset * 28),
+      to: currentWeekStart) ?? currentWeekStart
+  }
+
+  private var periodEnd: Date {
+    calendar.date(byAdding: .day, value: 27, to: periodStart) ?? periodStart
+  }
+
+  private var periodEndExclusive: Date {
+    calendar.date(byAdding: .day, value: 28, to: periodStart) ?? periodEnd
+  }
+
+  private var calendarDays: [Date] {
+    (0..<28).compactMap { calendar.date(byAdding: .day, value: $0, to: periodStart) }
+  }
+
+  private var sessionsByDay: [Date: [WorkoutSession]] {
+    Dictionary(grouping: sessions) { calendar.startOfDay(for: $0.startedAt) }
+  }
+
+  private var visibleWorkoutCount: Int {
+    sessions.filter { $0.startedAt >= periodStart && $0.startedAt < periodEndExclusive }.count
+  }
+
+  private var periodLabel: String {
+    let start = periodStart.formatted(.dateTime.month(.abbreviated).day())
+    let end = periodEnd.formatted(.dateTime.month(.abbreviated).day())
+    return "\(start) – \(end)"
   }
 
   var body: some View {
-    LazyVGrid(columns: columns, spacing: 5) {
-      ForEach(days, id: \.self) { day in
-        let count = sessions.filter { Calendar.current.isDate($0.startedAt, inSameDayAs: day) }
-          .count
-        RoundedRectangle(cornerRadius: 4)
-          .fill(
-            count == 0
-              ? Color.secondary.opacity(0.12)
-              : Theme.coral.opacity(min(1, 0.48 + Double(count) * 0.25))
+    VStack(alignment: .leading, spacing: 10) {
+      HStack(alignment: .center, spacing: 12) {
+        VStack(alignment: .leading, spacing: 2) {
+          SectionEyebrow(text: "Last 4 weeks")
+          Text(
+            "\(visibleWorkoutCount) workout\(visibleWorkoutCount == 1 ? "" : "s")"
           )
-          .aspectRatio(1, contentMode: .fit)
-          .accessibilityLabel(
-            "\(day.formatted(date: .abbreviated, time: .omitted)): \(count) workouts")
+          .font(.title3.bold())
+          Text(periodLabel)
+            .font(.caption)
+            .foregroundStyle(.secondary)
+        }
+
+        Spacer()
+
+        HStack(spacing: 8) {
+          Button {
+            periodOffset -= 1
+          } label: {
+            Image(systemName: "chevron.left")
+              .frame(width: 30, height: 30)
+          }
+          .buttonStyle(.bordered)
+          .accessibilityLabel("Previous 4 weeks")
+          .accessibilityIdentifier("activity-previous-period")
+
+          Button {
+            periodOffset += 1
+          } label: {
+            Image(systemName: "chevron.right")
+              .frame(width: 30, height: 30)
+          }
+          .buttonStyle(.bordered)
+          .disabled(periodOffset >= 0)
+          .accessibilityLabel("Next 4 weeks")
+          .accessibilityIdentifier("activity-next-period")
+        }
+      }
+
+      LazyVGrid(columns: columns, spacing: 4) {
+        ForEach(weekdayNames, id: \.full) { weekday in
+          Text(weekday.short)
+            .font(.caption2.weight(.semibold))
+            .foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity)
+            .accessibilityLabel(weekday.full)
+        }
+
+        ForEach(calendarDays, id: \.self) { day in
+          if day <= today {
+            let daySessions = sessionsByDay[day, default: []]
+            let markers = routineMarkers(for: daySessions)
+            let participantCount = participantCount(for: daySessions)
+            NavigationLink {
+              DayWorkoutSummaryView(day: day, sessions: daySessions, routines: routines)
+            } label: {
+              ActivityDayCell(
+                workoutCount: daySessions.count,
+                routineMarkers: markers,
+                participantCount: participantCount,
+                isToday: calendar.isDateInToday(day))
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(
+              "\(day.formatted(date: .abbreviated, time: .omitted)): \(daySessions.count) workout\(daySessions.count == 1 ? "" : "s")"
+            )
+            .accessibilityValue(
+              markers.map(\.name).joined(separator: ", ")
+                + (participantCount > 1 ? "; Multiple people" : "")
+            )
+            .accessibilityHint("Shows workout details for this day")
+          } else {
+            ActivityPaddingDayCell()
+              .accessibilityHidden(true)
+          }
+        }
+      }
+      .id(periodOffset)
+    }
+  }
+
+  private func routineMarkers(for daySessions: [WorkoutSession]) -> [ActivityRoutineMarker] {
+    var markers: [ActivityRoutineMarker] = []
+    for session in daySessions.sorted(by: { $0.startedAt < $1.startedAt }) {
+      let routine = routines.first(where: { $0.id == session.routineID })
+      let name = routine?.name ?? session.exercises.first?.exerciseName ?? "Workout"
+      let symbol = routine?.symbol.trimmingCharacters(in: .whitespacesAndNewlines)
+      let marker = ActivityRoutineMarker(
+        id: session.routineID,
+        name: name,
+        symbol: symbol?.isEmpty == false ? symbol : nil,
+        acronym: acronym(for: name),
+        colorHex: routine?.colorHex ?? "FF5A45")
+      if !markers.contains(where: { $0.id == marker.id }) { markers.append(marker) }
+    }
+    return markers
+  }
+
+  private func participantCount(for daySessions: [WorkoutSession]) -> Int {
+    Set(
+      daySessions.flatMap(\.participantNames).map {
+        $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+      }
+    ).count
+  }
+
+  private func acronym(for name: String) -> String {
+    let words = name.split(whereSeparator: { !$0.isLetter && !$0.isNumber })
+    if words.count > 1 {
+      return words.prefix(3).compactMap(\.first).map(String.init).joined().uppercased()
+    }
+    return String(words.first?.prefix(2) ?? "W").uppercased()
+  }
+}
+
+private struct ActivityRoutineMarker: Identifiable {
+  let id: UUID
+  let name: String
+  let symbol: String?
+  let acronym: String
+  let colorHex: String
+}
+
+private struct ActivityPaddingDayCell: View {
+  var body: some View {
+    RoundedRectangle(cornerRadius: 8, style: .continuous)
+      .fill(Color.secondary.opacity(0.04))
+      .aspectRatio(1.25, contentMode: .fit)
+  }
+}
+
+private struct ActivityDayCell: View {
+  let workoutCount: Int
+  let routineMarkers: [ActivityRoutineMarker]
+  let participantCount: Int
+  let isToday: Bool
+
+  private var accentColor: Color {
+    routineMarkers.first.map { Color(hex: $0.colorHex) } ?? Theme.coral
+  }
+
+  var body: some View {
+    ZStack {
+      RoundedRectangle(cornerRadius: 8, style: .continuous)
+        .fill(workoutCount == 0 ? Color.secondary.opacity(0.10) : accentColor.opacity(0.16))
+        .overlay {
+          if isToday {
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+              .stroke(accentColor, lineWidth: 1.5)
+          }
+        }
+
+      if workoutCount > 0 {
+        HStack(spacing: 3) {
+          ForEach(routineMarkers.prefix(3)) { marker in
+            if let symbol = marker.symbol {
+              Image(systemName: symbol)
+                .font(.caption.weight(.bold))
+                .foregroundStyle(Color(hex: marker.colorHex))
+            } else {
+              Text(marker.acronym)
+                .font(.caption2.weight(.heavy))
+                .foregroundStyle(Color(hex: marker.colorHex))
+            }
+          }
+        }
+        .lineLimit(1)
+        .minimumScaleFactor(0.65)
+        .padding(.horizontal, workoutCount > 1 ? 10 : 4)
+      }
+
+      if workoutCount > 1 {
+        Text("\(workoutCount)")
+          .font(.system(size: 9, weight: .bold))
+          .foregroundStyle(.white)
+          .frame(minWidth: 16, minHeight: 16)
+          .background(accentColor, in: Circle())
+          .padding(3)
+          .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+      }
+
+      if participantCount > 1 {
+        Image(systemName: "person.2.fill")
+          .font(.system(size: 7, weight: .bold))
+          .foregroundStyle(accentColor)
+          .frame(width: 16, height: 16)
+          .background(.background.opacity(0.92), in: Circle())
+          .padding(3)
+          .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+          .accessibilityHidden(true)
       }
     }
+    .aspectRatio(1.25, contentMode: .fit)
+    .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+  }
+}
+
+private struct DayWorkoutSummaryView: View {
+  @Environment(\.modelContext) private var context
+  @Query(sort: \PersonProfile.sortOrder) private var people: [PersonProfile]
+  let day: Date
+  let sessions: [WorkoutSession]
+  let routines: [Routine]
+  @State private var showingCleanupConfirmation = false
+  @State private var didDeleteUncompletedSets = false
+
+  private var orderedSessions: [WorkoutSession] {
+    sessions.sorted { $0.startedAt < $1.startedAt }
+  }
+
+  var body: some View {
+    Group {
+      if orderedSessions.isEmpty {
+        ContentUnavailableView(
+          "No Workouts",
+          systemImage: "calendar",
+          description: Text("There are no workouts recorded for this day."))
+      } else {
+        List {
+          ForEach(orderedSessions) { session in
+            Section {
+              completedRoutineTile(for: session)
+                .listRowInsets(EdgeInsets())
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+
+              completedWorkoutBody(for: session)
+                .listRowInsets(EdgeInsets())
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+            }
+          }
+
+          if uncompletedSetCount > 0 && !didDeleteUncompletedSets {
+            Section {
+              uncompletedSetsCleanup
+                .listRowInsets(EdgeInsets())
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+            }
+          }
+        }
+        .listStyle(.insetGrouped)
+      }
+    }
+    .navigationTitle(day.formatted(date: .abbreviated, time: .omitted))
+    .navigationBarTitleDisplayMode(.inline)
+  }
+
+  private var uncompletedSetCount: Int {
+    orderedSessions.reduce(0) { count, session in
+      count
+        + session.exercises.flatMap(\.participants)
+        .filter { session.isParticipantActive($0.participantName) }
+        .flatMap(\.sets)
+        .filter { !$0.isCompleted }
+        .count
+    }
+  }
+
+  private func deleteAllUncompletedSets() {
+    for session in orderedSessions {
+      for exercise in session.exercises {
+        for participant in exercise.participants
+        where session.isParticipantActive(participant.participantName) {
+          let uncompletedSets = participant.sets.filter { !$0.isCompleted }
+          let uncompletedIDs = Set(uncompletedSets.map(\.id))
+          participant.sets.removeAll { uncompletedIDs.contains($0.id) }
+          for set in uncompletedSets { context.delete(set) }
+          for (index, set) in participant.orderedSets.enumerated() { set.sortOrder = index }
+        }
+      }
+    }
+    try? context.save()
+    showingCleanupConfirmation = false
+    didDeleteUncompletedSets = true
+  }
+
+  private func completedWorkoutBody(for session: WorkoutSession) -> some View {
+    let exercises = session.exercises.sorted(by: { $0.sortOrder < $1.sortOrder })
+
+    return VStack(alignment: .leading, spacing: 14) {
+      VStack(alignment: .leading, spacing: 6) {
+        Label(
+          session.startedAt.formatted(date: .omitted, time: .shortened),
+          systemImage: "clock")
+        Label(peopleSummary(for: session), systemImage: "person.2")
+        Label(
+          "\(session.completedSetCount) of \(session.totalSetCount) sets",
+          systemImage: "checkmark.circle")
+      }
+      .font(.subheadline)
+      .foregroundStyle(.secondary)
+
+      ForEach(Array(exercises.enumerated()), id: \.element.id) { exerciseIndex, exercise in
+        Divider()
+
+        VStack(alignment: .leading, spacing: 12) {
+          Text(exercise.exerciseName)
+            .font(.headline)
+
+          ForEach(
+            exercise.participants.filter {
+              session.isParticipantActive($0.participantName)
+            }
+          ) { participant in
+            let participantColor = color(for: participant.participantName)
+            VStack(alignment: .leading, spacing: 7) {
+              Text(participant.participantName)
+                .font(.subheadline.weight(.semibold))
+
+              ForEach(Array(participant.orderedSets.enumerated()), id: \.element.id) {
+                index, set in
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                  Text("Set \(index + 1)")
+                    .foregroundStyle(.secondary)
+                  Spacer(minLength: 8)
+                  Text(setSummary(set, participant: participant, unit: exercise.unit))
+                    .multilineTextAlignment(.trailing)
+                    .monospacedDigit()
+                  Image(
+                    systemName: set.isCompleted ? "checkmark" : "\(index + 1).circle.fill"
+                  )
+                  .font(.caption2.bold())
+                  .foregroundStyle(set.isCompleted ? .white : participantColor)
+                  .frame(width: 26, height: 24)
+                  .background(
+                    set.isCompleted ? participantColor : participantColor.opacity(0.12),
+                    in: RoundedRectangle(cornerRadius: 7)
+                  )
+                  .accessibilityLabel(set.isCompleted ? "Completed" : "Not completed")
+                }
+                .font(.caption)
+              }
+            }
+          }
+        }
+        .padding(.bottom, exerciseIndex == exercises.count - 1 ? 0 : 2)
+      }
+    }
+    .padding(14)
+    .background(.background, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+    .padding(.bottom, 4)
+  }
+
+  private var uncompletedSetsCleanup: some View {
+    Button(role: .destructive) {
+      showingCleanupConfirmation = true
+    } label: {
+      Label("Delete Uncompleted Sets", systemImage: "trash")
+        .font(.subheadline.weight(.semibold))
+        .frame(maxWidth: .infinity)
+    }
+    .buttonStyle(.bordered)
+    .accessibilityIdentifier("delete-uncompleted-sets")
+    .popover(
+      isPresented: $showingCleanupConfirmation,
+      attachmentAnchor: .rect(.bounds),
+      arrowEdge: .bottom
+    ) {
+      cleanupConfirmationPopover
+        .presentationCompactAdaptation(.popover)
+    }
+    .padding(14)
+    .background(.background, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+    .padding(.vertical, 4)
+  }
+
+  private var cleanupConfirmationPopover: some View {
+    VStack(alignment: .leading, spacing: 14) {
+      VStack(alignment: .leading, spacing: 5) {
+        Text("Delete uncompleted sets?")
+          .font(.headline)
+        Text(
+          "This removes \(uncompletedSetCount) uncompleted set\(uncompletedSetCount == 1 ? "" : "s") across every exercise shown. Completed sets will stay intact."
+        )
+        .font(.subheadline)
+        .foregroundStyle(.secondary)
+      }
+
+      HStack {
+        Button("Cancel") {
+          showingCleanupConfirmation = false
+        }
+        .buttonStyle(.bordered)
+
+        Spacer()
+
+        Button("Delete Sets", role: .destructive) {
+          deleteAllUncompletedSets()
+        }
+        .buttonStyle(.borderedProminent)
+        .tint(.red)
+        .accessibilityIdentifier("confirm-delete-uncompleted-sets")
+      }
+    }
+    .padding()
+    .frame(width: 300)
+  }
+
+  private func completedRoutineTile(for session: WorkoutSession) -> some View {
+    let routine = routines.first(where: { $0.id == session.routineID })
+    let name = routine?.name ?? "Unknown Routine"
+    let symbol = routine?.symbol ?? "dumbbell.fill"
+    let color = Color(hex: routine?.colorHex ?? "FF5A45")
+    let exerciseCount = session.exercises.count
+
+    return HStack(spacing: 14) {
+      Image(systemName: symbol)
+        .font(.title2)
+        .foregroundStyle(color)
+        .frame(width: 48, height: 48)
+        .background(color.opacity(0.12), in: RoundedRectangle(cornerRadius: 14))
+        .accessibilityHidden(true)
+
+      VStack(alignment: .leading, spacing: 4) {
+        Text(name)
+          .font(.headline)
+          .foregroundStyle(.primary)
+        Text("\(exerciseCount) exercise\(exerciseCount == 1 ? "" : "s")")
+          .font(.subheadline)
+          .foregroundStyle(.secondary)
+      }
+
+      Spacer()
+    }
+    .padding(14)
+    .background(.background, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+    .padding(.vertical, 4)
+  }
+
+  private func peopleSummary(for session: WorkoutSession) -> String {
+    let names = session.participantNames
+    return names.isEmpty ? "No people recorded" : names.joined(separator: ", ")
+  }
+
+  private func color(for participantName: String) -> Color {
+    let colorHex =
+      people.first {
+        $0.name.caseInsensitiveCompare(participantName) == .orderedSame
+      }?.colorHex ?? "FF5A45"
+    return Color(hex: colorHex)
+  }
+
+  private func setSummary(
+    _ set: WorkoutSet, participant: ParticipantLog, unit: TrackingUnit
+  ) -> String {
+    var parts: [String] = []
+    if let measurement = set.measurement
+      ?? (participant.measurement == 0 ? nil : participant.measurement)
+    {
+      parts.append("\(measurement.tidy) \(unit.label)")
+    }
+    if set.reps > 0 { parts.append("\(set.reps) reps") }
+    if let distance = set.distanceMiles { parts.append("\(distance.tidy) mi") }
+    if let duration = set.durationSeconds { parts.append("\(duration.tidy) sec") }
+    if let rpe = set.rpe { parts.append("RPE \(rpe.tidy)") }
+    return parts.isEmpty ? "No metrics" : parts.joined(separator: " × ")
   }
 }

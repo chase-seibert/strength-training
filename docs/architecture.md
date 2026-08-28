@@ -6,7 +6,7 @@ StrengthLog is a dependency-free SwiftUI app targeting iOS 17 and later. SwiftDa
 
 The resting UI is organized around five tabs:
 
-- Workout: available routines first, then 30-day activity and direct reopening for the three most recent workouts.
+- Workout: available routines first, then paged four-week activity and a conditional Deleted Workouts restoration link.
 - Routines: routine composition, naming, icon and color selection, ordering, and recoverable deletion.
 - Exercises: catalog browsing and custom exercises.
 - Progress: aggregate pounds volume and immutable session snapshots.
@@ -22,7 +22,7 @@ In Debug builds, Settings also links to a Developer menu. Its replay action clea
 
 Starting a routine immediately snapshots that graph into a persisted `WorkoutSession`. The start sheet defaults to the people from the most recent session and permits a quick subset toggle. Turning a person off only removes them from the session's visible participant set; their logs remain in the session so turning them back on is non-destructive. Session logs are independent objects, so changing a routine later does not rewrite exercise history; the current routine name is resolved from the session's stable `routineID` whenever history is displayed. During a workout the app edits session measurement, reps, completion, visibility, and sets directly. `ParticipantLog` enforces a contiguous set sequence: only the first incomplete set can be completed, only the latest completed set can be removed, removal truncates that set and every later incomplete set, and completing the numbered next-set control appends a completed set. The latest saved session is the next-time default source for each person's weights, reps, and set structure.
 
-Only one session can be open in the app UI. When one is open, the root replaces the entire tab interface with its workout editor. Done returns to the five resting tabs and performs the save/default-update path. Any log can be reopened directly from Workout or Progress without confirmation. The persisted `isActive` and `endedAt` fields remain as presentation and migration plumbing, not as workout completion or timing concepts.
+Only one session can be open in the app UI. When one is open, the root replaces the entire tab interface with its workout editor. Done returns to the five resting tabs and performs the save/default-update path. Completed logs can be inspected from Workout's calendar, while Progress retains the explicit reopen action. The persisted `isActive` and `endedAt` fields remain as presentation and migration plumbing, not as workout completion or timing concepts.
 
 Both `RoutineExercise` and `ExerciseLog` use explicit `sortOrder` values. Open-workout moves rewrite those values after every reorder. Routine edit mode instead snapshots its name, icon, color, and ordered exercise references into draft state: deletion, reordering, and appearance changes refresh that draft immediately, Cancel discards it, and Save applies relationship removals, child deletion, appearance, and final sort-order values in one persistence operation. Deleting the routine itself sets `deletedAt`, preserving its relationships and all independent workout history. A running workout can append catalog exercises with participant logs for the current workout crew; additions remain part of that session snapshot.
 
