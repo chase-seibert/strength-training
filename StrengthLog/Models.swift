@@ -2,6 +2,16 @@ import Foundation
 import SwiftData
 import SwiftUI
 
+enum WorkoutPreferences {
+  static let defaultRepsKey = "defaultWorkoutReps"
+  static let fallbackReps = 8
+
+  static var defaultReps: Int {
+    let stored = UserDefaults.standard.integer(forKey: defaultRepsKey)
+    return stored > 0 ? stored : fallbackReps
+  }
+}
+
 enum TrackingUnit: String, CaseIterable, Codable, Identifiable {
   case pounds
   case kilograms
@@ -345,7 +355,7 @@ final class WorkoutSession {
       ParticipantLog(
         participantName: name,
         measurement: 0,
-        sets: (0..<3).map { WorkoutSet(sortOrder: $0, reps: 10) })
+        sets: (0..<3).map { WorkoutSet(sortOrder: $0, reps: WorkoutPreferences.defaultReps) })
     }
     exercises.append(
       ExerciseLog(
@@ -365,12 +375,13 @@ final class ExerciseLog {
   var supersetID: String?
   var unitRaw: String
   var sortOrder: Int
-  var isFinished: Bool
+  var isBilateral: Bool = false
   @Relationship(deleteRule: .cascade) var participants: [ParticipantLog]
 
   init(
     exerciseName: String, unit: TrackingUnit, sortOrder: Int,
-    participants: [ParticipantLog], notes: String? = nil, supersetID: String? = nil
+    participants: [ParticipantLog], notes: String? = nil, supersetID: String? = nil,
+    isBilateral: Bool = false
   ) {
     id = UUID()
     self.exerciseName = exerciseName
@@ -378,7 +389,7 @@ final class ExerciseLog {
     self.supersetID = supersetID
     unitRaw = unit.rawValue
     self.sortOrder = sortOrder
-    isFinished = false
+    self.isBilateral = isBilateral
     self.participants = participants
   }
 
@@ -412,7 +423,7 @@ final class ParticipantLog {
   }
 
   var nextSetReps: Int {
-    orderedSets.last?.reps ?? 10
+    orderedSets.last?.reps ?? WorkoutPreferences.defaultReps
   }
 
   func canToggleCompletion(of set: WorkoutSet) -> Bool {
@@ -429,16 +440,14 @@ final class ParticipantLog {
     guard canToggleCompletion(of: set) else { return [] }
     if !set.isCompleted {
       set.isCompleted = true
+      set.isLeftCompleted = true
+      set.isRightCompleted = true
       return []
     }
-
-    let ordered = orderedSets
-    guard let index = ordered.firstIndex(where: { $0.id == set.id }) else { return [] }
-    let removed = Array(ordered[index...])
-    let removedIDs = Set(removed.map(\.id))
-    sets.removeAll { removedIDs.contains($0.id) }
-    normalizeSetOrder()
-    return removed
+    set.isCompleted = false
+    set.isLeftCompleted = false
+    set.isRightCompleted = false
+    return []
   }
 
   @discardableResult
@@ -447,8 +456,11 @@ final class ParticipantLog {
     normalizeSetOrder()
     let set = WorkoutSet(
       sortOrder: sets.count,
-      reps: sets.sorted(by: { $0.sortOrder < $1.sortOrder }).last?.reps ?? 10,
+      reps: sets.sorted(by: { $0.sortOrder < $1.sortOrder }).last?.reps
+        ?? WorkoutPreferences.defaultReps,
       isCompleted: true)
+    set.isLeftCompleted = true
+    set.isRightCompleted = true
     sets.append(set)
     return set
   }
@@ -471,11 +483,16 @@ final class WorkoutSet {
   var durationSeconds: Double?
   var rpe: Double?
   var setTypeRaw: String?
+  var leftReps: Int?
+  var rightReps: Int?
+  var isLeftCompleted: Bool = false
+  var isRightCompleted: Bool = false
 
   init(
     sortOrder: Int, reps: Int, isCompleted: Bool = false, measurement: Double? = nil,
     distanceMiles: Double? = nil, durationSeconds: Double? = nil, rpe: Double? = nil,
-    setType: String? = nil
+    setType: String? = nil, leftReps: Int? = nil, rightReps: Int? = nil,
+    isLeftCompleted: Bool? = nil, isRightCompleted: Bool? = nil
   ) {
     id = UUID()
     self.sortOrder = sortOrder
@@ -486,7 +503,47 @@ final class WorkoutSet {
     self.durationSeconds = durationSeconds
     self.rpe = rpe
     setTypeRaw = setType
+    self.leftReps = leftReps
+    self.rightReps = rightReps
+    self.isLeftCompleted = isLeftCompleted ?? isCompleted
+    self.isRightCompleted = isRightCompleted ?? isCompleted
   }
+
+  func reps(for side: WorkoutSide) -> Int {
+    switch side {
+    case .left: leftReps ?? reps
+    case .right: rightReps ?? reps
+    }
+  }
+
+  func setReps(_ value: Int, for side: WorkoutSide) {
+    switch side {
+    case .left: leftReps = value
+    case .right: rightReps = value
+    }
+  }
+
+  func isCompleted(on side: WorkoutSide) -> Bool {
+    switch side {
+    case .left: isLeftCompleted
+    case .right: isRightCompleted
+    }
+  }
+
+  func toggleCompletion(on side: WorkoutSide) {
+    switch side {
+    case .left: isLeftCompleted.toggle()
+    case .right: isRightCompleted.toggle()
+    }
+    isCompleted = isLeftCompleted && isRightCompleted
+  }
+}
+
+enum WorkoutSide: String, CaseIterable, Identifiable {
+  case left = "L"
+  case right = "R"
+
+  var id: String { rawValue }
 }
 
 @Model

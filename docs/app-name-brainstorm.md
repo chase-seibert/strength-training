@@ -12,7 +12,89 @@ The app is a fast, friendly strength-training log for people who may work out al
 
 The name does not need to explain every feature. The icon, subtitle, and App Store description can make the workout-logging purpose explicit.
 
-## Current finalists
+## Current direction: LiftChase
+
+As of August 28, 2026, **LiftChase** is the preferred working name. It follows the Chase-based portfolio strategy documented in the user-level app naming guidance: a one-word CamelCase compound with `Chase` as the suffix and a first word that represents something the customer genuinely pursues.
+
+**LiftChase** is short, easy to say and spell, clearly related to strength training, and more distinctive than the crowded `Gym`, `Workout`, `Tracker`, and `Log` naming patterns. The shared-workout differentiator can be expressed in the App Store subtitle instead of forcing the entire feature set into the name.
+
+- **Proposed App Store name:** LiftChase
+- **Proposed subtitle:** *Shared strength workout log*
+- **Spoken positioning:** “LiftChase keeps every lifter's sets, weights, and progress together.”
+- **Temporary local display name:** Lift Chase
+
+The temporary display name intentionally uses a space so it reads naturally beneath the app icon during local testing. It does not rename the Xcode project, target, scheme, product, bundle identifier, or repository.
+
+## App Store naming survey
+
+On August 28, 2026, four broad searches of Apple's public U.S. App Store catalog returned 540 unique relevant titles. The most common naming words were:
+
+| Word | Titles containing the word |
+| --- | ---: |
+| Workout | 284 |
+| Tracker | 231 |
+| Gym | 182 |
+| Log | 139 |
+| Strength | 55 |
+| Fitness | 53 |
+| Training | 45 |
+| Lift | 14 |
+
+The recognizable products generally use one of three approaches:
+
+- Standalone brands such as **Hevy**, **Strong**, **Fitbod**, and **JEFIT**.
+- Fitness compounds such as **StrongLifts**, **StrengthLog**, **RepCount**, **HeavySet**, and **Liftin'**.
+- Generic keyword stacks such as “Gym Workout Tracker Log,” which may perform a descriptive search function but are difficult to remember or defend as brands.
+
+This supports using a compact product name such as **LiftChase** and putting category keywords in the subtitle.
+
+## Chase-suffix candidates
+
+| Rank | Name | Strongest quality | Main tension |
+| ---: | --- | --- | --- |
+| 1 | **LiftChase** | Best balance of clarity, memorability, and portfolio fit. | “Lift” is common in adjacent fitness compounds. |
+| 2 | **ProgressChase** | Emphasizes the durable customer benefit. | Does not immediately communicate strength training. |
+| 3 | **NextRepChase** | Motivational and native to the workout experience. | Longer and slightly more slogan-like. |
+| 4 | **VolumeChase** | Uses authentic lifting vocabulary. | “Volume” is ambiguous outside fitness. |
+| 5 | **StreakChase** | Strong consistency and habit message. | Makes streaks feel like the app's central feature. |
+| 6 | **GainsChase** | Natural, familiar gym language. | Sits close to existing apps named Gains. |
+| 7 | **OverloadChase** | Connects directly to progressive overload. | Technical and potentially intimidating to beginners. |
+| 8 | **MilestoneChase** | Positive and extensible beyond lifting. | Comparatively long. |
+| 9 | **FormChase** | Approachable and technique-oriented. | Undersells logging and progression. |
+| 10 | **PeakChase** | Aspirational and compact. | Semantically close to the existing Peak Strength app. |
+| 11 | **PRChase** | Highly relevant to experienced lifters. | Awkward to dictate and search verbally. |
+| 12 | **RepChase** | Compact and directly related to lifting. | `repchase.com` is registered. |
+| 13 | **SetChase** | Reflects the app's core interaction. | `setchase.com` is registered and the meaning is narrow. |
+| 14 | **PlateChase** | Unmistakably weight-oriented. | Can suggest food tracking; its `.com` is registered. |
+| 15 | **PowerChase** | Energetic and broadly understandable. | Broad meaning and a registered `.com`. |
+| 16 | **MaxChase** | Short and punchy. | “Max” sounds like a person and implies 1RM training. |
+| 17 | **GoalChase** | Immediately understandable. | Too generic to feel strongly ownable. |
+| 18 | **MomentumChase** | Dynamic and emotionally appealing. | Already used by a downloadable game. |
+| 19 | **RecordChase** | Has a useful progress-and-logging double meaning. | Already used by an active property-research product. |
+| 20 | **StrengthChase** | Clearly states the category. | Generic, longer than LiftChase, and its `.com` is registered. |
+
+## Preliminary Chase-name screening
+
+The five strongest publicly clear candidates received the following preliminary screen on August 28, 2026:
+
+| Candidate | U.S. App Store | Indexed Google Play | Broader web | `.com` registry |
+| --- | --- | --- | --- | --- |
+| **LiftChase** | No exact public match found | No exact indexed match found | No meaningful exact product found | No Verisign record found |
+| **ProgressChase** | No exact public match found | No exact indexed match found | No meaningful exact product found | No Verisign record found |
+| **NextRepChase** | No exact public match found | No exact indexed match found | No meaningful exact product found | No Verisign record found |
+| **VolumeChase** | No exact public match found | No exact indexed match found | No meaningful exact product found | No Verisign record found |
+| **StreakChase** | No exact public match found | No exact indexed match found | No meaningful exact product found | No Verisign record found |
+
+These are preliminary green signals, not conclusions that a name is available or legally safe. Public search cannot reveal unpublished App Store Connect reservations. App Store reservation, current domain registration, and formal trademark clearance remain separate final steps.
+
+Specific conflicts eliminate or weaken several otherwise attractive candidates:
+
+- **RecordChase** is an active property-intelligence software product.
+- **MomentumChase** is an existing downloadable Windows game.
+- **RepChase**, **SetChase**, **PlateChase**, **PowerChase**, **PRChase**, **PeakChase**, **GoalChase**, **MaxChase**, and **StrengthChase** have registered `.com` domains.
+- **GainsChase** has no exact public match, but the App Store already contains multiple weight-training products using **Gains** prominently.
+
+## Previous standalone finalists
 
 | Name | Strongest quality | Suggested subtitle | Main tension |
 | --- | --- | --- | --- |

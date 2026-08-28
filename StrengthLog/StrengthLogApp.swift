@@ -139,23 +139,35 @@ struct RootView: View {
   }
 
   @Environment(\.modelContext) private var context
+  @Query(
+    filter: #Predicate<WorkoutSession> { $0.isActive && $0.deletedAt == nil },
+    sort: \WorkoutSession.startedAt,
+    order: .reverse)
+  private var activeSessions: [WorkoutSession]
   @State private var navigationPath: [ActiveWorkoutRoute] = []
   @State private var selectedTab = 0
+  @State private var didRestoreActiveWorkout = false
 
   var body: some View {
     TabView(selection: $selectedTab) {
       NavigationStack(path: $navigationPath) {
-        HomeView(onOpenWorkout: presentActiveWorkout)
-          .navigationDestination(for: ActiveWorkoutRoute.self) { route in
-            if let session = context.model(for: route.sessionID) as? WorkoutSession {
-              ActiveWorkoutView(
-                session: session,
-                onDone: { completeAndDismiss(session) },
-                onDelete: { deleteAndDismiss(session) },
-                onClose: dismissActiveWorkout
-              )
-            }
+        HomeView(
+          onOpenWorkout: presentActiveWorkout,
+          onReturnHome: {
+            selectedTab = 0
+            navigationPath.removeAll()
           }
+        )
+        .navigationDestination(for: ActiveWorkoutRoute.self) { route in
+          if let session = context.model(for: route.sessionID) as? WorkoutSession {
+            ActiveWorkoutView(
+              session: session,
+              onDone: { completeAndDismiss(session) },
+              onDelete: { deleteAndDismiss(session) },
+              onClose: dismissActiveWorkout
+            )
+          }
+        }
       }
       .tabItem { Label("Workout", systemImage: "dumbbell.fill") }
       .tag(0)
@@ -177,6 +189,13 @@ struct RootView: View {
         .tag(4)
     }
     .tint(Theme.coral)
+    .onAppear {
+      guard !didRestoreActiveWorkout else { return }
+      didRestoreActiveWorkout = true
+      if let activeSession = activeSessions.first {
+        presentActiveWorkout(activeSession)
+      }
+    }
   }
 
   private func presentActiveWorkout(_ session: WorkoutSession) {

@@ -30,6 +30,87 @@ final class WorkoutNavigationUITests: XCTestCase {
     XCTAssertTrue(app.navigationBars["Basic Workout"].exists)
   }
 
+  func testThreePersonWorkoutMatrixAndSharedCompletion() {
+    app.terminate()
+    app.launchArguments = ["-basicWorkoutFixture", "-activeWorkoutFixture"]
+    app.launch()
+
+    XCTAssertTrue(app.otherElements["active-workout-screen"].waitForExistence(timeout: 5))
+    for name in ["Alex", "Jordan", "Owen"] {
+      XCTAssertTrue(app.staticTexts[name].exists)
+    }
+    let firstSharedSet = app.descendants(matching: .any)["shared-set-1"]
+    let secondSharedSet = app.descendants(matching: .any)["shared-set-2"]
+    XCTAssertTrue(firstSharedSet.exists)
+    XCTAssertTrue(secondSharedSet.exists)
+    XCTAssertTrue(app.buttons["previous-exercise"].exists)
+    XCTAssertLessThan(app.buttons["previous-exercise"].frame.midY, app.frame.midY)
+
+    app.buttons["reps-plus-Alex-1"].tap()
+    XCTAssertEqual(app.textFields["Reps for Alex, set 2"].value as? String, "9")
+
+    XCTAssertTrue(app.buttons["next-exercise-Bench Press"].exists)
+    XCTAssertFalse(app.buttons["complete-exercise-Bench Press"].exists)
+    for name in ["Alex", "Jordan", "Owen"] {
+      XCTAssertEqual(app.buttons["participant-set-\(name)-1"].label, "Complete set")
+      XCTAssertEqual(app.buttons["participant-set-\(name)-2"].label, "Complete set")
+    }
+
+    firstSharedSet.tap()
+    secondSharedSet.tap()
+    secondSharedSet.tap()
+    for name in ["Alex", "Jordan", "Owen"] {
+      XCTAssertTrue(app.buttons["participant-set-\(name)-2"].exists)
+      XCTAssertEqual(app.buttons["participant-set-\(name)-2"].label, "Complete set")
+    }
+
+    let historyButton = app.buttons["exercise-history-Bench Press"]
+    historyButton.tap()
+    XCTAssertTrue(app.navigationBars["Bench Press"].waitForExistence(timeout: 3))
+    app.buttons["Done"].tap()
+
+    app.buttons["add-shared-set"].tap()
+    let thirdSharedSet = app.descendants(matching: .any)["shared-set-3"]
+    XCTAssertTrue(thirdSharedSet.waitForExistence(timeout: 2))
+    thirdSharedSet.swipeLeft()
+    let deleteThirdSet = app.buttons["delete-set-3"]
+    XCTAssertTrue(deleteThirdSet.waitForExistence(timeout: 2))
+    deleteThirdSet.tap()
+    XCTAssertTrue(thirdSharedSet.waitForNonExistence(timeout: 2))
+  }
+
+  func testExerciseArrowNavigationTracksCurrentExercise() {
+    app.terminate()
+    app.launchArguments = [
+      "-basicWorkoutFixture",
+      "-activeWorkoutFixture",
+      "-activeWorkoutNavigationFixture",
+    ]
+    app.launch()
+
+    let benchTitle = app.staticTexts["Bench Press"]
+    let squatTitle = app.staticTexts["Barbell Back Squat"]
+    let curlTitle = app.staticTexts["Fixture Custom Curl"]
+    let benchNext = app.buttons["next-exercise-Bench Press"]
+    let squatNext = app.buttons["next-exercise-Barbell Back Squat"]
+    let previous = app.buttons["previous-exercise"]
+
+    XCTAssertTrue(waitForHittable(benchTitle))
+    benchNext.tap()
+    XCTAssertTrue(waitForHittable(squatTitle))
+
+    previous.tap()
+    XCTAssertTrue(waitForHittable(benchTitle))
+
+    benchNext.tap()
+    XCTAssertTrue(waitForHittable(squatTitle))
+    squatNext.tap()
+    XCTAssertTrue(waitForHittable(curlTitle))
+
+    previous.tap()
+    XCTAssertTrue(waitForHittable(squatTitle))
+  }
+
   func testCalendarOpensEveryWorkoutForSelectedDay() {
     let multiWorkoutDay = app.buttons.matching(
       NSPredicate(format: "label CONTAINS %@", "2 workouts")
@@ -39,21 +120,58 @@ final class WorkoutNavigationUITests: XCTestCase {
       multiWorkoutDay.value as? String, "Lower Body, Basic Workout; Multiple people")
     multiWorkoutDay.tap()
 
+    XCTAssertTrue(app.navigationBars["2 Workouts"].waitForExistence(timeout: 5))
     XCTAssertTrue(app.staticTexts["Lower Body"].waitForExistence(timeout: 5))
     XCTAssertTrue(app.staticTexts["Basic Workout"].exists)
+    XCTAssertFalse(app.staticTexts["Barbell Back Squat"].exists)
+    XCTAssertFalse(app.staticTexts["Bench Press"].exists)
+    XCTAssertTrue(
+      app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "7:00")).firstMatch.exists
+    )
+    XCTAssertTrue(app.staticTexts["2 people"].exists)
+    XCTAssertTrue(app.staticTexts["4 of 6 sets completed"].exists)
+    XCTAssertEqual(
+      app.buttons.matching(
+        NSPredicate(format: "identifier BEGINSWITH %@", "select-completed-workout-")
+      ).count, 2)
+
+    app.staticTexts["Basic Workout"].tap()
+    XCTAssertTrue(app.navigationBars["Basic Workout"].waitForExistence(timeout: 5))
+    XCTAssertTrue(app.buttons["delete-completed-workout"].exists)
     XCTAssertTrue(app.staticTexts["Alex"].exists)
     XCTAssertTrue(app.staticTexts["Jordan"].exists)
-    XCTAssertTrue(app.staticTexts["145 lb × 5 reps"].exists)
     XCTAssertTrue(app.staticTexts["65 lb × 10 reps"].exists)
+    XCTAssertFalse(app.staticTexts["Set 3"].exists)
 
     let cleanupButton = app.buttons["delete-uncompleted-sets"]
     scrollToHittable(cleanupButton)
+    app.swipeUp()
     cleanupButton.tap()
 
-    let confirmCleanupButton = app.buttons["confirm-delete-uncompleted-sets"]
+    let confirmCleanupButton = app.buttons["Delete Sets"]
     XCTAssertTrue(confirmCleanupButton.waitForExistence(timeout: 2))
     confirmCleanupButton.tap()
     XCTAssertTrue(cleanupButton.waitForNonExistence(timeout: 2))
+  }
+
+  func testDeletingWorkoutFromPickerReturnsHome() {
+    let multiWorkoutDay = app.buttons.matching(
+      NSPredicate(format: "label CONTAINS %@", "2 workouts")
+    ).firstMatch
+    XCTAssertTrue(multiWorkoutDay.waitForExistence(timeout: 5))
+    multiWorkoutDay.tap()
+
+    XCTAssertTrue(app.navigationBars["2 Workouts"].waitForExistence(timeout: 5))
+    app.staticTexts["Basic Workout"].tap()
+    XCTAssertTrue(app.navigationBars["Basic Workout"].waitForExistence(timeout: 5))
+
+    app.buttons["delete-completed-workout"].tap()
+    let confirmDelete = app.alerts.buttons["Delete Workout"]
+    XCTAssertTrue(confirmDelete.waitForExistence(timeout: 2))
+    confirmDelete.tap()
+
+    XCTAssertTrue(app.navigationBars["Workout"].waitForExistence(timeout: 5))
+    XCTAssertFalse(app.navigationBars["2 Workouts"].exists)
   }
 
   func testCalendarNavigatesBetweenFourWeekPeriods() {
@@ -132,5 +250,12 @@ final class WorkoutNavigationUITests: XCTestCase {
       app.swipeUp()
     }
     XCTAssertTrue(element.isHittable)
+  }
+
+  private func waitForHittable(_ element: XCUIElement, timeout: TimeInterval = 3) -> Bool {
+    let expectation = XCTNSPredicateExpectation(
+      predicate: NSPredicate(format: "hittable == true"),
+      object: element)
+    return XCTWaiter.wait(for: [expectation], timeout: timeout) == .completed
   }
 }

@@ -66,10 +66,9 @@ struct ProgressView: View {
       }
     }
     .navigationTitle("Progress")
-    .confirmationDialog(
+    .alert(
       "Delete workout?",
-      isPresented: $showingDeleteConfirmation,
-      titleVisibility: .visible
+      isPresented: $showingDeleteConfirmation
     ) {
       Button("Delete Workout", role: .destructive, action: deletePending)
       Button("Cancel", role: .cancel) { pendingDeletion = nil }
@@ -163,10 +162,9 @@ struct SessionDetailView: View {
         }
       }
     }
-    .confirmationDialog(
+    .alert(
       "Delete workout?",
-      isPresented: $showingDeleteConfirmation,
-      titleVisibility: .visible
+      isPresented: $showingDeleteConfirmation
     ) {
       Button("Delete Workout", role: .destructive, action: delete)
       Button("Cancel", role: .cancel) {}

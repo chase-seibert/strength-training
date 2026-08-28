@@ -7,6 +7,7 @@
     static func install(in context: ModelContext) {
       let alex = PersonProfile(name: "Alex", colorHex: "FF5A45", sortOrder: 0)
       let jordan = PersonProfile(name: "Jordan", colorHex: "53C8A6", sortOrder: 1)
+      let owen = PersonProfile(name: "Owen", colorHex: "59A8FA", sortOrder: 2)
       let benchPress = Exercise(
         sourceID: "fixture-bench-press",
         name: "Bench Press",
@@ -40,14 +41,22 @@
           Prescription(
             participantName: alex.name,
             measurement: 95,
-            sets: (0..<3).map { SetTemplate(sortOrder: $0, reps: 8) })
+            sets: (0..<3).map { SetTemplate(sortOrder: $0, reps: 8) }),
+          Prescription(
+            participantName: jordan.name,
+            measurement: 65,
+            sets: (0..<3).map { SetTemplate(sortOrder: $0, reps: 8) }),
+          Prescription(
+            participantName: owen.name,
+            measurement: 45,
+            sets: (0..<3).map { SetTemplate(sortOrder: $0, reps: 8) }),
         ])
       let basicRoutine = Routine(
         name: "Basic Workout",
         symbol: "dumbbell.fill",
         colorHex: "FF5A45",
         exercises: [basicRoutineExercise])
-      basicRoutine.participantNames = [alex.name, jordan.name]
+      basicRoutine.participantNames = [alex.name, jordan.name, owen.name]
 
       let lowerRoutineExercise = RoutineExercise(
         exerciseName: squat.name,
@@ -88,6 +97,7 @@
           efforts: [
             (alex.name, benchPress.name, 100, [8, 8, 8]),
             (jordan.name, benchPress.name, 65, [10, 10, 9]),
+            (owen.name, benchPress.name, 45, [8, 8, 8]),
           ], leaveLastSetUncompleted: true),
         makeWorkout(
           routine: basicRoutine, daysAgo: 7, hour: 18,
@@ -114,6 +124,7 @@
 
       context.insert(alex)
       context.insert(jordan)
+      context.insert(owen)
       context.insert(benchPress)
       context.insert(squat)
       context.insert(customExercise)
@@ -121,6 +132,20 @@
       context.insert(lowerRoutine)
       workoutHistory.forEach(context.insert)
       try? context.save()
+
+      if ProcessInfo.processInfo.arguments.contains("-activeWorkoutFixture") {
+        let activeWorkout = WorkoutSessionStarter.start(
+          routine: basicRoutine,
+          people: [alex, jordan, owen],
+          sessions: workoutHistory,
+          catalog: [benchPress, customExercise, squat],
+          in: context)
+        if ProcessInfo.processInfo.arguments.contains("-activeWorkoutNavigationFixture") {
+          activeWorkout?.add(squat)
+          activeWorkout?.add(customExercise)
+          try? context.save()
+        }
+      }
     }
 
     private static func makeWorkout(

@@ -4,6 +4,7 @@ import SwiftUI
 struct HomeView: View {
   @Environment(\.modelContext) private var context
   let onOpenWorkout: (WorkoutSession) -> Void
+  let onReturnHome: () -> Void
   @Query(filter: #Predicate<Routine> { $0.deletedAt == nil }, sort: \Routine.createdAt)
   private var routines: [Routine]
   @Query private var allRoutines: [Routine]
@@ -19,8 +20,12 @@ struct HomeView: View {
   @Query private var catalog: [Exercise]
   @Query(filter: #Predicate<PersonProfile> { !$0.isArchived }, sort: \PersonProfile.sortOrder)
   private var people: [PersonProfile]
-  init(onOpenWorkout: @escaping (WorkoutSession) -> Void = { _ in }) {
+  init(
+    onOpenWorkout: @escaping (WorkoutSession) -> Void = { _ in },
+    onReturnHome: @escaping () -> Void = {}
+  ) {
     self.onOpenWorkout = onOpenWorkout
+    self.onReturnHome = onReturnHome
   }
 
   var body: some View {
@@ -72,7 +77,7 @@ struct HomeView: View {
 
   private var activityCard: some View {
     VStack(alignment: .leading, spacing: 12) {
-      ActivityGrid(sessions: sessions, routines: allRoutines)
+      ActivityGrid(sessions: sessions, routines: allRoutines, onReturnHome: onReturnHome)
     }
     .padding()
     .background(.background, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
@@ -223,6 +228,7 @@ struct DeletedWorkoutsView: View {
 struct ActivityGrid: View {
   let sessions: [WorkoutSession]
   let routines: [Routine]
+  let onReturnHome: () -> Void
   @State private var periodOffset = 0
   private let calendar = Calendar.current
   private let columns = Array(repeating: GridItem(.flexible(), spacing: 5), count: 7)
@@ -331,7 +337,19 @@ struct ActivityGrid: View {
             let markers = routineMarkers(for: daySessions)
             let participantCount = participantCount(for: daySessions)
             NavigationLink {
-              DayWorkoutSummaryView(day: day, sessions: daySessions, routines: routines)
+              if daySessions.count > 1 {
+                DayWorkoutPickerView(
+                  day: day,
+                  sessions: daySessions,
+                  routines: routines,
+                  onReturnHome: onReturnHome)
+              } else {
+                DayWorkoutSummaryView(
+                  day: day,
+                  sessions: daySessions,
+                  routines: routines,
+                  onReturnHome: onReturnHome)
+              }
             } label: {
               ActivityDayCell(
                 workoutCount: daySessions.count,
@@ -474,17 +492,89 @@ private struct ActivityDayCell: View {
   }
 }
 
+private struct DayWorkoutPickerView: View {
+  @Environment(\.dismiss) private var dismiss
+  let day: Date
+  let sessions: [WorkoutSession]
+  let routines: [Routine]
+  let onReturnHome: () -> Void
+
+  private var orderedSessions: [WorkoutSession] {
+    sessions.filter { $0.deletedAt == nil }.sorted { $0.startedAt < $1.startedAt }
+  }
+
+  var body: some View {
+    List(orderedSessions) { session in
+      NavigationLink {
+        DayWorkoutSummaryView(
+          day: day,
+          sessions: [session],
+          routines: routines,
+          onReturnHome: {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+              dismiss()
+              onReturnHome()
+            }
+          })
+      } label: {
+        workoutRow(for: session)
+      }
+      .accessibilityIdentifier("select-completed-workout-\(session.id.uuidString)")
+    }
+    .listStyle(.insetGrouped)
+    .navigationTitle(
+      "\(orderedSessions.count) Workout\(orderedSessions.count == 1 ? "" : "s")"
+    )
+    .navigationBarTitleDisplayMode(.inline)
+  }
+
+  private func workoutRow(for session: WorkoutSession) -> some View {
+    let routine = routines.first(where: { $0.id == session.routineID })
+    let name = routine?.name ?? session.exercises.first?.exerciseName ?? "Workout"
+    let symbol = routine?.symbol ?? "dumbbell.fill"
+    let color = Color(hex: routine?.colorHex ?? "FF5A45")
+    let peopleCount = session.participantNames.count
+
+    return HStack(spacing: 12) {
+      Image(systemName: symbol)
+        .font(.title3)
+        .foregroundStyle(color)
+        .frame(width: 44, height: 44)
+        .background(color.opacity(0.12), in: RoundedRectangle(cornerRadius: 12))
+
+      VStack(alignment: .leading, spacing: 2) {
+        Text(name)
+          .font(.headline)
+          .foregroundStyle(.primary)
+        Group {
+          Text(session.startedAt.formatted(date: .omitted, time: .shortened))
+          Text("\(peopleCount) \(peopleCount == 1 ? "person" : "people")")
+          Text(
+            "\(session.completedSetCount) of \(session.totalSetCount) sets completed"
+          )
+        }
+        .font(.caption)
+        .foregroundStyle(.secondary)
+      }
+    }
+    .padding(.vertical, 4)
+  }
+}
+
 private struct DayWorkoutSummaryView: View {
+  @Environment(\.dismiss) private var dismiss
   @Environment(\.modelContext) private var context
   @Query(sort: \PersonProfile.sortOrder) private var people: [PersonProfile]
   let day: Date
   let sessions: [WorkoutSession]
   let routines: [Routine]
-  @State private var showingCleanupConfirmation = false
+  let onReturnHome: () -> Void
   @State private var didDeleteUncompletedSets = false
+  @State private var pendingWorkoutDeletion: WorkoutSession?
+  @State private var showingDestructiveConfirmation = false
 
   private var orderedSessions: [WorkoutSession] {
-    sessions.sorted { $0.startedAt < $1.startedAt }
+    sessions.filter { $0.deletedAt == nil }.sorted { $0.startedAt < $1.startedAt }
   }
 
   var body: some View {
@@ -518,12 +608,57 @@ private struct DayWorkoutSummaryView: View {
                 .listRowSeparator(.hidden)
             }
           }
+
+          Color.clear
+            .frame(height: 56)
+            .listRowInsets(EdgeInsets())
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+            .accessibilityHidden(true)
         }
         .listStyle(.insetGrouped)
       }
     }
-    .navigationTitle(day.formatted(date: .abbreviated, time: .omitted))
+    .navigationTitle(summaryTitle)
     .navigationBarTitleDisplayMode(.inline)
+    .toolbar {
+      if orderedSessions.count == 1, let session = orderedSessions.first {
+        ToolbarItem(placement: .topBarTrailing) {
+          Button("Delete Workout", systemImage: "trash", role: .destructive) {
+            requestWorkoutDelete(session)
+          }
+          .accessibilityIdentifier("delete-completed-workout")
+        }
+      }
+    }
+    .alert(
+      pendingWorkoutDeletion == nil ? "Delete uncompleted sets?" : "Delete workout?",
+      isPresented: $showingDestructiveConfirmation
+    ) {
+      if pendingWorkoutDeletion == nil {
+        Button("Delete Sets", role: .destructive, action: deleteAllUncompletedSets)
+      } else {
+        Button("Delete Workout", role: .destructive, action: deletePendingWorkout)
+      }
+      Button("Cancel", role: .cancel) { pendingWorkoutDeletion = nil }
+    } message: {
+      if let session = pendingWorkoutDeletion {
+        Text(
+          "This moves the \(routineName(for: session)) workout from \(session.startedAt.formatted(date: .abbreviated, time: .shortened)) to Deleted Workouts, where it can be restored."
+        )
+      } else {
+        Text(
+          "This removes \(uncompletedSetCount) uncompleted set\(uncompletedSetCount == 1 ? "" : "s") from this workout. Completed sets will stay intact."
+        )
+      }
+    }
+  }
+
+  private var summaryTitle: String {
+    guard orderedSessions.count == 1, let session = orderedSessions.first else {
+      return "\(orderedSessions.count) Workouts"
+    }
+    return routineName(for: session)
   }
 
   private var uncompletedSetCount: Int {
@@ -551,12 +686,12 @@ private struct DayWorkoutSummaryView: View {
       }
     }
     try? context.save()
-    showingCleanupConfirmation = false
+    showingDestructiveConfirmation = false
     didDeleteUncompletedSets = true
   }
 
   private func completedWorkoutBody(for session: WorkoutSession) -> some View {
-    let exercises = session.exercises.sorted(by: { $0.sortOrder < $1.sortOrder })
+    let exercises = completedExercises(in: session)
 
     return VStack(alignment: .leading, spacing: 14) {
       VStack(alignment: .leading, spacing: 6) {
@@ -565,7 +700,7 @@ private struct DayWorkoutSummaryView: View {
           systemImage: "clock")
         Label(peopleSummary(for: session), systemImage: "person.2")
         Label(
-          "\(session.completedSetCount) of \(session.totalSetCount) sets",
+          "\(session.completedSetCount) set\(session.completedSetCount == 1 ? "" : "s") completed",
           systemImage: "checkmark.circle")
       }
       .font(.subheadline)
@@ -581,15 +716,16 @@ private struct DayWorkoutSummaryView: View {
           ForEach(
             exercise.participants.filter {
               session.isParticipantActive($0.participantName)
+                && $0.sets.contains(where: \.isCompleted)
             }
           ) { participant in
             let participantColor = color(for: participant.participantName)
+            let completedSets = participant.orderedSets.enumerated().filter(\.element.isCompleted)
             VStack(alignment: .leading, spacing: 7) {
               Text(participant.participantName)
                 .font(.subheadline.weight(.semibold))
 
-              ForEach(Array(participant.orderedSets.enumerated()), id: \.element.id) {
-                index, set in
+              ForEach(completedSets, id: \.element.id) { index, set in
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                   Text("Set \(index + 1)")
                     .foregroundStyle(.secondary)
@@ -597,17 +733,15 @@ private struct DayWorkoutSummaryView: View {
                   Text(setSummary(set, participant: participant, unit: exercise.unit))
                     .multilineTextAlignment(.trailing)
                     .monospacedDigit()
-                  Image(
-                    systemName: set.isCompleted ? "checkmark" : "\(index + 1).circle.fill"
-                  )
-                  .font(.caption2.bold())
-                  .foregroundStyle(set.isCompleted ? .white : participantColor)
-                  .frame(width: 26, height: 24)
-                  .background(
-                    set.isCompleted ? participantColor : participantColor.opacity(0.12),
-                    in: RoundedRectangle(cornerRadius: 7)
-                  )
-                  .accessibilityLabel(set.isCompleted ? "Completed" : "Not completed")
+                  Image(systemName: "checkmark")
+                    .font(.caption2.bold())
+                    .foregroundStyle(.white)
+                    .frame(width: 26, height: 24)
+                    .background(
+                      participantColor,
+                      in: RoundedRectangle(cornerRadius: 7)
+                    )
+                    .accessibilityLabel("Completed")
                 }
                 .font(.caption)
               }
@@ -624,7 +758,8 @@ private struct DayWorkoutSummaryView: View {
 
   private var uncompletedSetsCleanup: some View {
     Button(role: .destructive) {
-      showingCleanupConfirmation = true
+      pendingWorkoutDeletion = nil
+      showingDestructiveConfirmation = true
     } label: {
       Label("Delete Uncompleted Sets", systemImage: "trash")
         .font(.subheadline.weight(.semibold))
@@ -632,49 +767,9 @@ private struct DayWorkoutSummaryView: View {
     }
     .buttonStyle(.bordered)
     .accessibilityIdentifier("delete-uncompleted-sets")
-    .popover(
-      isPresented: $showingCleanupConfirmation,
-      attachmentAnchor: .rect(.bounds),
-      arrowEdge: .bottom
-    ) {
-      cleanupConfirmationPopover
-        .presentationCompactAdaptation(.popover)
-    }
     .padding(14)
     .background(.background, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
     .padding(.vertical, 4)
-  }
-
-  private var cleanupConfirmationPopover: some View {
-    VStack(alignment: .leading, spacing: 14) {
-      VStack(alignment: .leading, spacing: 5) {
-        Text("Delete uncompleted sets?")
-          .font(.headline)
-        Text(
-          "This removes \(uncompletedSetCount) uncompleted set\(uncompletedSetCount == 1 ? "" : "s") across every exercise shown. Completed sets will stay intact."
-        )
-        .font(.subheadline)
-        .foregroundStyle(.secondary)
-      }
-
-      HStack {
-        Button("Cancel") {
-          showingCleanupConfirmation = false
-        }
-        .buttonStyle(.bordered)
-
-        Spacer()
-
-        Button("Delete Sets", role: .destructive) {
-          deleteAllUncompletedSets()
-        }
-        .buttonStyle(.borderedProminent)
-        .tint(.red)
-        .accessibilityIdentifier("confirm-delete-uncompleted-sets")
-      }
-    }
-    .padding()
-    .frame(width: 300)
   }
 
   private func completedRoutineTile(for session: WorkoutSession) -> some View {
@@ -682,7 +777,7 @@ private struct DayWorkoutSummaryView: View {
     let name = routine?.name ?? "Unknown Routine"
     let symbol = routine?.symbol ?? "dumbbell.fill"
     let color = Color(hex: routine?.colorHex ?? "FF5A45")
-    let exerciseCount = session.exercises.count
+    let exerciseCount = completedExercises(in: session).count
 
     return HStack(spacing: 14) {
       Image(systemName: symbol)
@@ -702,10 +797,43 @@ private struct DayWorkoutSummaryView: View {
       }
 
       Spacer()
+
     }
     .padding(14)
     .background(.background, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
     .padding(.vertical, 4)
+  }
+
+  private func routineName(for session: WorkoutSession) -> String {
+    routines.first(where: { $0.id == session.routineID })?.name ?? "Unknown Routine"
+  }
+
+  private func completedExercises(in session: WorkoutSession) -> [ExerciseLog] {
+    session.exercises
+      .filter { exercise in
+        exercise.participants.contains { participant in
+          session.isParticipantActive(participant.participantName)
+            && participant.sets.contains(where: \.isCompleted)
+        }
+      }
+      .sorted(by: { $0.sortOrder < $1.sortOrder })
+  }
+
+  private func requestWorkoutDelete(_ session: WorkoutSession) {
+    pendingWorkoutDeletion = session
+    showingDestructiveConfirmation = true
+  }
+
+  private func deletePendingWorkout() {
+    guard let session = pendingWorkoutDeletion else { return }
+    session.deletedAt = .now
+    session.isActive = false
+    session.endedAt = session.endedAt ?? .now
+    try? context.save()
+    pendingWorkoutDeletion = nil
+    showingDestructiveConfirmation = false
+    dismiss()
+    onReturnHome()
   }
 
   private func peopleSummary(for session: WorkoutSession) -> String {

@@ -788,13 +788,19 @@ enum WorkoutSessionStarter {
     let knownNames = orderedKnownNames(
       history: history, routine: routine, orderedPeople: orderedPeople)
     let logs = routine.exercises.sorted(by: { $0.sortOrder < $1.sortOrder }).map { item in
-      ExerciseLog(
+      let previousExercise = history.lazy.flatMap(\.exercises).first {
+        $0.exerciseName.caseInsensitiveCompare(item.exerciseName) == .orderedSame
+      }
+      let participantLogs = knownNames.map {
+        participantLog(for: $0, exercise: item, history: history)
+      }
+      equalizeSetCounts(participantLogs)
+      return ExerciseLog(
         exerciseName: item.exerciseName,
         unit: unit(for: item, catalog: catalog),
         sortOrder: item.sortOrder,
-        participants: knownNames.map {
-          participantLog(for: $0, exercise: item, history: history)
-        })
+        participants: participantLogs,
+        isBilateral: previousExercise?.isBilateral ?? false)
     }
 
     let session = WorkoutSession(
@@ -844,14 +850,22 @@ enum WorkoutSessionStarter {
         $0.participantName.caseInsensitiveCompare(name) == .orderedSame
       }
     if let previous {
+      let completedSets = previous.sets
+        .filter(\.isCompleted)
+        .sorted(by: { $0.sortOrder < $1.sortOrder })
       return ParticipantLog(
         participantName: name, measurement: previous.measurement,
-        sets: previous.sets.sorted(by: { $0.sortOrder < $1.sortOrder }).map {
-          WorkoutSet(
-            sortOrder: $0.sortOrder, reps: $0.reps, measurement: $0.measurement,
-            distanceMiles: $0.distanceMiles, durationSeconds: $0.durationSeconds, rpe: $0.rpe,
-            setType: $0.setTypeRaw)
-        })
+        sets: completedSets.isEmpty
+          ? (0..<3).map {
+            WorkoutSet(sortOrder: $0, reps: WorkoutPreferences.defaultReps)
+          }
+          : completedSets.enumerated().map { index, set in
+            WorkoutSet(
+              sortOrder: index, reps: set.reps, measurement: set.measurement,
+              distanceMiles: set.distanceMiles, durationSeconds: set.durationSeconds, rpe: set.rpe,
+              setType: set.setTypeRaw, leftReps: set.leftReps, rightReps: set.rightReps,
+              isLeftCompleted: false, isRightCompleted: false)
+          })
     }
     if let legacy = exercise.prescriptions.first(where: {
       $0.participantName.caseInsensitiveCompare(name) == .orderedSame
@@ -865,6 +879,18 @@ enum WorkoutSessionStarter {
     }
     return ParticipantLog(
       participantName: name, measurement: 0,
-      sets: (0..<3).map { WorkoutSet(sortOrder: $0, reps: 10) })
+      sets: (0..<3).map { WorkoutSet(sortOrder: $0, reps: WorkoutPreferences.defaultReps) })
+  }
+
+  private static func equalizeSetCounts(_ participants: [ParticipantLog]) {
+    let targetCount = participants.map(\.sets.count).max() ?? 0
+    for participant in participants where participant.sets.count < targetCount {
+      let reps = participant.orderedSets.last?.reps ?? WorkoutPreferences.defaultReps
+      while participant.sets.count < targetCount {
+        participant.sets.append(
+          WorkoutSet(sortOrder: participant.sets.count, reps: reps)
+        )
+      }
+    }
   }
 }
