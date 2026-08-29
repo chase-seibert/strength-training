@@ -25,8 +25,6 @@ struct ActiveWorkoutView: View {
   @State private var showingExercisePicker = false
   @State private var editMode: EditMode = .inactive
   @State private var showingDeleteConfirmation = false
-  @State private var pendingParticipantRemoval: String?
-  @State private var showingParticipantRemovalConfirmation = false
   @State private var didRestoreScrollPosition = false
   @State private var currentExerciseID: UUID?
   @State private var requestedExerciseID: UUID?
@@ -34,31 +32,35 @@ struct ActiveWorkoutView: View {
   var body: some View {
     ScrollViewReader { proxy in
       List {
-        ForEach(Array(orderedExercises.enumerated()), id: \.element.id) { index, exercise in
-          ActiveExerciseCard(
-            exercise: exercise,
-            catalogExercise: catalogByName[exercise.exerciseName],
-            visiblePeople: visiblePeople,
-            colors: participantColors,
-            position: index + 1,
-            total: orderedExercises.count,
-            onAdvance: { jumpExercise(after: exercise, by: 1) }
-          )
-          .id(exercise.id)
-          .background {
-            GeometryReader { geometry in
-              Color.clear.preference(
-                key: ExerciseCardOffsetPreferenceKey.self,
-                value: [
-                  exercise.id: geometry.frame(in: .named("active-workout-scroll")).minY
-                ])
+        if usesTwoColumnSinglePersonLayout {
+          ForEach(
+            Array(stride(from: 0, to: orderedExercises.count, by: 2)), id: \.self
+          ) { firstIndex in
+            HStack(alignment: .top, spacing: 8) {
+              exerciseCard(
+                orderedExercises[firstIndex], index: firstIndex, isCompactTwoColumn: true)
+              if orderedExercises.indices.contains(firstIndex + 1) {
+                exerciseCard(
+                  orderedExercises[firstIndex + 1], index: firstIndex + 1,
+                  isCompactTwoColumn: true)
+              } else {
+                Color.clear
+                  .frame(maxWidth: .infinity)
+              }
             }
+            .listRowInsets(EdgeInsets(top: 8, leading: 8, bottom: 12, trailing: 8))
+            .listRowSeparator(.hidden)
+            .listRowBackground(Color.clear)
           }
-          .listRowInsets(EdgeInsets(top: 8, leading: 12, bottom: 12, trailing: 12))
-          .listRowSeparator(.hidden)
-          .listRowBackground(Color.clear)
+        } else {
+          ForEach(Array(orderedExercises.enumerated()), id: \.element.id) { index, exercise in
+            exerciseCard(exercise, index: index, isCompactTwoColumn: false)
+              .listRowInsets(EdgeInsets(top: 8, leading: 12, bottom: 12, trailing: 12))
+              .listRowSeparator(.hidden)
+              .listRowBackground(Color.clear)
+          }
+          .onMove(perform: moveExercises)
         }
-        .onMove(perform: moveExercises)
 
         HStack(spacing: 10) {
           workoutAction(
@@ -137,11 +139,7 @@ struct ActiveWorkoutView: View {
       }
       .onPreferenceChange(ExerciseCardOffsetPreferenceKey.self) { offsets in
         guard requestedExerciseID == nil else { return }
-        currentExerciseID =
-          orderedExercises.min(by: { lhs, rhs in
-            abs((offsets[lhs.id] ?? .greatestFiniteMagnitude) - 120)
-              < abs((offsets[rhs.id] ?? .greatestFiniteMagnitude) - 120)
-          })?.id ?? orderedExercises.first?.id
+        currentExerciseID = exerciseNearestStickyHeader(in: offsets)
       }
       .onChange(of: requestedExerciseID) { _, target in
         guard let target else { return }
@@ -253,6 +251,53 @@ struct ActiveWorkoutView: View {
 
   private var usesAlignedParticipantPicker: Bool { currentExerciseIndex > 0 }
 
+  private var usesTwoColumnSinglePersonLayout: Bool {
+    visiblePeople.count == 1 && !editMode.isEditing
+  }
+
+  private func exerciseNearestStickyHeader(in offsets: [UUID: CGFloat]) -> UUID? {
+    let distances = orderedExercises.compactMap { exercise -> (id: UUID, distance: CGFloat)? in
+      guard let offset = offsets[exercise.id] else { return nil }
+      return (exercise.id, abs(offset - 120))
+    }
+    guard let closestDistance = distances.map(\.distance).min() else {
+      return orderedExercises.first?.id
+    }
+    let closestIDs = Set(
+      distances.filter { abs($0.distance - closestDistance) < 1 }.map(\.id))
+    if let currentExerciseID, closestIDs.contains(currentExerciseID) {
+      return currentExerciseID
+    }
+    return orderedExercises.first(where: { closestIDs.contains($0.id) })?.id
+  }
+
+  private func exerciseCard(
+    _ exercise: ExerciseLog, index: Int, isCompactTwoColumn: Bool
+  ) -> some View {
+    ActiveExerciseCard(
+      exercise: exercise,
+      catalogExercise: catalogByName[exercise.exerciseName],
+      visiblePeople: visiblePeople,
+      colors: participantColors,
+      position: index + 1,
+      total: orderedExercises.count,
+      isCompactTwoColumn: isCompactTwoColumn,
+      onAdvance: { jumpExercise(after: exercise, by: 1) }
+    )
+    .fixedSize(horizontal: false, vertical: isCompactTwoColumn)
+    .frame(maxWidth: .infinity, alignment: .top)
+    .id(exercise.id)
+    .background {
+      GeometryReader { geometry in
+        Color.clear.preference(
+          key: ExerciseCardOffsetPreferenceKey.self,
+          value: [
+            exercise.id: geometry.frame(in: .named("active-workout-scroll")).minY
+          ])
+      }
+    }
+  }
+
   private var participantPills: some View {
     ScrollView(.horizontal, showsIndicators: false) {
       HStack(spacing: usesAlignedParticipantPicker ? 6 : 8) {
@@ -271,19 +316,6 @@ struct ActiveWorkoutView: View {
       }
       .padding(.vertical, 2)
       .animation(.snappy, value: usesAlignedParticipantPicker)
-    }
-    .confirmationDialog(
-      "Hide \(pendingParticipantRemoval ?? "person") from this workout?",
-      isPresented: $showingParticipantRemovalConfirmation,
-      titleVisibility: .visible
-    ) {
-      Button("Hide Person", role: .destructive) {
-        if let pendingParticipantRemoval { removeParticipant(pendingParticipantRemoval) }
-        pendingParticipantRemoval = nil
-      }
-      Button("Cancel", role: .cancel) { pendingParticipantRemoval = nil }
-    } message: {
-      Text("Completed sets will be kept. You can turn this person back on later in this workout.")
     }
     .accessibilityIdentifier("sticky-participant-picker")
   }
@@ -324,16 +356,7 @@ struct ActiveWorkoutView: View {
   private func toggleParticipant(_ name: String) {
     if session.isParticipantActive(name) {
       guard session.participantNames.count > 1 else { return }
-      let hasCompletedSets = session.exercises.flatMap(\.participants).contains {
-        $0.participantName.caseInsensitiveCompare(name) == .orderedSame
-          && $0.sets.contains(where: \.isCompleted)
-      }
-      if hasCompletedSets {
-        pendingParticipantRemoval = name
-        showingParticipantRemovalConfirmation = true
-      } else {
-        removeParticipant(name)
-      }
+      removeParticipant(name)
     } else {
       session.participantNames = PersonProfile.orderedNames(
         session.participantNames + [name], using: people)
@@ -448,6 +471,7 @@ struct ActiveExerciseCard: View {
   let colors: [String: String]
   let position: Int
   let total: Int
+  let isCompactTwoColumn: Bool
   let onAdvance: () -> Void
   @State private var showingImages = false
   @State private var showingHistory = false
@@ -487,7 +511,7 @@ struct ActiveExerciseCard: View {
   var body: some View {
     VStack(spacing: 12) {
       HStack(alignment: .top, spacing: 10) {
-        if let catalogExercise, !catalogExercise.imageURLs.isEmpty {
+        if !isCompactTwoColumn, let catalogExercise, !catalogExercise.imageURLs.isEmpty {
           Button {
             showingImages = true
           } label: {
@@ -500,8 +524,9 @@ struct ActiveExerciseCard: View {
         }
         VStack(alignment: .leading, spacing: 3) {
           Text(exercise.exerciseName)
-            .font(.title3.bold())
+            .font(isCompactTwoColumn ? .headline.bold() : .title3.bold())
             .lineLimit(2)
+            .fixedSize(horizontal: false, vertical: true)
           Text("\(position) of \(total) · \(exercise.unit.title)")
             .font(.caption.weight(.semibold))
             .foregroundStyle(.secondary)
@@ -517,9 +542,11 @@ struct ActiveExerciseCard: View {
           showingHistory = true
         } label: {
           Image(systemName: "chart.xyaxis.line")
-            .font(.headline)
+            .font(isCompactTwoColumn ? .subheadline : .headline)
             .foregroundStyle(.blue)
-            .frame(width: 44, height: 44)
+            .frame(
+              width: isCompactTwoColumn ? 32 : 44,
+              height: isCompactTwoColumn ? 32 : 44)
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("exercise-history-\(exercise.exerciseName)")
@@ -545,13 +572,17 @@ struct ActiveExerciseCard: View {
           .frame(width: activeWorkoutParticipantColumnWidth)
         }
       }
-      .frame(maxWidth: .infinity, alignment: .leading)
+      .frame(maxWidth: .infinity, alignment: isCompactTwoColumn ? .center : .leading)
 
       Divider()
 
-      setCountControls
+      if isCompactTwoColumn {
+        compactSetCountControls
+      } else {
+        setCountControls
+      }
     }
-    .padding(12)
+    .padding(isCompactTwoColumn ? 10 : 12)
     .background(
       Color(.systemBackground),
       in: RoundedRectangle(cornerRadius: 20, style: .continuous)
@@ -589,7 +620,48 @@ struct ActiveExerciseCard: View {
         .frame(width: activeWorkoutParticipantColumnWidth)
       }
     }
-    .frame(maxWidth: .infinity, alignment: .leading)
+    .frame(maxWidth: .infinity, alignment: isCompactTwoColumn ? .center : .leading)
+  }
+
+  private var compactSetCountControls: some View {
+    HStack(spacing: 8) {
+      Button(action: removeLastSetForEveryone) {
+        Image(systemName: "minus.circle")
+          .font(.title3.weight(.semibold))
+          .frame(width: 44, height: 44)
+          .contentShape(Rectangle())
+      }
+      .buttonStyle(.plain)
+      .foregroundStyle(setCount > 1 ? Theme.navy : Color.secondary.opacity(0.4))
+      .disabled(setCount <= 1)
+      .accessibilityIdentifier("remove-shared-set")
+      .accessibilityLabel("Remove set")
+
+      Button(action: addSetForEveryone) {
+        Image(systemName: "plus.circle.fill")
+          .font(.title3.weight(.semibold))
+          .frame(width: 44, height: 44)
+          .contentShape(Rectangle())
+      }
+      .buttonStyle(.plain)
+      .foregroundStyle(Theme.coral)
+      .accessibilityIdentifier("add-shared-set")
+      .accessibilityLabel("Add set")
+
+      Button(action: onAdvance) {
+        Image(systemName: "chevron.down")
+          .font(.headline.weight(.bold))
+          .foregroundStyle(Theme.coral)
+          .frame(width: 44, height: 44)
+          .contentShape(Rectangle())
+      }
+      .buttonStyle(.plain)
+      .disabled(position >= total)
+      .opacity(position >= total ? 0.45 : 1)
+      .accessibilityLabel("Next exercise")
+      .accessibilityIdentifier("next-exercise-\(exercise.exerciseName)")
+    }
+    .frame(maxWidth: .infinity)
   }
 
   private var setCountControls: some View {

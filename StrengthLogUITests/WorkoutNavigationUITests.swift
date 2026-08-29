@@ -89,6 +89,50 @@ final class WorkoutNavigationUITests: XCTestCase {
     XCTAssertLessThan(abs(addSet.frame.midY - nextExercise.frame.midY), 2)
   }
 
+  func testParticipantWithCompletedSetsTogglesWithoutConfirmation() {
+    app.terminate()
+    app.launchArguments = ["-basicWorkoutFixture", "-activeWorkoutFixture"]
+    app.launch()
+
+    let alexSet = app.buttons["participant-set-Alex-1"]
+    let alexPicker = app.buttons["participant-picker-Alex"]
+    XCTAssertTrue(alexSet.waitForExistence(timeout: 5))
+    alexSet.tap()
+
+    alexPicker.tap()
+    XCTAssertTrue(app.textFields["Base reps for Alex"].waitForNonExistence(timeout: 2))
+    XCTAssertEqual(alexPicker.label, "Alex, excluded")
+    XCTAssertFalse(app.buttons["Hide Person"].exists)
+
+    alexPicker.tap()
+    XCTAssertTrue(alexSet.waitForExistence(timeout: 2))
+    XCTAssertEqual(alexSet.label, "Remove completed Bench Press set 1")
+  }
+
+  func testSinglePersonWorkoutShowsTwoExerciseCardsSideBySide() {
+    app.terminate()
+    app.launchArguments = [
+      "-basicWorkoutFixture",
+      "-activeWorkoutFixture",
+      "-activeWorkoutOnePersonFixture",
+      "-activeWorkoutNavigationFixture",
+    ]
+    app.launch()
+
+    let benchHistory = app.buttons["exercise-history-Bench Press"]
+    let squatHistory = app.buttons["exercise-history-Barbell Back Squat"]
+    XCTAssertTrue(benchHistory.waitForExistence(timeout: 5))
+    XCTAssertTrue(squatHistory.exists)
+    XCTAssertLessThan(abs(benchHistory.frame.minY - squatHistory.frame.minY), 2)
+    XCTAssertLessThan(benchHistory.frame.midX, app.frame.midX)
+    XCTAssertGreaterThan(squatHistory.frame.midX, app.frame.midX)
+
+    app.buttons["next-exercise-Bench Press"].tap()
+    XCTAssertTrue(app.navigationBars["Barbell Back Squat"].waitForExistence(timeout: 2))
+    RunLoop.current.run(until: Date().addingTimeInterval(0.7))
+    XCTAssertTrue(app.navigationBars["Barbell Back Squat"].exists)
+  }
+
   func testSetCompletionControlsWrapByParticipantCount() {
     assertSetWrap(
       extraArguments: ["-activeWorkoutOnePersonFixture"],
