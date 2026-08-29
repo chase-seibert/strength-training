@@ -7,7 +7,7 @@
 - As a lifter, I want a new workout to remember each person's latest weights, reps, and sets for a routine, so that setup is fast without storing workout data on the routine.
 - As a new lifter, I want optional Upper Body, Lower Body, and Core starters, so that I can begin quickly without being forced into sample data.
 - As a lifter, I want a broad searchable exercise catalog with equipment, muscle, form notes, and imagery, so that I can build routines quickly and recognize unfamiliar movements.
-- As a lifter, I want Custom to be the first exercise filter, so that exercises I created or duplicated are immediately accessible without searching the full catalog.
+- As a lifter, I want a compact exercise filter menu ordered All, Custom, then muscles alphabetically, so that custom and muscle filtering stays easy without consuming library space.
 - As a lifter, I want to add an exercise to a routine directly from its catalog detail, so that browsing naturally turns into routine building.
 - As a lifter, I want to add, remove, and reorder exercises while editing routines, so that their contents and workout order match my plan.
 - As a lifter, I want custom exercises and editable catalog-unit defaults, so that routines use one consistent measurement per exercise while I can correct an inaccurate default.

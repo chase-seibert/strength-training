@@ -34,4 +34,4 @@
 - Made routines person-agnostic: workouts own their participant set, and each person's latest workout values seed the next session.
 - Made catalog exercise units the source of truth, restored master-exercise unit editing, and removed routine-level unit customization.
 - Added guided create/edit exercise forms, exercise renaming and duplication, original-name search and display, and stable canonical identity links across routines and workout history.
-- Added Custom as the first exercise-library filter while retaining All as the default view.
+- Replaced the long exercise-filter chip row with a compact filter menu ordered All, Custom, then muscles alphabetically.

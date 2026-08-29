@@ -11,14 +11,20 @@ struct ExerciseLibraryView: View {
   @State private var showingNewExercise = false
 
   private var filters: [String] {
-    ["Custom", "All"] + Array(Set(exercises.map { $0.primaryMuscle.capitalized })).sorted()
+    ["All", "Custom"] + Array(Set(exercises.map { $0.primaryMuscle.capitalized })).sorted()
   }
 
   private var filtered: [Exercise] {
     exercises.filter { item in
-      (selectedFilter == "All"
-        || (selectedFilter == "Custom" && item.isCustom)
-        || item.primaryMuscle.caseInsensitiveCompare(selectedFilter) == .orderedSame)
+      let matchesFilter =
+        if selectedFilter == "All" {
+          true
+        } else if selectedFilter == "Custom" {
+          item.isCustom
+        } else {
+          item.primaryMuscle.caseInsensitiveCompare(selectedFilter) == .orderedSame
+        }
+      return matchesFilter
         && (searchText.isEmpty || item.name.localizedStandardContains(searchText)
           || item.canonicalOriginalName.localizedStandardContains(searchText))
     }
@@ -27,24 +33,17 @@ struct ExerciseLibraryView: View {
   var body: some View {
     List {
       Section {
-        ScrollView(.horizontal, showsIndicators: false) {
-          HStack {
-            ForEach(filters, id: \.self) { filter in
-              Button(filter) { selectedFilter = filter }
-                .buttonStyle(.borderedProminent)
-                .buttonBorderShape(.capsule)
-                .tint(selectedFilter == filter ? Theme.coral : Color.secondary.opacity(0.18))
-                .foregroundStyle(selectedFilter == filter ? .white : .primary)
-                .accessibilityIdentifier("exercise-filter-\(filter)")
-            }
-          }
-        }
-        .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 0))
-      }
-
-      Section("\(filtered.count) exercises") {
         ForEach(filtered) { exercise in
           ExerciseLibraryRow(exercise: exercise)
+        }
+      } header: {
+        HStack {
+          Text("\(filtered.count) exercises")
+          Spacer()
+          if selectedFilter != "All" {
+            Text(selectedFilter)
+              .foregroundStyle(.secondary)
+          }
         }
       }
 
@@ -64,7 +63,24 @@ struct ExerciseLibraryView: View {
     .searchable(text: $searchText, prompt: "Name or original name")
     .navigationTitle("Exercises")
     .toolbar {
-      ToolbarItem(placement: .primaryAction) {
+      ToolbarItemGroup(placement: .primaryAction) {
+        Menu {
+          Picker("Filter exercises", selection: $selectedFilter) {
+            ForEach(filters, id: \.self) { filter in
+              Text(filter)
+                .tag(filter)
+                .accessibilityIdentifier("exercise-filter-option-\(filter)")
+            }
+          }
+        } label: {
+          Label(
+            "Filter exercises: \(selectedFilter)",
+            systemImage: selectedFilter == "All"
+              ? "line.3.horizontal.decrease.circle"
+              : "line.3.horizontal.decrease.circle.fill")
+        }
+        .accessibilityIdentifier("exercise-filter-menu")
+
         Button("Custom exercise", systemImage: "plus") { showingNewExercise = true }
       }
     }

@@ -28,13 +28,17 @@ final class WorkoutNavigationUITests: XCTestCase {
     add(screenshot)
   }
 
-  func testCustomExerciseFilterAppearsFirstAndExcludesCatalogExercises() {
+  func testExerciseFilterMenuOrdersCustomAfterAllAndExcludesCatalogExercises() {
     app.tabBars.buttons["Exercises"].tap()
-    let customFilter = app.buttons["exercise-filter-Custom"]
-    let allFilter = app.buttons["exercise-filter-All"]
-    XCTAssertTrue(customFilter.waitForExistence(timeout: 5))
-    XCTAssertTrue(allFilter.exists)
-    XCTAssertLessThan(customFilter.frame.minX, allFilter.frame.minX)
+    let filterMenu = app.buttons["exercise-filter-menu"]
+    XCTAssertTrue(filterMenu.waitForExistence(timeout: 5))
+    filterMenu.tap()
+
+    let allFilter = app.buttons["All"]
+    let customFilter = app.buttons["Custom"]
+    XCTAssertTrue(allFilter.waitForExistence(timeout: 2))
+    XCTAssertTrue(customFilter.exists)
+    XCTAssertLessThan(allFilter.frame.minY, customFilter.frame.minY)
 
     customFilter.tap()
     XCTAssertTrue(app.buttons["exercise-Fixture Custom Curl"].waitForExistence(timeout: 3))
