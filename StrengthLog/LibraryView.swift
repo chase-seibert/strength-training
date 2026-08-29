@@ -7,18 +7,20 @@ struct ExerciseLibraryView: View {
   @Query(filter: #Predicate<Exercise> { $0.isCustom && $0.deletedAt != nil })
   private var deletedCustomExercises: [Exercise]
   @State private var searchText = ""
-  @State private var selectedMuscle = "All"
+  @State private var selectedFilter = "All"
   @State private var showingNewExercise = false
 
-  private var muscles: [String] {
-    ["All"] + Array(Set(exercises.map { $0.primaryMuscle.capitalized })).sorted()
+  private var filters: [String] {
+    ["Custom", "All"] + Array(Set(exercises.map { $0.primaryMuscle.capitalized })).sorted()
   }
 
   private var filtered: [Exercise] {
     exercises.filter { item in
-      (selectedMuscle == "All"
-        || item.primaryMuscle.caseInsensitiveCompare(selectedMuscle) == .orderedSame)
-        && (searchText.isEmpty || item.name.localizedStandardContains(searchText))
+      (selectedFilter == "All"
+        || (selectedFilter == "Custom" && item.isCustom)
+        || item.primaryMuscle.caseInsensitiveCompare(selectedFilter) == .orderedSame)
+        && (searchText.isEmpty || item.name.localizedStandardContains(searchText)
+          || item.canonicalOriginalName.localizedStandardContains(searchText))
     }
   }
 
@@ -27,12 +29,13 @@ struct ExerciseLibraryView: View {
       Section {
         ScrollView(.horizontal, showsIndicators: false) {
           HStack {
-            ForEach(muscles, id: \.self) { muscle in
-              Button(muscle) { selectedMuscle = muscle }
+            ForEach(filters, id: \.self) { filter in
+              Button(filter) { selectedFilter = filter }
                 .buttonStyle(.borderedProminent)
                 .buttonBorderShape(.capsule)
-                .tint(selectedMuscle == muscle ? Theme.coral : Color.secondary.opacity(0.18))
-                .foregroundStyle(selectedMuscle == muscle ? .white : .primary)
+                .tint(selectedFilter == filter ? Theme.coral : Color.secondary.opacity(0.18))
+                .foregroundStyle(selectedFilter == filter ? .white : .primary)
+                .accessibilityIdentifier("exercise-filter-\(filter)")
             }
           }
         }
@@ -58,7 +61,7 @@ struct ExerciseLibraryView: View {
       }
     }
     .listStyle(.insetGrouped)
-    .searchable(text: $searchText, prompt: "Exercise name")
+    .searchable(text: $searchText, prompt: "Name or original name")
     .navigationTitle("Exercises")
     .toolbar {
       ToolbarItem(placement: .primaryAction) {
@@ -84,6 +87,10 @@ private struct ExerciseLibraryRow: View {
           .clipShape(RoundedRectangle(cornerRadius: 13))
         VStack(alignment: .leading, spacing: 4) {
           Text(exercise.name).font(.headline)
+          if exercise.name.caseInsensitiveCompare(exercise.canonicalOriginalName) != .orderedSame {
+            Text("Originally \(exercise.canonicalOriginalName)")
+              .font(.caption2).foregroundStyle(.tertiary).lineLimit(1)
+          }
           Text("\(exercise.primaryMuscle.capitalized) · \(exercise.equipment.capitalized)")
             .font(.caption).foregroundStyle(.secondary).lineLimit(1)
         }
@@ -111,6 +118,8 @@ struct ExerciseDetailView: View {
   @Bindable var exercise: Exercise
   @State private var showingRoutinePicker = false
   @State private var showingDeleteConfirmation = false
+  @State private var showingEditor = false
+  @State private var showingDuplicateEditor = false
 
   var body: some View {
     ScrollView {
@@ -122,17 +131,23 @@ struct ExerciseDetailView: View {
           SectionEyebrow(text: exercise.category)
           Text(exercise.name)
             .font(.largeTitle.bold())
+          if exercise.canonicalID != exercise.id {
+            Label("Duplicate of \(exercise.canonicalOriginalName)", systemImage: "square.on.square")
+              .font(.caption).foregroundStyle(.secondary)
+          } else if exercise.name.caseInsensitiveCompare(exercise.canonicalOriginalName)
+            != .orderedSame
+          {
+            Label("Originally \(exercise.canonicalOriginalName)", systemImage: "link")
+              .font(.caption).foregroundStyle(.secondary)
+          }
           Text("\(exercise.primaryMuscle.capitalized) · \(exercise.equipment.capitalized)")
             .foregroundStyle(.secondary)
         }
 
         VStack(alignment: .leading, spacing: 10) {
-          Text("Tracking unit").font(.headline)
-          Picker("Unit", selection: Binding(get: { exercise.unit }, set: { exercise.unit = $0 })) {
-            ForEach(TrackingUnit.allCases) { Text($0.title).tag($0) }
-          }
-          .pickerStyle(.menu)
-          Text("This saved exercise value is used everywhere, including routines.")
+          LabeledContent("Workout tracking", value: exercise.unit.title)
+            .font(.headline)
+          Text("Edit the exercise to change what each set records.")
             .font(.caption).foregroundStyle(.secondary)
         }
         .padding()
@@ -154,6 +169,14 @@ struct ExerciseDetailView: View {
       .padding()
     }
     .navigationBarTitleDisplayMode(.inline)
+    .toolbar {
+      ToolbarItemGroup(placement: .primaryAction) {
+        Button("Duplicate", systemImage: "plus.square.on.square") {
+          showingDuplicateEditor = true
+        }
+        Button("Edit", systemImage: "pencil") { showingEditor = true }
+      }
+    }
     .safeAreaInset(edge: .bottom) {
       VStack(spacing: 10) {
         Button {
@@ -189,6 +212,12 @@ struct ExerciseDetailView: View {
     }
     .sheet(isPresented: $showingRoutinePicker) {
       AddExerciseFromLibrarySheet(exercise: exercise)
+    }
+    .sheet(isPresented: $showingEditor) {
+      ExerciseEditorSheet(editing: exercise)
+    }
+    .sheet(isPresented: $showingDuplicateEditor) {
+      ExerciseEditorSheet(duplicating: exercise)
     }
   }
 
@@ -318,8 +347,17 @@ struct AddExerciseFromLibrarySheet: View {
 }
 
 struct NewExerciseSheet: View {
+  var body: some View {
+    ExerciseEditorSheet()
+  }
+}
+
+private struct ExerciseEditorSheet: View {
   @Environment(\.dismiss) private var dismiss
   @Environment(\.modelContext) private var context
+  @Query(filter: #Predicate<Exercise> { $0.deletedAt == nil }) private var exercises: [Exercise]
+  private let exercise: Exercise?
+  private let duplicateSource: Exercise?
   @State private var name = ""
   @State private var category = "strength"
   @State private var equipment = "other"
@@ -327,39 +365,215 @@ struct NewExerciseSheet: View {
   @State private var unit: TrackingUnit = .pounds
   @State private var instructions = ""
 
+  private static let muscles = [
+    "abdominals", "abductors", "adductors", "biceps", "calves", "chest", "forearms",
+    "glutes", "hamstrings", "lats", "lower back", "middle back", "neck", "quadriceps",
+    "shoulders", "traps", "triceps", "other",
+  ]
+  private static let equipmentOptions = [
+    "body only", "bands", "barbell", "cable", "dumbbell", "e-z curl bar", "exercise ball",
+    "foam roll", "kettlebells", "machine", "medicine ball", "other",
+  ]
+  private static let categoryOptions = [
+    "strength", "powerlifting", "olympic weightlifting", "cardio", "plyometrics", "stretching",
+    "strongman", "other",
+  ]
+
+  init() {
+    exercise = nil
+    duplicateSource = nil
+  }
+
+  init(editing exercise: Exercise) {
+    self.exercise = exercise
+    duplicateSource = nil
+    _name = State(initialValue: exercise.name)
+    _category = State(initialValue: exercise.category)
+    _equipment = State(initialValue: exercise.equipment)
+    _muscle = State(initialValue: exercise.primaryMuscle)
+    _unit = State(initialValue: exercise.unit)
+    _instructions = State(initialValue: exercise.instructions)
+  }
+
+  init(duplicating source: Exercise) {
+    exercise = nil
+    duplicateSource = source
+    _name = State(initialValue: "\(source.name) Copy")
+    _category = State(initialValue: source.category)
+    _equipment = State(initialValue: source.equipment)
+    _muscle = State(initialValue: source.primaryMuscle)
+    _unit = State(initialValue: source.unit)
+    _instructions = State(initialValue: source.instructions)
+  }
+
+  private var trimmedName: String {
+    name.trimmingCharacters(in: .whitespacesAndNewlines)
+  }
+
+  private var hasNameConflict: Bool {
+    exercises.contains {
+      $0.id != exercise?.id && $0.name.caseInsensitiveCompare(trimmedName) == .orderedSame
+    }
+  }
+
+  private var title: String {
+    if exercise != nil { return "Edit Exercise" }
+    if duplicateSource != nil { return "Duplicate Exercise" }
+    return "New Exercise"
+  }
+
+  private var trackingExplanation: String {
+    switch unit {
+    case .pounds: "Record weight in pounds and reps for each set."
+    case .kilograms: "Record weight in kilograms and reps for each set."
+    case .repetitions: "Record reps for each set without a weight."
+    case .seconds: "Record a duration in seconds."
+    case .minutes: "Record a duration in minutes."
+    case .miles: "Record distance in miles."
+    case .kilometers: "Record distance in kilometers."
+    case .meters: "Record distance in meters."
+    case .steps: "Record a step count."
+    }
+  }
+
   var body: some View {
     NavigationStack {
       Form {
-        Section("Exercise") {
-          TextField("Name", text: $name)
-          TextField("Primary muscle", text: $muscle)
-          TextField("Equipment", text: $equipment)
-          TextField("Category", text: $category)
+        Section {
+          TextField("e.g. Goblet Squat", text: $name)
+            .textInputAutocapitalization(.words)
+            .accessibilityLabel("Exercise name")
+            .accessibilityIdentifier("exercise-name-field")
+        } header: {
+          Text("Exercise name")
+        } footer: {
+          if hasNameConflict && !trimmedName.isEmpty {
+            Text("An exercise already uses this name.").foregroundStyle(.red)
+          } else {
+            Text("This is the name shown in routines, workouts, and history.")
+          }
+        }
+
+        Section {
           Picker("Tracking unit", selection: $unit) {
             ForEach(TrackingUnit.allCases) { Text($0.title).tag($0) }
           }
+        } header: {
+          Text("Workout tracking")
+        } footer: {
+          Text(trackingExplanation)
         }
-        Section("Form notes") {
-          TextField("Instructions or cues", text: $instructions, axis: .vertical)
+
+        Section {
+          Picker("Main muscle", selection: $muscle) {
+            ForEach(options(including: muscle, defaults: Self.muscles), id: \.self) {
+              Text(friendlyName($0)).tag($0)
+            }
+          }
+          Picker("Equipment", selection: $equipment) {
+            ForEach(options(including: equipment, defaults: Self.equipmentOptions), id: \.self) {
+              Text(friendlyName($0)).tag($0)
+            }
+          }
+          Picker("Exercise type", selection: $category) {
+            ForEach(options(including: category, defaults: Self.categoryOptions), id: \.self) {
+              Text(friendlyName($0)).tag($0)
+            }
+          }
+        } header: {
+          Text("Exercise details")
+        } footer: {
+          Text(
+            "Main muscle is the area doing most of the work. Exercise type groups similar movements."
+          )
+        }
+
+        Section {
+          TextField("Optional technique cues", text: $instructions, axis: .vertical)
             .lineLimit(4...8)
+        } header: {
+          Text("Form notes")
+        } footer: {
+          Text("Add reminders such as stance, setup, or range of motion.")
         }
       }
-      .navigationTitle("New Exercise")
+      .navigationTitle(title)
       .navigationBarTitleDisplayMode(.inline)
       .toolbar {
         ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
         ToolbarItem(placement: .confirmationAction) {
-          Button("Save") {
-            context.insert(
-              Exercise(
-                name: name, category: category, equipment: equipment, primaryMuscle: muscle,
-                unit: unit, instructions: instructions, isCustom: true))
-            try? context.save()
-            dismiss()
-          }
-          .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+          Button("Save", action: save)
+            .disabled(trimmedName.isEmpty || hasNameConflict)
         }
       }
+    }
+  }
+
+  private func options(including current: String, defaults: [String]) -> [String] {
+    defaults.contains(current) ? defaults : [current] + defaults
+  }
+
+  private func friendlyName(_ raw: String) -> String {
+    switch raw {
+    case "body only": "Bodyweight"
+    case "e-z curl bar": "EZ Curl Bar"
+    case "kettlebells": "Kettlebell"
+    default: raw.capitalized
+    }
+  }
+
+  private func save() {
+    if let exercise {
+      let previousName = exercise.name
+      if exercise.originalName.isEmpty { exercise.originalName = previousName }
+      if exercise.rootExerciseID == nil { exercise.rootExerciseID = exercise.id }
+      exercise.name = trimmedName
+      exercise.category = category
+      exercise.equipment = equipment
+      exercise.primaryMuscle = muscle
+      exercise.unit = unit
+      exercise.instructions = instructions.trimmingCharacters(in: .whitespacesAndNewlines)
+      updateReferences(to: exercise, previouslyNamed: previousName)
+    } else {
+      let source = duplicateSource
+      let newExercise = Exercise(
+        originalName: source?.canonicalOriginalName,
+        rootExerciseID: source?.canonicalID,
+        name: trimmedName,
+        category: category,
+        equipment: equipment,
+        primaryMuscle: muscle,
+        unit: unit,
+        instructions: instructions.trimmingCharacters(in: .whitespacesAndNewlines),
+        imagePath: source?.imagePath,
+        additionalImagePaths: Array(source?.imagePaths.dropFirst() ?? []),
+        isCustom: true)
+      context.insert(newExercise)
+    }
+    try? context.save()
+    dismiss()
+  }
+
+  private func updateReferences(to exercise: Exercise, previouslyNamed previousName: String) {
+    let routineExercises = (try? context.fetch(FetchDescriptor<RoutineExercise>())) ?? []
+    for reference in routineExercises
+    where reference.exerciseID == exercise.id
+      || (reference.exerciseID == nil
+        && reference.exerciseName.caseInsensitiveCompare(previousName) == .orderedSame)
+    {
+      reference.exerciseID = exercise.id
+      reference.exerciseName = exercise.name
+      reference.unitRaw = exercise.unit.rawValue
+    }
+
+    let logs = (try? context.fetch(FetchDescriptor<ExerciseLog>())) ?? []
+    for log in logs
+    where log.exerciseID == exercise.id
+      || (log.exerciseID == nil
+        && log.exerciseName.caseInsensitiveCompare(previousName) == .orderedSame)
+    {
+      log.exerciseID = exercise.id
+      log.exerciseName = exercise.name
     }
   }
 }

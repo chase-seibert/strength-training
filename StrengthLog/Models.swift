@@ -97,6 +97,10 @@ extension PersonProfile {
 final class Exercise {
   var id: UUID
   var sourceID: String?
+  // Declaration defaults keep existing SwiftData stores eligible for lightweight migration.
+  // Empty legacy values are interpreted as the exercise's current name and ID.
+  var originalName: String = ""
+  var rootExerciseID: UUID?
   var name: String
   var category: String
   var equipment: String
@@ -110,6 +114,8 @@ final class Exercise {
 
   init(
     sourceID: String? = nil,
+    originalName: String? = nil,
+    rootExerciseID: UUID? = nil,
     name: String,
     category: String,
     equipment: String,
@@ -121,8 +127,11 @@ final class Exercise {
     isCustom: Bool = false,
     deletedAt: Date? = nil
   ) {
-    id = UUID()
+    let id = UUID()
+    self.id = id
     self.sourceID = sourceID
+    self.originalName = originalName ?? name
+    self.rootExerciseID = rootExerciseID ?? id
     self.name = name
     self.category = category
     self.equipment = equipment
@@ -140,6 +149,12 @@ final class Exercise {
     get { TrackingUnit(rawValue: unitRaw) ?? .pounds }
     set { unitRaw = newValue.rawValue }
   }
+
+  /// The immutable identity shared by an original exercise and every duplicate made from it.
+  var canonicalID: UUID { rootExerciseID ?? id }
+
+  /// The name the canonical exercise had before any user rename.
+  var canonicalOriginalName: String { originalName.isEmpty ? name : originalName }
 
   var imageURL: URL? {
     imageURLs.first
@@ -218,7 +233,11 @@ final class Routine {
   }
 
   func contains(_ exercise: Exercise) -> Bool {
-    exercises.contains { $0.exerciseName.caseInsensitiveCompare(exercise.name) == .orderedSame }
+    exercises.contains {
+      $0.exerciseID == exercise.id
+        || ($0.exerciseID == nil
+          && $0.exerciseName.caseInsensitiveCompare(exercise.name) == .orderedSame)
+    }
   }
 
   @discardableResult
@@ -345,7 +364,11 @@ final class WorkoutSession {
   }
 
   func contains(_ exercise: Exercise) -> Bool {
-    exercises.contains { $0.exerciseName.caseInsensitiveCompare(exercise.name) == .orderedSame }
+    exercises.contains {
+      $0.exerciseID == exercise.id
+        || ($0.exerciseID == nil
+          && $0.exerciseName.caseInsensitiveCompare(exercise.name) == .orderedSame)
+    }
   }
 
   @discardableResult
@@ -359,6 +382,7 @@ final class WorkoutSession {
     }
     exercises.append(
       ExerciseLog(
+        exerciseID: exercise.id,
         exerciseName: exercise.name,
         unit: exercise.unit,
         sortOrder: exercises.count,
@@ -370,6 +394,8 @@ final class WorkoutSession {
 @Model
 final class ExerciseLog {
   var id: UUID
+  // Optional for lightweight migration of workout history created before stable exercise links.
+  var exerciseID: UUID?
   var exerciseName: String
   var notes: String?
   var supersetID: String?
@@ -379,11 +405,12 @@ final class ExerciseLog {
   @Relationship(deleteRule: .cascade) var participants: [ParticipantLog]
 
   init(
-    exerciseName: String, unit: TrackingUnit, sortOrder: Int,
+    exerciseID: UUID? = nil, exerciseName: String, unit: TrackingUnit, sortOrder: Int,
     participants: [ParticipantLog], notes: String? = nil, supersetID: String? = nil,
     isBilateral: Bool = false
   ) {
     id = UUID()
+    self.exerciseID = exerciseID
     self.exerciseName = exerciseName
     self.notes = notes
     self.supersetID = supersetID

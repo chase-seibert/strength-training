@@ -50,8 +50,32 @@ enum SeedData {
           item.imagePaths.count > 1
           ? item.imagePaths.dropFirst().joined(separator: "\n") : nil
       }
+
+      normalizeStableExerciseIdentity(existing, in: context)
     }
 
     try? context.save()
+  }
+
+  private static func normalizeStableExerciseIdentity(
+    _ exercises: [Exercise], in context: ModelContext
+  ) {
+    for exercise in exercises {
+      if exercise.originalName.isEmpty { exercise.originalName = exercise.name }
+      if exercise.rootExerciseID == nil { exercise.rootExerciseID = exercise.id }
+    }
+
+    let groupedByName = Dictionary(grouping: exercises, by: { $0.name.lowercased() })
+    let uniqueByName = groupedByName.compactMapValues { $0.count == 1 ? $0[0] : nil }
+
+    let routineExercises = (try? context.fetch(FetchDescriptor<RoutineExercise>())) ?? []
+    for reference in routineExercises where reference.exerciseID == nil {
+      reference.exerciseID = uniqueByName[reference.exerciseName.lowercased()]?.id
+    }
+
+    let exerciseLogs = (try? context.fetch(FetchDescriptor<ExerciseLog>())) ?? []
+    for log in exerciseLogs where log.exerciseID == nil {
+      log.exerciseID = uniqueByName[log.exerciseName.lowercased()]?.id
+    }
   }
 }

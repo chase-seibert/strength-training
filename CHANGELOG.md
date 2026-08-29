@@ -33,3 +33,5 @@
 - Added swipe-to-delete for Workout-tab recent workouts and a confirmed delete button at the bottom of open workouts.
 - Made routines person-agnostic: workouts own their participant set, and each person's latest workout values seed the next session.
 - Made catalog exercise units the source of truth, restored master-exercise unit editing, and removed routine-level unit customization.
+- Added guided create/edit exercise forms, exercise renaming and duplication, original-name search and display, and stable canonical identity links across routines and workout history.
+- Added Custom as the first exercise-library filter while retaining All as the default view.

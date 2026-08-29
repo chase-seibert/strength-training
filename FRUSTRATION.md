@@ -10,7 +10,7 @@ This workspace began without Git metadata, but the environment exposes the proje
 
 ## 2026-08-28 — Simulator UI tests can stall behind device-service noise
 
-The compact workout UI test reached and dismissed its new last-set sheet, but the XCTest runner stalled before printing a final result while CoreSimulator repeatedly logged a passcode-protected device-service warning. A broader UI run also stopped on an unrelated existing calendar assertion. For visual prototypes, use `make sim-build`, launch with `simctl`, capture a screenshot, and treat the UI-test result as indeterminate until the simulator service is healthy.
+The compact workout UI test reached and dismissed its new last-set sheet, but the XCTest runner stalled before printing a final result while CoreSimulator repeatedly logged a passcode-protected device-service warning. A broader UI run also stopped on an unrelated existing calendar assertion. A later run also failed with `Invalid device state` after `make sim-launch` hung. Check `xcrun simctl list devices available`; letting the crashed simulator settle back to Shutdown before retrying restored the focused UI test. For visual prototypes, use `make sim-build`, launch with `simctl`, capture a screenshot, and treat the UI-test result as indeterminate until the simulator service is healthy.
 
 ## 2026-08-28 — New SwiftData property crashes on an existing phone store
 

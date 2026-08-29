@@ -189,7 +189,13 @@ struct ActiveWorkoutView: View {
   }
 
   private var catalogByName: [String: Exercise] {
-    Dictionary(uniqueKeysWithValues: catalog.map { ($0.name, $0) })
+    catalog.reduce(into: [:]) { result, exercise in
+      result[exercise.name] = result[exercise.name] ?? exercise
+    }
+  }
+
+  private var catalogByID: [UUID: Exercise] {
+    Dictionary(uniqueKeysWithValues: catalog.map { ($0.id, $0) })
   }
 
   private var orderedExercises: [ExerciseLog] {
@@ -292,7 +298,8 @@ struct ActiveWorkoutView: View {
   private func exerciseCard(_ exercise: ExerciseLog, index: Int) -> some View {
     ActiveExerciseCard(
       exercise: exercise,
-      catalogExercise: catalogByName[exercise.exerciseName],
+      catalogExercise: exercise.exerciseID.flatMap { catalogByID[$0] }
+        ?? catalogByName[exercise.exerciseName],
       visiblePeople: visiblePeople,
       colors: participantColors,
       position: index + 1,
@@ -659,6 +666,7 @@ struct ActiveExerciseCard: View {
     }
     .sheet(isPresented: $showingHistory) {
       ExerciseGroupHistoryView(
+        exerciseID: exercise.exerciseID,
         exerciseName: exercise.exerciseName,
         people: visiblePeople,
         colors: colors,
@@ -1490,6 +1498,7 @@ struct ExerciseGroupHistoryView: View {
     filter: #Predicate<WorkoutSession> { $0.deletedAt == nil },
     sort: \WorkoutSession.startedAt)
   private var sessions: [WorkoutSession]
+  let exerciseID: UUID?
   let exerciseName: String
   let people: [String]
   let colors: [String: String]
@@ -1499,7 +1508,10 @@ struct ExerciseGroupHistoryView: View {
     sessions.flatMap { session -> [ExerciseHistoryPoint] in
       guard
         let exercise = session.exercises.first(where: {
-          $0.exerciseName.caseInsensitiveCompare(exerciseName) == .orderedSame
+          if let exerciseID, let loggedExerciseID = $0.exerciseID {
+            return exerciseID == loggedExerciseID
+          }
+          return $0.exerciseName.caseInsensitiveCompare(exerciseName) == .orderedSame
         })
       else { return [] }
       return people.compactMap { personName in

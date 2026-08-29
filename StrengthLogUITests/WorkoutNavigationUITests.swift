@@ -10,6 +10,80 @@ final class WorkoutNavigationUITests: XCTestCase {
     app.launch()
   }
 
+  func testNewExerciseFormIsGuidedAndCaptureScreenshot() {
+    app.tabBars.buttons["Exercises"].tap()
+    let addButton = app.buttons["Custom exercise"]
+    XCTAssertTrue(addButton.waitForExistence(timeout: 5))
+    addButton.tap()
+    XCTAssertTrue(app.navigationBars["New Exercise"].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.staticTexts["Exercise name"].exists)
+    XCTAssertTrue(app.staticTexts["Workout tracking"].exists)
+    XCTAssertTrue(app.staticTexts["Exercise details"].exists)
+    XCTAssertTrue(app.staticTexts["Main muscle"].exists)
+    XCTAssertTrue(app.staticTexts["Exercise type"].exists)
+
+    let screenshot = XCTAttachment(screenshot: app.screenshot())
+    screenshot.name = "guided-new-exercise-form"
+    screenshot.lifetime = .keepAlways
+    add(screenshot)
+  }
+
+  func testCustomExerciseFilterAppearsFirstAndExcludesCatalogExercises() {
+    app.tabBars.buttons["Exercises"].tap()
+    let customFilter = app.buttons["exercise-filter-Custom"]
+    let allFilter = app.buttons["exercise-filter-All"]
+    XCTAssertTrue(customFilter.waitForExistence(timeout: 5))
+    XCTAssertTrue(allFilter.exists)
+    XCTAssertLessThan(customFilter.frame.minX, allFilter.frame.minX)
+
+    customFilter.tap()
+    XCTAssertTrue(app.buttons["exercise-Fixture Custom Curl"].waitForExistence(timeout: 3))
+    XCTAssertFalse(app.buttons["exercise-Bench Press"].exists)
+    XCTAssertFalse(app.buttons["exercise-Barbell Back Squat"].exists)
+  }
+
+  func testRenameAndDuplicateExercisePreserveOriginalIdentity() {
+    app.tabBars.buttons["Exercises"].tap()
+    let originalRow = app.buttons["exercise-Bench Press"]
+    XCTAssertTrue(originalRow.waitForExistence(timeout: 5))
+    originalRow.tap()
+
+    let editButton = app.buttons["Edit"]
+    XCTAssertTrue(editButton.waitForExistence(timeout: 3))
+    editButton.tap()
+    XCTAssertTrue(app.navigationBars["Edit Exercise"].waitForExistence(timeout: 2))
+
+    let nameField = app.textFields["exercise-name-field"]
+    XCTAssertTrue(nameField.waitForExistence(timeout: 2))
+    nameField.tap()
+    nameField.typeText(
+      Array(repeating: XCUIKeyboardKey.delete.rawValue, count: 30).joined())
+    nameField.typeText("Chest Press")
+    app.buttons["Save"].tap()
+
+    XCTAssertTrue(app.staticTexts["Chest Press"].waitForExistence(timeout: 3))
+    XCTAssertTrue(app.staticTexts["Originally Bench Press"].exists)
+
+    let duplicateButton = app.buttons["Duplicate"]
+    XCTAssertTrue(duplicateButton.exists)
+    duplicateButton.tap()
+    XCTAssertTrue(app.navigationBars["Duplicate Exercise"].waitForExistence(timeout: 2))
+    XCTAssertEqual(app.textFields["exercise-name-field"].value as? String, "Chest Press Copy")
+    app.buttons["Save"].tap()
+
+    app.navigationBars.buttons.element(boundBy: 0).tap()
+    let duplicateRow = app.buttons["exercise-Chest Press Copy"]
+    XCTAssertTrue(duplicateRow.waitForExistence(timeout: 3))
+    duplicateRow.tap()
+    XCTAssertTrue(app.staticTexts["Duplicate of Bench Press"].waitForExistence(timeout: 3))
+
+    app.tabBars.buttons["Routines"].tap()
+    let routine = app.staticTexts["Basic Workout"]
+    XCTAssertTrue(routine.waitForExistence(timeout: 3))
+    routine.tap()
+    XCTAssertTrue(app.staticTexts["Chest Press"].waitForExistence(timeout: 3))
+  }
+
   func testStartCloseAndResumeActiveWorkout() {
     let startButton = app.buttons["start-routine-Basic Workout"]
     XCTAssertTrue(startButton.waitForExistence(timeout: 5))

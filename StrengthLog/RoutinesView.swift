@@ -596,7 +596,8 @@ struct RoutineDetailView: View {
     }
     .sheet(isPresented: $showingExercisePicker) {
       AddExerciseToRoutineSheet(
-        existingExerciseNames: displayedExercises.map(\.exerciseName),
+        existingExerciseIDs: Set(displayedExercises.compactMap(\.exerciseID)),
+        legacyExerciseNames: displayedExercises.filter { $0.exerciseID == nil }.map(\.exerciseName),
         onAdd: addExercise
       )
       .environment(\.editMode, .constant(.inactive))
@@ -652,7 +653,9 @@ struct RoutineDetailView: View {
     if editMode.isEditing {
       guard
         !draftExercises.contains(where: {
-          $0.exerciseName.caseInsensitiveCompare(exercise.name) == .orderedSame
+          $0.exerciseID == exercise.id
+            || ($0.exerciseID == nil
+              && $0.exerciseName.caseInsensitiveCompare(exercise.name) == .orderedSame)
         })
       else { return }
       draftExercises.append(
@@ -715,7 +718,8 @@ struct AddExerciseToRoutineSheet: View {
   @Environment(\.dismiss) private var dismiss
   @Query(filter: #Predicate<Exercise> { $0.deletedAt == nil }, sort: \Exercise.name)
   private var exercises: [Exercise]
-  let existingExerciseNames: [String]
+  let existingExerciseIDs: Set<UUID>
+  let legacyExerciseNames: [String]
   let onAdd: (Exercise) -> Void
   @State private var searchText = ""
 
@@ -753,9 +757,10 @@ struct AddExerciseToRoutineSheet: View {
   }
 
   private func contains(_ exercise: Exercise) -> Bool {
-    existingExerciseNames.contains {
-      $0.caseInsensitiveCompare(exercise.name) == .orderedSame
-    }
+    existingExerciseIDs.contains(exercise.id)
+      || legacyExerciseNames.contains {
+        $0.caseInsensitiveCompare(exercise.name) == .orderedSame
+      }
   }
 }
 
@@ -789,13 +794,14 @@ enum WorkoutSessionStarter {
       history: history, routine: routine, orderedPeople: orderedPeople)
     let logs = routine.exercises.sorted(by: { $0.sortOrder < $1.sortOrder }).map { item in
       let previousExercise = history.lazy.flatMap(\.exercises).first {
-        $0.exerciseName.caseInsensitiveCompare(item.exerciseName) == .orderedSame
+        matches($0, item)
       }
       let participantLogs = knownNames.map {
         participantLog(for: $0, exercise: item, history: history)
       }
       equalizeSetCounts(participantLogs)
       return ExerciseLog(
+        exerciseID: item.exerciseID,
         exerciseName: item.exerciseName,
         unit: unit(for: item, catalog: catalog),
         sortOrder: item.sortOrder,
@@ -843,7 +849,7 @@ enum WorkoutSessionStarter {
     let previous = history.lazy
       .flatMap(\.exercises)
       .filter {
-        $0.exerciseName.caseInsensitiveCompare(exercise.exerciseName) == .orderedSame
+        matches($0, exercise)
       }
       .flatMap(\.participants)
       .first {
@@ -880,6 +886,13 @@ enum WorkoutSessionStarter {
     return ParticipantLog(
       participantName: name, measurement: 0,
       sets: (0..<3).map { WorkoutSet(sortOrder: $0, reps: WorkoutPreferences.defaultReps) })
+  }
+
+  private static func matches(_ log: ExerciseLog, _ exercise: RoutineExercise) -> Bool {
+    if let exerciseID = exercise.exerciseID, let logExerciseID = log.exerciseID {
+      return exerciseID == logExerciseID
+    }
+    return log.exerciseName.caseInsensitiveCompare(exercise.exerciseName) == .orderedSame
   }
 
   private static func equalizeSetCounts(_ participants: [ParticipantLog]) {

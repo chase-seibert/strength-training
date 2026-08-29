@@ -793,6 +793,7 @@ enum HevyImporter {
           setType: set.type)
       }
       return ExerciseLog(
+        exerciseID: localExercise.id,
         exerciseName: localExercise.name,
         unit: localExercise.unit,
         sortOrder: exerciseIndex,

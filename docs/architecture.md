@@ -40,6 +40,8 @@ The importer always creates a new routine for every selected source title and ne
 
 `exercise-catalog.json` is a generated, normalized, offline seed. On first launch it becomes editable SwiftData `Exercise` records. Each source record retains both image paths; the app maps those paths to a bundled 640-pixel WebP derivative and pages through the local images in the library and active workout. Custom exercises use the same model and have no source identifier.
 
+Every exercise has an immutable record UUID, a never-changing `originalName`, and a `rootExerciseID`. Renaming mutates only the display name and updates cached names on routine and workout references while retaining their UUID link. Duplicating creates a new custom record UUID but copies the canonical root UUID and original name, so copies remain traceable to the same source family without becoming the same editable record. `RoutineExercise` and `ExerciseLog` both carry the concrete exercise UUID; name matching remains only as a legacy-store fallback, and seed maintenance backfills unambiguous legacy references.
+
 ## Tradeoffs
 
 - Participant references are snapshot names rather than mutable foreign keys. This intentionally keeps history readable after a profile rename or archive.
