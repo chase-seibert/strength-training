@@ -667,7 +667,7 @@ private struct DayWorkoutSummaryView: View {
         + session.exercises.flatMap(\.participants)
         .filter { session.isParticipantActive($0.participantName) }
         .flatMap(\.sets)
-        .filter { !$0.isCompleted }
+        .filter { !$0.isCompleted && !$0.isSkipped }
         .count
     }
   }
@@ -677,7 +677,7 @@ private struct DayWorkoutSummaryView: View {
       for exercise in session.exercises {
         for participant in exercise.participants
         where session.isParticipantActive(participant.participantName) {
-          let uncompletedSets = participant.sets.filter { !$0.isCompleted }
+          let uncompletedSets = participant.sets.filter { !$0.isCompleted && !$0.isSkipped }
           let uncompletedIDs = Set(uncompletedSets.map(\.id))
           participant.sets.removeAll { uncompletedIDs.contains($0.id) }
           for set in uncompletedSets { context.delete(set) }

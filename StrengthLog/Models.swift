@@ -337,7 +337,7 @@ final class WorkoutSession {
   }
   var totalSetCount: Int {
     exercises.flatMap(\.participants).filter { isParticipantActive($0.participantName) }
-      .flatMap(\.sets).count
+      .flatMap(\.sets).filter { !$0.isSkipped }.count
   }
 
   func isParticipantActive(_ name: String) -> Bool {
@@ -478,6 +478,9 @@ final class WorkoutSet {
   var sortOrder: Int
   var reps: Int
   var isCompleted: Bool
+  // A declaration-level default lets SwiftData add this field to existing stores
+  // through its lightweight migration path without requiring the user to reset data.
+  var isSkipped: Bool = false
   var measurement: Double?
   var distanceMiles: Double?
   var durationSeconds: Double?
@@ -489,7 +492,8 @@ final class WorkoutSet {
   var isRightCompleted: Bool = false
 
   init(
-    sortOrder: Int, reps: Int, isCompleted: Bool = false, measurement: Double? = nil,
+    sortOrder: Int, reps: Int, isCompleted: Bool = false, isSkipped: Bool = false,
+    measurement: Double? = nil,
     distanceMiles: Double? = nil, durationSeconds: Double? = nil, rpe: Double? = nil,
     setType: String? = nil, leftReps: Int? = nil, rightReps: Int? = nil,
     isLeftCompleted: Bool? = nil, isRightCompleted: Bool? = nil
@@ -498,6 +502,7 @@ final class WorkoutSet {
     self.sortOrder = sortOrder
     self.reps = reps
     self.isCompleted = isCompleted
+    self.isSkipped = isSkipped
     self.measurement = measurement
     self.distanceMiles = distanceMiles
     self.durationSeconds = durationSeconds

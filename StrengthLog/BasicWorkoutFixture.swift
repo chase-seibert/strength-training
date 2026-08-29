@@ -134,12 +134,68 @@
       try? context.save()
 
       if ProcessInfo.processInfo.arguments.contains("-activeWorkoutFixture") {
+        let activePeople: [PersonProfile]
+        if ProcessInfo.processInfo.arguments.contains("-activeWorkoutOnePersonFixture") {
+          activePeople = [alex]
+        } else if ProcessInfo.processInfo.arguments.contains("-activeWorkoutTwoPersonFixture") {
+          activePeople = [alex, jordan]
+        } else {
+          activePeople = [alex, jordan, owen]
+        }
         let activeWorkout = WorkoutSessionStarter.start(
           routine: basicRoutine,
-          people: [alex, jordan, owen],
+          people: activePeople,
           sessions: workoutHistory,
           catalog: [benchPress, customExercise, squat],
           in: context)
+        if ProcessInfo.processInfo.arguments.contains("-activeWorkoutCustomizedLastSetFixture"),
+          let participant = activeWorkout?.exercises.first?.participants.first(where: {
+            $0.participantName == alex.name
+          }),
+          let lastSet = participant.orderedSets.last
+        {
+          lastSet.reps = 18
+          try? context.save()
+        }
+        if ProcessInfo.processInfo.arguments.contains("-activeWorkoutSkippedLastSetFixture"),
+          let participant = activeWorkout?.exercises.first?.participants.first(where: {
+            $0.participantName == jordan.name
+          }),
+          let lastSet = participant.orderedSets.last
+        {
+          lastSet.isSkipped = true
+          try? context.save()
+        }
+        if ProcessInfo.processInfo.arguments.contains(
+          "-activeWorkoutThreeSetSkippedLastSetFixture"),
+          let exercise = activeWorkout?.exercises.first
+        {
+          for participant in exercise.participants {
+            let reps = participant.orderedSets.first?.reps ?? WorkoutPreferences.defaultReps
+            while participant.sets.count < 3 {
+              participant.sets.append(
+                WorkoutSet(sortOrder: participant.sets.count, reps: reps))
+            }
+          }
+          exercise.participants.first(where: { $0.participantName == jordan.name })?
+            .orderedSets.last?.isSkipped = true
+          try? context.save()
+        }
+        if ProcessInfo.processInfo.arguments.contains("-activeWorkoutWrappingFixture"),
+          let activeWorkout
+        {
+          let targetSetCount = activePeople.count == 1 ? 10 : 5
+          for exercise in activeWorkout.exercises {
+            for participant in exercise.participants {
+              let reps = participant.orderedSets.first?.reps ?? WorkoutPreferences.defaultReps
+              while participant.sets.count < targetSetCount {
+                participant.sets.append(
+                  WorkoutSet(sortOrder: participant.sets.count, reps: reps))
+              }
+            }
+          }
+          try? context.save()
+        }
         if ProcessInfo.processInfo.arguments.contains("-activeWorkoutNavigationFixture") {
           activeWorkout?.add(squat)
           activeWorkout?.add(customExercise)

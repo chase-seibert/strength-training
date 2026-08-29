@@ -39,30 +39,37 @@ final class WorkoutNavigationUITests: XCTestCase {
     for name in ["Alex", "Jordan", "Owen"] {
       XCTAssertTrue(app.staticTexts[name].exists)
     }
-    let firstSharedSet = app.descendants(matching: .any)["shared-set-1"]
-    let secondSharedSet = app.descendants(matching: .any)["shared-set-2"]
-    XCTAssertTrue(firstSharedSet.exists)
-    XCTAssertTrue(secondSharedSet.exists)
-    XCTAssertTrue(app.buttons["previous-exercise"].exists)
-    XCTAssertLessThan(app.buttons["previous-exercise"].frame.midY, app.frame.midY)
+    XCTAssertFalse(app.buttons["previous-exercise"].exists)
 
-    app.buttons["reps-plus-Alex-1"].tap()
-    XCTAssertEqual(app.textFields["Reps for Alex, set 2"].value as? String, "9")
+    app.buttons["base-reps-plus-Alex"].tap()
+    XCTAssertEqual(app.textFields["Base reps for Alex"].value as? String, "9")
 
     XCTAssertTrue(app.buttons["next-exercise-Bench Press"].exists)
-    XCTAssertFalse(app.buttons["complete-exercise-Bench Press"].exists)
     for name in ["Alex", "Jordan", "Owen"] {
-      XCTAssertEqual(app.buttons["participant-set-\(name)-1"].label, "Complete set")
-      XCTAssertEqual(app.buttons["participant-set-\(name)-2"].label, "Complete set")
+      XCTAssertTrue(app.buttons["participant-set-\(name)-1"].exists)
+      XCTAssertTrue(app.buttons["participant-set-\(name)-2"].exists)
     }
 
-    firstSharedSet.tap()
-    secondSharedSet.tap()
-    secondSharedSet.tap()
-    for name in ["Alex", "Jordan", "Owen"] {
-      XCTAssertTrue(app.buttons["participant-set-\(name)-2"].exists)
-      XCTAssertEqual(app.buttons["participant-set-\(name)-2"].label, "Complete set")
-    }
+    app.buttons["participant-set-Alex-1"].tap()
+    XCTAssertEqual(
+      app.buttons["participant-set-Alex-1"].label,
+      "Remove completed Bench Press set 1")
+
+    app.buttons["last-set-menu-Alex"].tap()
+    XCTAssertTrue(app.buttons["Customize Last Set…"].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.buttons["Skip Last Set"].exists)
+    XCTAssertFalse(app.buttons["Skip Last Two Sets"].exists)
+    app.buttons["Customize Last Set…"].tap()
+    XCTAssertTrue(app.navigationBars["Customize last set"].waitForExistence(timeout: 2))
+    app.buttons["Done"].tap()
+
+    app.buttons["last-set-menu-Jordan"].tap()
+    XCTAssertTrue(app.buttons["Skip Last Set"].exists)
+    app.buttons["Skip Last Set"].tap()
+    XCTAssertTrue(app.staticTexts["Last set skipped"].exists)
+    app.buttons["last-set-menu-Jordan"].tap()
+    app.buttons["Restore Skipped Sets"].tap()
+    XCTAssertTrue(app.buttons["participant-set-Jordan-2"].exists)
 
     let historyButton = app.buttons["exercise-history-Bench Press"]
     historyButton.tap()
@@ -70,13 +77,77 @@ final class WorkoutNavigationUITests: XCTestCase {
     app.buttons["Done"].tap()
 
     app.buttons["add-shared-set"].tap()
-    let thirdSharedSet = app.descendants(matching: .any)["shared-set-3"]
-    XCTAssertTrue(thirdSharedSet.waitForExistence(timeout: 2))
-    thirdSharedSet.swipeLeft()
-    let deleteThirdSet = app.buttons["delete-set-3"]
-    XCTAssertTrue(deleteThirdSet.waitForExistence(timeout: 2))
-    deleteThirdSet.tap()
-    XCTAssertTrue(thirdSharedSet.waitForNonExistence(timeout: 2))
+    XCTAssertTrue(app.buttons["remove-shared-set"].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.buttons["participant-set-Alex-3"].exists)
+    app.buttons["remove-shared-set"].tap()
+    app.buttons["remove-shared-set"].tap()
+    XCTAssertFalse(app.buttons["remove-shared-set"].isEnabled)
+    XCTAssertFalse(app.buttons["participant-set-Alex-2"].exists)
+
+    let addSet = app.buttons["add-shared-set"]
+    let nextExercise = app.buttons["next-exercise-Bench Press"]
+    XCTAssertLessThan(abs(addSet.frame.midY - nextExercise.frame.midY), 2)
+  }
+
+  func testSetCompletionControlsWrapByParticipantCount() {
+    assertSetWrap(
+      extraArguments: ["-activeWorkoutOnePersonFixture"],
+      person: "Alex",
+      lastSetOnFirstRow: 2,
+      firstSetOnNextRow: 3)
+    assertSetWrap(
+      extraArguments: ["-activeWorkoutTwoPersonFixture"],
+      person: "Alex",
+      lastSetOnFirstRow: 2,
+      firstSetOnNextRow: 3)
+    assertSetWrap(
+      extraArguments: [],
+      person: "Alex",
+      lastSetOnFirstRow: 2,
+      firstSetOnNextRow: 3)
+  }
+
+  func testParticipantControlsKeepFixedWidthAndVerticalAxis() {
+    let onePersonFrame = assertParticipantControlAlignment(
+      extraArguments: ["-activeWorkoutOnePersonFixture"],
+      person: "Alex")
+    let twoPersonFrame = assertParticipantControlAlignment(
+      extraArguments: ["-activeWorkoutTwoPersonFixture"],
+      person: "Alex")
+    let threePersonFrame = assertParticipantControlAlignment(
+      extraArguments: [],
+      person: "Alex")
+
+    XCTAssertLessThan(abs(onePersonFrame.width - twoPersonFrame.width), 2)
+    XCTAssertLessThan(abs(twoPersonFrame.width - threePersonFrame.width), 2)
+    XCTAssertLessThan(onePersonFrame.midX, app.frame.midX)
+  }
+
+  func testParticipantStatusKeepsRepValuesAlignedAndMovesSetButtonsDown() {
+    app.terminate()
+    app.launchArguments = ["-basicWorkoutFixture", "-activeWorkoutFixture"]
+    app.launch()
+    let normalFirstSet = app.buttons["participant-set-Alex-1"]
+    XCTAssertTrue(normalFirstSet.waitForExistence(timeout: 5))
+    let normalFirstSetMinY = normalFirstSet.frame.minY
+
+    app.terminate()
+    app.launchArguments = [
+      "-basicWorkoutFixture",
+      "-activeWorkoutFixture",
+      "-activeWorkoutThreeSetSkippedLastSetFixture",
+    ]
+    app.launch()
+
+    let alexReps = app.textFields["Base reps for Alex"]
+    let jordanReps = app.textFields["Base reps for Jordan"]
+    let alexFirstSet = app.buttons["participant-set-Alex-1"]
+    let jordanFirstSet = app.buttons["participant-set-Jordan-1"]
+    XCTAssertTrue(alexReps.waitForExistence(timeout: 5))
+    XCTAssertTrue(app.staticTexts["Last set skipped"].exists)
+    XCTAssertLessThan(abs(alexReps.frame.midY - jordanReps.frame.midY), 2)
+    XCTAssertLessThan(abs(alexFirstSet.frame.midY - jordanFirstSet.frame.midY), 2)
+    XCTAssertGreaterThan(alexFirstSet.frame.minY, normalFirstSetMinY)
   }
 
   func testExerciseArrowNavigationTracksCurrentExercise() {
@@ -88,27 +159,34 @@ final class WorkoutNavigationUITests: XCTestCase {
     ]
     app.launch()
 
-    let benchTitle = app.staticTexts["Bench Press"]
-    let squatTitle = app.staticTexts["Barbell Back Squat"]
-    let curlTitle = app.staticTexts["Fixture Custom Curl"]
     let benchNext = app.buttons["next-exercise-Bench Press"]
     let squatNext = app.buttons["next-exercise-Barbell Back Squat"]
     let previous = app.buttons["previous-exercise"]
+    let alexPicker = app.buttons["participant-picker-Alex"]
 
-    XCTAssertTrue(waitForHittable(benchTitle))
+    XCTAssertTrue(app.navigationBars["Bench Press"].waitForExistence(timeout: 5))
+    XCTAssertTrue(waitForHittable(benchNext))
+    XCTAssertFalse(previous.exists)
+    XCTAssertTrue(alexPicker.isHittable)
     benchNext.tap()
-    XCTAssertTrue(waitForHittable(squatTitle))
+    XCTAssertTrue(app.navigationBars["Barbell Back Squat"].waitForExistence(timeout: 3))
+    XCTAssertTrue(waitForHittable(squatNext))
+    XCTAssertTrue(previous.waitForExistence(timeout: 2))
+    XCTAssertTrue(alexPicker.isHittable)
 
     previous.tap()
-    XCTAssertTrue(waitForHittable(benchTitle))
+    XCTAssertTrue(app.navigationBars["Bench Press"].waitForExistence(timeout: 3))
+    XCTAssertTrue(waitForHittable(benchNext))
+    XCTAssertFalse(previous.exists)
 
     benchNext.tap()
-    XCTAssertTrue(waitForHittable(squatTitle))
+    XCTAssertTrue(app.navigationBars["Barbell Back Squat"].waitForExistence(timeout: 3))
+    XCTAssertTrue(waitForHittable(squatNext))
     squatNext.tap()
-    XCTAssertTrue(waitForHittable(curlTitle))
+    XCTAssertTrue(app.navigationBars["Fixture Custom Curl"].waitForExistence(timeout: 3))
 
     previous.tap()
-    XCTAssertTrue(waitForHittable(squatTitle))
+    XCTAssertTrue(app.navigationBars["Barbell Back Squat"].waitForExistence(timeout: 3))
   }
 
   func testCalendarOpensEveryWorkoutForSelectedDay() {
@@ -243,6 +321,55 @@ final class WorkoutNavigationUITests: XCTestCase {
     XCTAssertTrue(restoreButton.waitForExistence(timeout: 5))
     restoreButton.tap()
     XCTAssertFalse(restoreButton.exists)
+  }
+
+  private func assertSetWrap(
+    extraArguments: [String],
+    person: String,
+    lastSetOnFirstRow: Int,
+    firstSetOnNextRow: Int
+  ) {
+    app.terminate()
+    app.launchArguments =
+      ["-basicWorkoutFixture", "-activeWorkoutFixture", "-activeWorkoutWrappingFixture"]
+      + extraArguments
+    app.launch()
+
+    let first = app.buttons["participant-set-\(person)-1"]
+    let lastOnFirstRow = app.buttons["participant-set-\(person)-\(lastSetOnFirstRow)"]
+    let firstOnNextRow = app.buttons["participant-set-\(person)-\(firstSetOnNextRow)"]
+    XCTAssertTrue(first.waitForExistence(timeout: 5))
+    XCTAssertTrue(lastOnFirstRow.exists)
+    XCTAssertTrue(firstOnNextRow.exists)
+    XCTAssertLessThan(abs(first.frame.midY - lastOnFirstRow.frame.midY), 2)
+    XCTAssertGreaterThan(firstOnNextRow.frame.minY, first.frame.maxY)
+  }
+
+  private func assertParticipantControlAlignment(
+    extraArguments: [String],
+    person: String
+  ) -> CGRect {
+    app.terminate()
+    app.launchArguments =
+      ["-basicWorkoutFixture", "-activeWorkoutFixture"] + extraArguments
+    app.launch()
+
+    let load = app.textFields["Pounds for \(person)"]
+    let reps = app.textFields["Base reps for \(person)"]
+    let loadMinus = app.buttons["measurement-minus-\(person)"]
+    let repsMinus = app.buttons["base-reps-minus-\(person)"]
+    let firstSet = app.buttons["participant-set-\(person)-1"]
+    let secondSet = app.buttons["participant-set-\(person)-2"]
+    XCTAssertTrue(load.waitForExistence(timeout: 5))
+    XCTAssertTrue(reps.exists)
+    XCTAssertTrue(firstSet.exists)
+    XCTAssertTrue(secondSet.exists)
+
+    let setPairMidX = (firstSet.frame.midX + secondSet.frame.midX) / 2
+    XCTAssertLessThan(abs(loadMinus.frame.midX - repsMinus.frame.midX), 2)
+    XCTAssertLessThan(abs(load.frame.midX - reps.frame.midX), 2)
+    XCTAssertLessThan(abs(reps.frame.midX - setPairMidX), 2)
+    return load.frame
   }
 
   private func scrollToHittable(_ element: XCUIElement) {

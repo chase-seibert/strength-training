@@ -26,18 +26,12 @@ struct ActiveWorkoutView: View {
   @State private var pendingParticipantRemoval: String?
   @State private var showingParticipantRemovalConfirmation = false
   @State private var didRestoreScrollPosition = false
-  @State private var navigationExerciseName: String?
   @State private var currentExerciseID: UUID?
   @State private var requestedExerciseID: UUID?
 
   var body: some View {
     ScrollViewReader { proxy in
       List {
-        participantPills
-          .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
-          .listRowSeparator(.hidden)
-          .listRowBackground(Color.clear)
-
         ForEach(Array(orderedExercises.enumerated()), id: \.element.id) { index, exercise in
           ActiveExerciseCard(
             exercise: exercise,
@@ -121,6 +115,13 @@ struct ActiveWorkoutView: View {
       .environment(\.editMode, $editMode)
       .background(Color(.systemGroupedBackground))
       .background(DismissKeyboardOnTap())
+      .safeAreaInset(edge: .top, spacing: 0) {
+        participantPills
+          .padding(.horizontal, 16)
+          .padding(.vertical, 8)
+          .background(.regularMaterial)
+          .overlay(alignment: .bottom) { Divider() }
+      }
       .onAppear {
         guard !didRestoreScrollPosition else { return }
         didRestoreScrollPosition = true
@@ -133,10 +134,6 @@ struct ActiveWorkoutView: View {
         }
       }
       .onPreferenceChange(ExerciseCardOffsetPreferenceKey.self) { offsets in
-        navigationExerciseName =
-          orderedExercises.last(where: { exercise in
-            (offsets[exercise.id] ?? .greatestFiniteMagnitude) <= 0
-          })?.exerciseName
         guard requestedExerciseID == nil else { return }
         currentExerciseID =
           orderedExercises.min(by: { lhs, rhs in
@@ -157,7 +154,7 @@ struct ActiveWorkoutView: View {
         }
       }
     }
-    .navigationTitle(navigationExerciseName ?? routineName)
+    .navigationTitle(currentExerciseName)
     .navigationBarTitleDisplayMode(.inline)
     .navigationBarBackButtonHidden(true)
     .toolbar {
@@ -170,15 +167,16 @@ struct ActiveWorkoutView: View {
         .accessibilityIdentifier("close-active-workout")
       }
       ToolbarItem(placement: .topBarTrailing) {
-        Button {
-          jumpExercise(by: -1)
-        } label: {
-          Image(systemName: "chevron.up")
+        if currentExerciseIndex > 0 {
+          Button {
+            jumpExercise(by: -1)
+          } label: {
+            Image(systemName: "chevron.up")
+          }
+          .foregroundStyle(Theme.coral)
+          .accessibilityLabel("Previous exercise")
+          .accessibilityIdentifier("previous-exercise")
         }
-        .foregroundStyle(Theme.coral)
-        .disabled(currentExerciseIndex <= 0)
-        .accessibilityLabel("Previous exercise")
-        .accessibilityIdentifier("previous-exercise")
       }
     }
     .toolbar(.hidden, for: .tabBar)
@@ -243,6 +241,14 @@ struct ActiveWorkoutView: View {
     routines.first(where: { $0.id == session.routineID })?.name ?? "Unknown Routine"
   }
 
+  private var currentExerciseName: String {
+    guard let currentExerciseID else {
+      return orderedExercises.first?.exerciseName ?? routineName
+    }
+    return orderedExercises.first(where: { $0.id == currentExerciseID })?.exerciseName
+      ?? routineName
+  }
+
   private var participantPills: some View {
     VStack(alignment: .leading, spacing: 8) {
       Text("People")
@@ -278,6 +284,7 @@ struct ActiveWorkoutView: View {
               }
             }
             .buttonStyle(.plain)
+            .accessibilityIdentifier("participant-picker-\(person.name)")
             .accessibilityLabel("\(person.name), \(isSelected ? "included" : "excluded")")
             .accessibilityHint("Double tap to \(isSelected ? "hide" : "include") this person")
           }
@@ -298,6 +305,7 @@ struct ActiveWorkoutView: View {
     } message: {
       Text("Completed sets will be kept. You can turn this person back on later in this workout.")
     }
+    .accessibilityIdentifier("sticky-participant-picker")
   }
 
   private func toggleParticipant(_ name: String) {
@@ -430,7 +438,9 @@ struct ActiveExerciseCard: View {
   let onAdvance: () -> Void
   @State private var showingImages = false
   @State private var showingHistory = false
-  @State private var displayedSetCount: Int?
+  @State private var lastSetEditorParticipant: ParticipantLog?
+
+  private let participantColumnWidth: CGFloat = 108
 
   private var visibleLogs: [ParticipantLog] {
     visiblePeople.compactMap { name in
@@ -441,7 +451,11 @@ struct ActiveExerciseCard: View {
   }
 
   private var setCount: Int {
-    displayedSetCount ?? visibleLogs.map(\.sets.count).max() ?? 0
+    visibleLogs.map(\.sets.count).max() ?? 0
+  }
+
+  private var participantSetStatuses: [String] {
+    visibleLogs.compactMap { setStatus(for: $0) }
   }
 
   private var repGuidance: String? {
@@ -501,42 +515,30 @@ struct ActiveExerciseCard: View {
         .accessibilityLabel("Show group history for \(exercise.exerciseName)")
       }
 
-      participantHeaders
+      participantLoadControls
 
       Divider()
 
-      ForEach(0..<setCount, id: \.self) { setIndex in
-        SwipeToDeleteSetRow(
-          setNumber: setIndex + 1,
-          onDelete: { deleteSharedSet(setIndex) }
-        ) {
-          setRow(setIndex)
+      HStack(alignment: .top, spacing: 6) {
+        ForEach(visibleLogs) { participant in
+          ParticipantExerciseCell(
+            participant: participant,
+            exerciseName: exercise.exerciseName,
+            colorHex: colors[participant.participantName] ?? "FF5A45",
+            onCustomizeLastSet: { lastSetEditorParticipant = participant },
+            onResetLastSet: { resetLastSet(for: participant) },
+            onSkipLastSets: { skipLastSets($0, for: participant) },
+            onRestoreSkippedSets: { restoreSkippedSets(for: participant) },
+            reservedSetStatuses: participantSetStatuses
+          )
+          .frame(width: participantColumnWidth)
         }
-        if setIndex < setCount - 1 { Divider().padding(.leading, 46) }
       }
+      .frame(maxWidth: .infinity, alignment: .leading)
 
-      HStack(spacing: 10) {
-        Button(action: addSetForEveryone) {
-          Label("Add set", systemImage: "plus.circle.fill")
-            .font(.subheadline.weight(.semibold))
-            .foregroundStyle(Theme.coral)
-            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-        }
-        .buttonStyle(.plain)
-        .accessibilityIdentifier("add-shared-set")
+      Divider()
 
-        Button(action: onAdvance) {
-          Image(systemName: "chevron.down")
-            .font(.headline.weight(.bold))
-            .foregroundStyle(Theme.coral)
-            .frame(maxWidth: .infinity, minHeight: 44, alignment: .trailing)
-        }
-        .buttonStyle(.plain)
-        .disabled(position >= total)
-        .opacity(position >= total ? 0.45 : 1)
-        .accessibilityLabel("Next exercise")
-        .accessibilityIdentifier("next-exercise-\(exercise.exerciseName)")
-      }
+      setCountControls
     }
     .padding(12)
     .background(
@@ -555,127 +557,111 @@ struct ActiveExerciseCard: View {
         colors: colors,
         unit: exercise.unit)
     }
+    .sheet(item: $lastSetEditorParticipant) { participant in
+      if let lastSet = participant.orderedSets.last(where: { !$0.isSkipped }) {
+        LastSetEditorSheet(
+          exerciseName: exercise.exerciseName,
+          baseReps: baseReps(for: participant),
+          set: lastSet)
+      }
+    }
   }
 
-  private var participantHeaders: some View {
+  private var participantLoadControls: some View {
     HStack(alignment: .top, spacing: 6) {
-      Text("SET")
-        .font(.caption2.bold())
-        .foregroundStyle(.secondary)
-        .frame(width: 40)
-        .padding(.top, 8)
       ForEach(visibleLogs) { participant in
-        ParticipantMatrixHeader(
+        MeasurementStepper(
           participant: participant,
           unit: exercise.unit,
           colorHex: colors[participant.participantName] ?? "FF5A45"
         )
-        .frame(maxWidth: .infinity)
+        .frame(width: participantColumnWidth)
       }
     }
+    .frame(maxWidth: .infinity, alignment: .leading)
   }
 
-  private func setRow(_ setIndex: Int) -> some View {
-    HStack(alignment: .center, spacing: 6) {
-      Button {
-        toggleSetForEveryone(setIndex)
-      } label: {
-        let completed = sharedSetIsCompleted(setIndex)
-        Image(systemName: completed ? "checkmark" : "\(setIndex + 1).circle.fill")
-          .font(.subheadline.bold())
-          .foregroundStyle(completed ? .white : Theme.navy)
-          .frame(width: 40, height: 44)
-          .background(completed ? Theme.mint : Color.secondary.opacity(0.12), in: Circle())
+  private var setCountControls: some View {
+    ZStack(alignment: .bottomTrailing) {
+      HStack(spacing: 26) {
+        Button(action: removeLastSetForEveryone) {
+          HStack(spacing: 12) {
+            Image(systemName: "minus.circle")
+              .font(.title3.weight(.semibold))
+            Text("Remove Set")
+          }
+          .font(.subheadline.weight(.semibold))
+          .frame(minHeight: 44)
+          .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(setCount > 1 ? Theme.navy : Color.secondary.opacity(0.4))
+        .disabled(setCount <= 1)
+        .accessibilityIdentifier("remove-shared-set")
+        .accessibilityLabel("Remove set")
+
+        Button(action: addSetForEveryone) {
+          HStack(spacing: 12) {
+            Image(systemName: "plus.circle.fill")
+              .font(.title3.weight(.semibold))
+            Text("Add Set")
+          }
+          .font(.subheadline.weight(.semibold))
+          .frame(minHeight: 44)
+          .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(Theme.coral)
+        .accessibilityIdentifier("add-shared-set")
+        .accessibilityLabel("Add set")
+      }
+      .padding(.trailing, 64)
+      .frame(maxWidth: .infinity)
+
+      Button(action: onAdvance) {
+        Image(systemName: "chevron.down")
+          .font(.headline.weight(.bold))
+          .foregroundStyle(Theme.coral)
+          .frame(width: 44, height: 44)
+          .contentShape(Rectangle())
       }
       .buttonStyle(.plain)
-      .disabled(!canToggleSharedSet(setIndex))
-      .accessibilityIdentifier("shared-set-\(setIndex + 1)")
-      .accessibilityLabel("Toggle set \(setIndex + 1) for everyone")
-
-      ForEach(visibleLogs) { participant in
-        if participant.orderedSets.indices.contains(setIndex) {
-          ParticipantSetCell(
-            participant: participant,
-            set: participant.orderedSets[setIndex],
-            colorHex: colors[participant.participantName] ?? "FF5A45"
-          )
-          .frame(maxWidth: .infinity)
-        } else {
-          Text("—")
-            .font(.headline)
-            .foregroundStyle(.tertiary)
-            .frame(maxWidth: .infinity, minHeight: 72)
-        }
-      }
+      .disabled(position >= total)
+      .opacity(position >= total ? 0.45 : 1)
+      .accessibilityLabel("Next exercise")
+      .accessibilityIdentifier("next-exercise-\(exercise.exerciseName)")
     }
-    .padding(.horizontal, 4)
-    .background(
-      sharedSetIsCompleted(setIndex) ? Theme.mint.opacity(0.14) : .clear,
-      in: RoundedRectangle(cornerRadius: 12, style: .continuous)
-    )
-  }
-
-  private func sharedSetIsCompleted(_ index: Int) -> Bool {
-    let sets = visibleLogs.compactMap { participant in
-      participant.orderedSets.indices.contains(index) ? participant.orderedSets[index] : nil
-    }
-    return !sets.isEmpty && sets.count == visibleLogs.count && sets.allSatisfy(\.isCompleted)
-  }
-
-  private func canToggleSharedSet(_ index: Int) -> Bool {
-    visibleLogs.contains { participant in
-      participant.orderedSets.indices.contains(index)
-        && participant.canToggleCompletion(of: participant.orderedSets[index])
-    }
-  }
-
-  private func toggleSetForEveryone(_ index: Int) {
-    let shouldComplete = !sharedSetIsCompleted(index)
-    withAnimation(.snappy) {
-      for participant in visibleLogs where participant.orderedSets.indices.contains(index) {
-        let set = participant.orderedSets[index]
-        guard set.isCompleted != shouldComplete, participant.canToggleCompletion(of: set) else {
-          continue
-        }
-        participant.toggleCompletion(of: set).forEach(context.delete)
-      }
-    }
-    try? context.save()
   }
 
   private func addSetForEveryone() {
-    let nextCount = setCount + 1
     withAnimation(.snappy) {
       for participant in exercise.participants {
-        let last = participant.orderedSets.last
+        let ordered = participant.orderedSets
+        let base = baseReps(for: participant)
+        let lastOverride = lastSetOverride(for: participant)
+        if lastOverride != nil, let last = ordered.last { last.reps = base }
         let set = WorkoutSet(
           sortOrder: participant.sets.count,
-          reps: last?.reps ?? WorkoutPreferences.defaultReps)
+          reps: lastOverride ?? base)
         participant.sets.append(set)
       }
-      displayedSetCount = nextCount
     }
     try? context.save()
   }
 
-  private func deleteSharedSet(_ index: Int) {
-    let nextCount =
-      exercise.participants.map { participant in
-        participant.orderedSets.indices.contains(index)
-          ? max(0, participant.sets.count - 1) : participant.sets.count
-      }.max() ?? 0
+  private func removeLastSetForEveryone() {
+    guard setCount > 1 else { return }
     withAnimation(.snappy) {
       for participant in exercise.participants {
         let ordered = participant.orderedSets
-        guard ordered.indices.contains(index) else { continue }
-        let removed = ordered[index]
-        participant.sets = ordered.filter { $0.id != removed.id }
+        guard let removed = ordered.last, ordered.count > 1 else { continue }
+        participant.sets = Array(ordered.dropLast())
         context.delete(removed)
         for (newIndex, set) in participant.orderedSets.enumerated() {
           set.sortOrder = newIndex
         }
       }
-      displayedSetCount = nextCount
+      equalizeSetCounts()
     }
     try? context.save()
   }
@@ -685,7 +671,7 @@ struct ActiveExerciseCard: View {
     guard targetCount > 0 else { return }
     var changed = false
     for participant in exercise.participants where participant.sets.count < targetCount {
-      let reps = participant.orderedSets.last?.reps ?? WorkoutPreferences.defaultReps
+      let reps = baseReps(for: participant)
       while participant.sets.count < targetCount {
         participant.sets.append(
           WorkoutSet(sortOrder: participant.sets.count, reps: reps)
@@ -693,104 +679,455 @@ struct ActiveExerciseCard: View {
         changed = true
       }
     }
-    displayedSetCount = targetCount
     if changed { try? context.save() }
   }
-}
 
-struct SwipeToDeleteSetRow<Content: View>: View {
-  let setNumber: Int
-  let onDelete: () -> Void
-  let content: Content
-  @State private var offset: CGFloat = 0
-  @State private var isDeleteRevealed = false
-
-  init(setNumber: Int, onDelete: @escaping () -> Void, @ViewBuilder content: () -> Content) {
-    self.setNumber = setNumber
-    self.onDelete = onDelete
-    self.content = content()
+  private func baseReps(for participant: ParticipantLog) -> Int {
+    let activeSets = participant.orderedSets.filter { !$0.isSkipped }
+    return activeSets.dropLast().first?.reps
+      ?? activeSets.first?.reps
+      ?? participant.orderedSets.first?.reps
+      ?? WorkoutPreferences.defaultReps
   }
 
-  var body: some View {
-    ZStack(alignment: .trailing) {
-      Image(systemName: "trash")
-        .font(.headline)
-        .foregroundStyle(.white)
-        .frame(width: 72)
-        .frame(maxHeight: .infinity)
-        .background(.red)
-        .opacity(offset < 0 ? 1 : 0)
-        .accessibilityHidden(true)
-
-      content
-        .padding(.vertical, 4)
-        .background(.background)
-        .contentShape(Rectangle())
-        .offset(x: offset)
-        .simultaneousGesture(
-          DragGesture(minimumDistance: 12)
-            .onChanged { value in
-              guard abs(value.translation.width) > abs(value.translation.height) else { return }
-              offset = min(0, max(-88, value.translation.width))
-            }
-            .onEnded { value in
-              guard abs(value.translation.width) > abs(value.translation.height) else {
-                withAnimation(.snappy) { offset = 0 }
-                return
-              }
-              withAnimation(.snappy) {
-                isDeleteRevealed = value.translation.width < -24
-                offset = isDeleteRevealed ? -72 : 0
-              }
-            }
-        )
-        .accessibilityElement(children: .contain)
-
-      if isDeleteRevealed {
-        Button(role: .destructive) {
-          delete()
-        } label: {
-          Image(systemName: "trash")
-            .font(.headline)
-            .foregroundStyle(.white)
-            .frame(width: 72)
-            .frame(maxHeight: .infinity)
-            .background(.red)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Delete set \(setNumber)")
-        .accessibilityIdentifier("delete-set-\(setNumber)")
-      }
+  private func lastSetOverride(for participant: ParticipantLog) -> Int? {
+    let activeSets = participant.orderedSets.filter { !$0.isSkipped }
+    guard activeSets.count > 1, let last = activeSets.last else {
+      return nil
     }
-    .clipped()
+    let base = baseReps(for: participant)
+    return last.reps == base ? nil : last.reps
   }
 
-  private func delete() {
-    withAnimation(.snappy) {
-      isDeleteRevealed = false
-      offset = 0
+  private func resetLastSet(for participant: ParticipantLog) {
+    guard let last = participant.orderedSets.last(where: { !$0.isSkipped }) else { return }
+    last.reps = baseReps(for: participant)
+    try? context.save()
+  }
+
+  private func skipLastSets(_ count: Int, for participant: ParticipantLog) {
+    let activeSets = participant.orderedSets.filter { !$0.isSkipped }
+    guard activeSets.count > count else { return }
+    for set in activeSets.suffix(count) {
+      set.isSkipped = true
+      set.isCompleted = false
+      set.isLeftCompleted = false
+      set.isRightCompleted = false
     }
-    onDelete()
+    try? context.save()
+  }
+
+  private func restoreSkippedSets(for participant: ParticipantLog) {
+    for set in participant.orderedSets where set.isSkipped {
+      set.isSkipped = false
+    }
+    try? context.save()
+  }
+
+  private func setStatus(for participant: ParticipantLog) -> String? {
+    var status: [String] = []
+    if let lastSetOverride = lastSetOverride(for: participant) {
+      status.append("Last set: \(lastSetOverride) reps")
+    }
+    let skippedSetCount = participant.orderedSets.filter(\.isSkipped).count
+    if skippedSetCount > 0 {
+      status.append(
+        skippedSetCount == 1
+          ? "Last set skipped"
+          : "Last \(skippedSetCount) sets skipped")
+    }
+    return status.isEmpty ? nil : status.joined(separator: " · ")
   }
 }
 
-struct ParticipantMatrixHeader: View {
+struct ParticipantExerciseCell: View {
+  @Environment(\.modelContext) private var context
   @Bindable var participant: ParticipantLog
-  let unit: TrackingUnit
+  let exerciseName: String
   let colorHex: String
+  let onCustomizeLastSet: () -> Void
+  let onResetLastSet: () -> Void
+  let onSkipLastSets: (Int) -> Void
+  let onRestoreSkippedSets: () -> Void
+  let reservedSetStatuses: [String]
+
+  private var orderedSets: [WorkoutSet] { participant.orderedSets }
+
+  private var activeSets: [WorkoutSet] {
+    orderedSets.filter { !$0.isSkipped }
+  }
+
+  private var skippedSetCount: Int {
+    orderedSets.filter(\.isSkipped).count
+  }
+
+  private var baseReps: Int {
+    activeSets.dropLast().first?.reps
+      ?? activeSets.first?.reps
+      ?? orderedSets.first?.reps
+      ?? WorkoutPreferences.defaultReps
+  }
+
+  private var lastSetOverride: Int? {
+    guard activeSets.count > 1, let last = activeSets.last, last.reps != baseReps else {
+      return nil
+    }
+    return last.reps
+  }
+
+  private var completionRows: [[(offset: Int, element: WorkoutSet)]] {
+    let indexedSets = Array(activeSets.enumerated())
+    guard !indexedSets.isEmpty else { return [] }
+    return stride(from: 0, to: indexedSets.count, by: 2).map { start in
+      Array(indexedSets[start..<min(start + 2, indexedSets.count)])
+    }
+  }
 
   var body: some View {
     VStack(spacing: 6) {
-      HStack(spacing: 4) {
-        InitialBadge(name: participant.participantName, colorHex: colorHex, size: 24)
-        Text(participant.participantName)
-          .font(.caption.bold())
-          .lineLimit(1)
-          .minimumScaleFactor(0.7)
+      VStack(spacing: 0) {
+        CompactRepsControl(
+          participant: participant,
+          baseReps: baseReps,
+          colorHex: colorHex
+        )
+        .frame(maxWidth: .infinity)
+
+        HStack(spacing: 0) {
+          Spacer(minLength: 0)
+          setOptionsMenu
+        }
+        .frame(height: 36)
       }
-      MeasurementStepper(participant: participant, unit: unit, colorHex: colorHex)
+
+      if !reservedSetStatuses.isEmpty {
+        ZStack(alignment: .top) {
+          ForEach(Array(reservedSetStatuses.enumerated()), id: \.offset) { indexedStatus in
+            setStatusText(indexedStatus.element)
+              .hidden()
+              .accessibilityHidden(true)
+          }
+          if let setStatus {
+            setStatusText(setStatus)
+          }
+        }
+        .frame(maxWidth: .infinity, alignment: .top)
+      }
+
+      VStack(spacing: 4) {
+        ForEach(completionRows.indices, id: \.self) { rowIndex in
+          HStack(spacing: 4) {
+            ForEach(completionRows[rowIndex], id: \.element.id) { indexedSet in
+              SetCompletionButton(
+                set: indexedSet.element,
+                participant: participant,
+                exerciseName: exerciseName,
+                setNumber: indexedSet.offset + 1,
+                colorHex: colorHex,
+                size: 36)
+            }
+          }
+        }
+      }
+      .frame(maxWidth: .infinity)
     }
+    .fixedSize(horizontal: false, vertical: true)
+  }
+
+  private var setOptionsMenu: some View {
+    Menu {
+      if activeSets.count >= 2 {
+        Button("Customize Last Set…", systemImage: "slider.horizontal.3") {
+          onCustomizeLastSet()
+        }
+        Button("Skip Last Set", systemImage: "forward.end") {
+          onSkipLastSets(1)
+        }
+      }
+      if activeSets.count >= 3 {
+        Button("Skip Last Two Sets", systemImage: "forward.end.fill") {
+          onSkipLastSets(2)
+        }
+      }
+      if lastSetOverride != nil {
+        Button("Reset Last Set to \(baseReps)", systemImage: "arrow.uturn.backward") {
+          onResetLastSet()
+        }
+      }
+      if skippedSetCount > 0 {
+        Button("Restore Skipped Sets", systemImage: "arrow.uturn.backward.circle") {
+          onRestoreSkippedSets()
+        }
+      }
+    } label: {
+      Image(systemName: "ellipsis")
+        .font(.system(size: 11, weight: .bold))
+        .foregroundStyle(Color(hex: colorHex))
+        .frame(width: 30, height: 30)
+        .overlay {
+          Circle()
+            .stroke(Color(hex: colorHex), lineWidth: 1.5)
+        }
+        .frame(width: 36, height: 36)
+        .contentShape(Rectangle())
+    }
+    .menuStyle(.borderlessButton)
+    .disabled(activeSets.count < 2 && skippedSetCount == 0)
+    .accessibilityLabel(
+      lastSetOverride == nil ? "Customize set options" : "Last set is \(lastSetOverride!) reps"
+    )
+    .accessibilityIdentifier("last-set-menu-\(participant.participantName)")
+  }
+
+  private var setStatus: String? {
+    var status: [String] = []
+    if let lastSetOverride {
+      status.append("Last set: \(lastSetOverride) reps")
+    }
+    if skippedSetCount > 0 {
+      status.append(
+        skippedSetCount == 1
+          ? "Last set skipped"
+          : "Last \(skippedSetCount) sets skipped")
+    }
+    return status.isEmpty ? nil : status.joined(separator: " · ")
+  }
+
+  private func setStatusText(_ status: String) -> some View {
+    Text(status)
+      .font(.caption2.weight(.semibold))
+      .foregroundStyle(Color(hex: colorHex))
+      .multilineTextAlignment(.center)
+      .fixedSize(horizontal: false, vertical: true)
+      .frame(maxWidth: .infinity)
+  }
+}
+
+struct SetCompletionButton: View {
+  @Environment(\.modelContext) private var context
+  @Bindable var set: WorkoutSet
+  @Bindable var participant: ParticipantLog
+  let exerciseName: String
+  let setNumber: Int
+  let colorHex: String
+  let size: CGFloat
+
+  var body: some View {
+    Button(action: toggleCompletion) {
+      ZStack(alignment: .topTrailing) {
+        Text("\(setNumber)")
+          .font(.system(size: 15, weight: .bold, design: .rounded))
+          .foregroundStyle(set.isCompleted ? Color(hex: colorHex) : .secondary)
+          .frame(width: size - 4, height: size - 4)
+          .background(
+            set.isCompleted ? Color(hex: colorHex).opacity(0.14) : Color.secondary.opacity(0.08),
+            in: RoundedRectangle(cornerRadius: 8, style: .continuous)
+          )
+          .overlay {
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+              .stroke(
+                set.isCompleted ? Color(hex: colorHex).opacity(0.6) : Color.secondary.opacity(0.2),
+                lineWidth: 1)
+          }
+
+        if set.isCompleted {
+          Image(systemName: "checkmark.circle.fill")
+            .font(.system(size: 11, weight: .bold))
+            .foregroundStyle(Color(hex: colorHex))
+            .background(Color(.systemBackground), in: Circle())
+            .offset(x: 3, y: -3)
+        }
+      }
+      .frame(width: size, height: size)
+      .contentShape(Rectangle())
+    }
+    .buttonStyle(.plain)
+    .disabled(!participant.canToggleCompletion(of: set))
+    .accessibilityIdentifier("participant-set-\(participant.participantName)-\(setNumber)")
+    .accessibilityLabel(
+      set.isCompleted
+        ? "Remove completed \(exerciseName) set \(setNumber)"
+        : "Complete \(exerciseName) set \(setNumber)")
+  }
+
+  private func toggleCompletion() {
+    withAnimation(.snappy) {
+      participant.toggleCompletion(of: set).forEach(context.delete)
+    }
+    try? context.save()
+  }
+}
+
+struct CompactRepsControl: View {
+  @Environment(\.modelContext) private var context
+  @Bindable var participant: ParticipantLog
+  let baseReps: Int
+  let colorHex: String
+  @State private var text = ""
+  @State private var isFocused = false
+
+  var body: some View {
+    VStack(spacing: 1) {
+      HStack(spacing: 0) {
+        stepButton("minus") { setBaseReps(baseReps - 1) }
+        SelectAllTextField(
+          text: $text,
+          isFocused: $isFocused,
+          keyboardType: .numberPad,
+          textAlignment: .center,
+          font: .monospacedDigitSystemFont(ofSize: 17, weight: .bold),
+          accessibilityLabel: "Base reps for \(participant.participantName)",
+          step: 1,
+          minimumValue: 1
+        )
+        .frame(maxWidth: .infinity, minHeight: 36)
+        .overlay(alignment: .bottom) {
+          Rectangle()
+            .fill(Color(hex: colorHex).opacity(0.38))
+            .frame(height: 1)
+            .padding(.horizontal, 4)
+        }
+        stepButton("plus") { setBaseReps(baseReps + 1) }
+      }
+      Text(baseReps == 1 ? "Rep" : "Reps")
+        .font(.system(size: 8, weight: .bold))
+        .foregroundStyle(.secondary)
+    }
+    .foregroundStyle(Color(hex: colorHex))
+    .onAppear { text = "\(baseReps)" }
+    .onChange(of: text) { _, newValue in
+      guard let reps = Int(newValue), reps > 0 else { return }
+      applyBaseReps(reps, updateText: false)
+    }
+    .onChange(of: baseReps) { _, reps in
+      if !isFocused { text = "\(reps)" }
+    }
+    .onChange(of: isFocused) { _, focused in
+      if !focused, text.isEmpty { text = "\(baseReps)" }
+    }
+  }
+
+  private func stepButton(_ systemName: String, action: @escaping () -> Void) -> some View {
+    Button(action: action) {
+      Image(systemName: systemName)
+        .font(.system(size: 11, weight: .bold))
+        .frame(width: 30, height: 30)
+        .background(Color(hex: colorHex).opacity(0.08), in: Circle())
+        .overlay {
+          Circle()
+            .stroke(Color(hex: colorHex).opacity(0.75), lineWidth: 1.25)
+        }
+        .frame(width: 36, height: 44)
+        .contentShape(Rectangle())
+    }
+    .buttonStyle(.plain)
+    .accessibilityIdentifier(
+      "base-reps-\(systemName)-\(participant.participantName)")
+  }
+
+  private func setBaseReps(_ value: Int) {
+    applyBaseReps(value, updateText: true)
+  }
+
+  private func applyBaseReps(_ value: Int, updateText: Bool) {
+    let reps = max(1, value)
+    let sets = participant.orderedSets
+    let activeSets = sets.filter { !$0.isSkipped }
+    let lastActiveSetID = activeSets.count > 1 ? activeSets.last?.id : nil
+    let preservesLastOverride = lastActiveSetID != nil && activeSets.last?.reps != baseReps
+    for (_, set) in sets.enumerated()
+    where !preservesLastOverride || set.id != lastActiveSetID {
+      set.reps = reps
+    }
+    if updateText { text = "\(reps)" }
+    try? context.save()
+  }
+}
+
+struct LastSetEditorSheet: View {
+  @Environment(\.dismiss) private var dismiss
+  @Environment(\.modelContext) private var context
+  let exerciseName: String
+  let baseReps: Int
+  @Bindable var set: WorkoutSet
+  @State private var text = ""
+  @State private var isFocused = false
+
+  var body: some View {
+    NavigationStack {
+      VStack(alignment: .leading, spacing: 18) {
+        VStack(alignment: .leading, spacing: 5) {
+          Text("Last set reps")
+            .font(.headline)
+          Text(
+            "This overrides the base value of \(baseReps) reps for the final set only. It will be remembered next time."
+          )
+          .font(.subheadline)
+          .foregroundStyle(.secondary)
+        }
+
+        HStack(spacing: 6) {
+          Button {
+            setReps(set.reps - 1)
+          } label: {
+            Image(systemName: "minus")
+              .frame(width: 44, height: 48)
+          }
+          .buttonStyle(.bordered)
+
+          SelectAllTextField(
+            text: $text,
+            isFocused: $isFocused,
+            keyboardType: .numberPad,
+            textAlignment: .center,
+            font: .monospacedDigitSystemFont(ofSize: 24, weight: .bold),
+            accessibilityLabel: "Last set reps for \(exerciseName)",
+            step: 1,
+            minimumValue: 1
+          )
+          .frame(maxWidth: .infinity, minHeight: 52)
+          .overlay(alignment: .bottom) {
+            Rectangle().fill(Theme.coral).frame(height: 2)
+          }
+
+          Button {
+            setReps(set.reps + 1)
+          } label: {
+            Image(systemName: "plus")
+              .frame(width: 44, height: 48)
+          }
+          .buttonStyle(.bordered)
+        }
+
+        Spacer()
+      }
+      .padding(20)
+      .navigationTitle("Customize last set")
+      .navigationBarTitleDisplayMode(.inline)
+      .toolbar {
+        ToolbarItem(placement: .confirmationAction) {
+          Button("Done") { dismiss() }
+        }
+      }
+      .onAppear { text = "\(set.reps)" }
+      .onChange(of: text) { _, newValue in
+        guard let reps = Int(newValue), reps > 0 else { return }
+        setReps(reps, updateText: false)
+      }
+      .onChange(of: set.reps) { _, reps in
+        if !isFocused { text = "\(reps)" }
+      }
+      .onChange(of: isFocused) { _, focused in
+        if !focused, text.isEmpty { text = "\(set.reps)" }
+      }
+    }
+    .presentationDetents([.medium])
+  }
+
+  private func setReps(_ value: Int, updateText: Bool = true) {
+    set.reps = max(1, value)
+    if updateText { text = "\(set.reps)" }
+    try? context.save()
   }
 }
 
@@ -813,7 +1150,7 @@ struct MeasurementStepper: View {
           isFocused: $isFocused,
           keyboardType: .decimalPad,
           textAlignment: .center,
-          font: .monospacedDigitSystemFont(ofSize: 13, weight: .bold),
+          font: .monospacedDigitSystemFont(ofSize: 16, weight: .bold),
           accessibilityLabel: "\(unit.title) for \(participant.participantName)",
           step: step,
           minimumValue: 0
@@ -848,128 +1185,25 @@ struct MeasurementStepper: View {
   private func stepButton(_ systemName: String, action: @escaping () -> Void) -> some View {
     Button(action: action) {
       Image(systemName: systemName)
-        .font(.caption2.bold())
-        .frame(width: 32, height: 44)
+        .font(.system(size: 11, weight: .bold))
+        .frame(width: 30, height: 30)
+        .background(Color(hex: colorHex).opacity(0.08), in: Circle())
+        .overlay {
+          Circle()
+            .stroke(Color(hex: colorHex).opacity(0.75), lineWidth: 1.25)
+        }
+        .frame(width: 36, height: 44)
         .contentShape(Rectangle())
     }
     .buttonStyle(.plain)
+    .accessibilityIdentifier(
+      "measurement-\(systemName)-\(participant.participantName)")
   }
 
   private func adjust(by change: Double) {
     participant.measurement = max(0, participant.measurement + change)
     text = participant.measurement.tidy
     for set in participant.sets { set.measurement = nil }
-    try? context.save()
-  }
-}
-
-struct ParticipantSetCell: View {
-  @Environment(\.modelContext) private var context
-  @Bindable var participant: ParticipantLog
-  @Bindable var set: WorkoutSet
-  let colorHex: String
-
-  var body: some View {
-    VStack(spacing: 4) {
-      EditableRepsControl(participant: participant, set: set)
-      Button(action: toggleCompletion) {
-        Image(systemName: set.isCompleted ? "checkmark.circle.fill" : "circle")
-          .font(.title2)
-          .foregroundStyle(set.isCompleted ? Color(hex: colorHex) : .secondary)
-          .frame(width: 44, height: 38)
-          .contentShape(Rectangle())
-      }
-      .buttonStyle(.plain)
-      .disabled(!participant.canToggleCompletion(of: set))
-      .accessibilityIdentifier(
-        "participant-set-\(participant.participantName)-\(set.sortOrder + 1)"
-      )
-      .accessibilityLabel(set.isCompleted ? "Remove completed set" : "Complete set")
-    }
-    .padding(.vertical, 2)
-  }
-
-  private func toggleCompletion() {
-    withAnimation(.snappy) {
-      participant.toggleCompletion(of: set).forEach(context.delete)
-    }
-    try? context.save()
-  }
-}
-
-struct EditableRepsControl: View {
-  @Environment(\.modelContext) private var context
-  @Bindable var participant: ParticipantLog
-  @Bindable var set: WorkoutSet
-  @State private var text = ""
-  @State private var isFocused = false
-
-  var body: some View {
-    HStack(spacing: 0) {
-      stepButton("minus", identifier: "reps-minus") { setReps(set.reps - 1) }
-      SelectAllTextField(
-        text: $text,
-        isFocused: $isFocused,
-        keyboardType: .numberPad,
-        textAlignment: .center,
-        font: .monospacedDigitSystemFont(ofSize: 14, weight: .bold),
-        accessibilityLabel: "Reps for \(participant.participantName), set \(set.sortOrder + 1)",
-        step: 1,
-        minimumValue: 1
-      )
-      .frame(maxWidth: .infinity, minHeight: 44)
-      .overlay(alignment: .bottom) {
-        Rectangle()
-          .fill(Color.secondary.opacity(0.28))
-          .frame(height: 1)
-          .padding(.horizontal, 5)
-      }
-      stepButton("plus", identifier: "reps-plus") { setReps(set.reps + 1) }
-    }
-    .foregroundStyle(Theme.navy)
-    .onAppear { text = "\(set.reps)" }
-    .onChange(of: text) { _, newValue in
-      guard let reps = Int(newValue), reps > 0 else { return }
-      applyReps(reps, updateText: false)
-    }
-    .onChange(of: set.reps) { _, reps in
-      if !isFocused { text = "\(reps)" }
-    }
-    .onChange(of: isFocused) { _, focused in
-      if !focused, text.isEmpty { text = "\(set.reps)" }
-    }
-  }
-
-  private func stepButton(
-    _ systemName: String, identifier: String, action: @escaping () -> Void
-  ) -> some View {
-    Button(action: action) {
-      Image(systemName: systemName)
-        .font(.caption.bold())
-        .frame(width: 32, height: 44)
-        .contentShape(Rectangle())
-    }
-    .buttonStyle(.plain)
-    .accessibilityIdentifier(
-      "\(identifier)-\(participant.participantName)-\(set.sortOrder + 1)"
-    )
-  }
-
-  private func setReps(_ value: Int) {
-    applyReps(value, updateText: true)
-  }
-
-  private func applyReps(_ value: Int, updateText: Bool) {
-    let reps = max(1, value)
-    let shouldRaiseFollowingSets = reps > set.reps
-    set.reps = reps
-    if shouldRaiseFollowingSets {
-      for followingSet in participant.sets
-      where followingSet.sortOrder > set.sortOrder && followingSet.reps < reps {
-        followingSet.reps = reps
-      }
-    }
-    if updateText { text = "\(reps)" }
     try? context.save()
   }
 }
