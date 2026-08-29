@@ -40,4 +40,4 @@ StrengthLog should feel energetic and fast without adopting the dense, black-and
 
 ## App icon
 
-The master is a 1024×1024, high-contrast barbell/progress mark with no text or baked corner mask. It was generated with the built-in image generation tool from a `logo-brand` prompt requesting a central geometric barbell, upward progress gesture, deep neutral background, coral symbol, bold silhouette, and recognition at 40 px.
+The master is a 1024×1024, high-contrast dumbbell monogram with no text or baked corner mask. Its teal `L`-shaped left weight and `C`-shaped right weight embed the Lift Chase initials into the lifting geometry, while the connecting shaft and mirrored outer plates remain electric coral against a deep navy background. The compact mark has an uninterrupted shaft, natural dumbbell proportions, and a bold silhouette that remains recognizable at 40–60 px.

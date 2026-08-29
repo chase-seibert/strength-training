@@ -35,3 +35,4 @@
 - Made catalog exercise units the source of truth, restored master-exercise unit editing, and removed routine-level unit customization.
 - Added guided create/edit exercise forms, exercise renaming and duplication, original-name search and display, and stable canonical identity links across routines and workout history.
 - Replaced the long exercise-filter chip row with a compact filter menu ordered All, Custom, then muscles alphabetically.
+- Replaced the original barbell/progress app icon with the selected Teal LC dumbbell monogram.
