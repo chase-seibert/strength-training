@@ -10,6 +10,8 @@ private struct ExerciseCardOffsetPreferenceKey: PreferenceKey {
   }
 }
 
+private let activeWorkoutParticipantColumnWidth: CGFloat = 108
+
 struct ActiveWorkoutView: View {
   @Environment(\.modelContext) private var context
   @Query(filter: #Predicate<PersonProfile> { !$0.isArchived }, sort: \PersonProfile.sortOrder)
@@ -117,7 +119,7 @@ struct ActiveWorkoutView: View {
       .background(DismissKeyboardOnTap())
       .safeAreaInset(edge: .top, spacing: 0) {
         participantPills
-          .padding(.horizontal, 16)
+          .padding(.horizontal, usesAlignedParticipantPicker ? 24 : 16)
           .padding(.vertical, 8)
           .background(.regularMaterial)
           .overlay(alignment: .bottom) { Divider() }
@@ -249,48 +251,26 @@ struct ActiveWorkoutView: View {
       ?? routineName
   }
 
+  private var usesAlignedParticipantPicker: Bool { currentExerciseIndex > 0 }
+
   private var participantPills: some View {
-    VStack(alignment: .leading, spacing: 8) {
-      Text("People")
-        .font(.caption.weight(.bold))
-        .foregroundStyle(.secondary)
-      ScrollView(.horizontal, showsIndicators: false) {
-        HStack(spacing: 8) {
-          ForEach(PersonProfile.ordered(people)) { person in
-            let isSelected = session.isParticipantActive(person.name)
-            Button {
-              toggleParticipant(person.name)
-            } label: {
-              HStack(spacing: 6) {
-                InitialBadge(name: person.name, colorHex: person.colorHex, size: 26)
-                Text(person.name)
-                  .font(.subheadline.weight(.semibold))
-                  .foregroundStyle(isSelected ? .primary : .secondary)
-                Image(systemName: isSelected ? "checkmark" : "plus")
-                  .font(.caption.bold())
-                  .foregroundStyle(isSelected ? Theme.coral : .secondary)
-              }
-              .padding(.horizontal, 10)
-              .padding(.vertical, 7)
-              .background(
-                isSelected ? Theme.coral.opacity(0.14) : Color.secondary.opacity(0.08),
-                in: Capsule()
-              )
-              .overlay {
-                Capsule()
-                  .stroke(
-                    isSelected ? Theme.coral.opacity(0.45) : Color.secondary.opacity(0.18),
-                    lineWidth: 1)
-              }
-            }
-            .buttonStyle(.plain)
-            .accessibilityIdentifier("participant-picker-\(person.name)")
-            .accessibilityLabel("\(person.name), \(isSelected ? "included" : "excluded")")
-            .accessibilityHint("Double tap to \(isSelected ? "hide" : "include") this person")
+    ScrollView(.horizontal, showsIndicators: false) {
+      HStack(spacing: usesAlignedParticipantPicker ? 6 : 8) {
+        ForEach(PersonProfile.ordered(people)) { person in
+          let isSelected = session.isParticipantActive(person.name)
+          Button {
+            toggleParticipant(person.name)
+          } label: {
+            participantPickerLabel(for: person, isSelected: isSelected)
           }
+          .buttonStyle(.plain)
+          .accessibilityIdentifier("participant-picker-\(person.name)")
+          .accessibilityLabel("\(person.name), \(isSelected ? "included" : "excluded")")
+          .accessibilityHint("Double tap to \(isSelected ? "hide" : "include") this person")
         }
-        .padding(.vertical, 2)
       }
+      .padding(.vertical, 2)
+      .animation(.snappy, value: usesAlignedParticipantPicker)
     }
     .confirmationDialog(
       "Hide \(pendingParticipantRemoval ?? "person") from this workout?",
@@ -306,6 +286,39 @@ struct ActiveWorkoutView: View {
       Text("Completed sets will be kept. You can turn this person back on later in this workout.")
     }
     .accessibilityIdentifier("sticky-participant-picker")
+  }
+
+  @ViewBuilder
+  private func participantPickerLabel(for person: PersonProfile, isSelected: Bool) -> some View {
+    HStack(spacing: usesAlignedParticipantPicker ? 5 : 6) {
+      InitialBadge(name: person.name, colorHex: person.colorHex, size: 26)
+      Text(person.name)
+        .font(.subheadline.weight(.semibold))
+        .foregroundStyle(isSelected ? .primary : .secondary)
+        .lineLimit(1)
+        .truncationMode(.tail)
+        .frame(
+          maxWidth: usesAlignedParticipantPicker ? .infinity : nil,
+          alignment: .leading)
+      Image(systemName: isSelected ? "checkmark" : "plus")
+        .font(.caption.bold())
+        .foregroundStyle(isSelected ? Theme.coral : .secondary)
+    }
+    .padding(.horizontal, usesAlignedParticipantPicker ? 8 : 10)
+    .frame(
+      width: usesAlignedParticipantPicker ? activeWorkoutParticipantColumnWidth : nil,
+      height: 42
+    )
+    .background(
+      isSelected ? Theme.coral.opacity(0.14) : Color.secondary.opacity(0.08),
+      in: Capsule()
+    )
+    .overlay {
+      Capsule()
+        .stroke(
+          isSelected ? Theme.coral.opacity(0.45) : Color.secondary.opacity(0.18),
+          lineWidth: 1)
+    }
   }
 
   private func toggleParticipant(_ name: String) {
@@ -440,8 +453,6 @@ struct ActiveExerciseCard: View {
   @State private var showingHistory = false
   @State private var lastSetEditorParticipant: ParticipantLog?
 
-  private let participantColumnWidth: CGFloat = 108
-
   private var visibleLogs: [ParticipantLog] {
     visiblePeople.compactMap { name in
       exercise.participants.first {
@@ -531,7 +542,7 @@ struct ActiveExerciseCard: View {
             onRestoreSkippedSets: { restoreSkippedSets(for: participant) },
             reservedSetStatuses: participantSetStatuses
           )
-          .frame(width: participantColumnWidth)
+          .frame(width: activeWorkoutParticipantColumnWidth)
         }
       }
       .frame(maxWidth: .infinity, alignment: .leading)
@@ -575,7 +586,7 @@ struct ActiveExerciseCard: View {
           unit: exercise.unit,
           colorHex: colors[participant.participantName] ?? "FF5A45"
         )
-        .frame(width: participantColumnWidth)
+        .frame(width: activeWorkoutParticipantColumnWidth)
       }
     }
     .frame(maxWidth: .infinity, alignment: .leading)

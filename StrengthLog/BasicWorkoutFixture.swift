@@ -5,9 +5,14 @@
   @MainActor
   enum BasicWorkoutFixture {
     static func install(in context: ModelContext) {
-      let alex = PersonProfile(name: "Alex", colorHex: "FF5A45", sortOrder: 0)
-      let jordan = PersonProfile(name: "Jordan", colorHex: "53C8A6", sortOrder: 1)
-      let owen = PersonProfile(name: "Owen", colorHex: "59A8FA", sortOrder: 2)
+      let usesLongNames = ProcessInfo.processInfo.arguments.contains(
+        "-activeWorkoutLongNamesFixture")
+      let alex = PersonProfile(
+        name: usesLongNames ? "Alexander" : "Alex", colorHex: "FF5A45", sortOrder: 0)
+      let jordan = PersonProfile(
+        name: usesLongNames ? "Danielle" : "Jordan", colorHex: "53C8A6", sortOrder: 1)
+      let owen = PersonProfile(
+        name: usesLongNames ? "Benjamin" : "Owen", colorHex: "59A8FA", sortOrder: 2)
       let benchPress = Exercise(
         sourceID: "fixture-bench-press",
         name: "Bench Press",
@@ -199,6 +204,17 @@
         if ProcessInfo.processInfo.arguments.contains("-activeWorkoutNavigationFixture") {
           activeWorkout?.add(squat)
           activeWorkout?.add(customExercise)
+          try? context.save()
+        }
+        if ProcessInfo.processInfo.arguments.contains(
+          "-activeWorkoutScrolledPeopleFixture"),
+          let firstParticipant = activeWorkout?.exercises.sorted(by: {
+            $0.sortOrder < $1.sortOrder
+          }).first?.participants.first
+        {
+          for set in firstParticipant.orderedSets.prefix(2) {
+            set.isCompleted = true
+          }
           try? context.save()
         }
       }

@@ -173,6 +173,14 @@ final class WorkoutNavigationUITests: XCTestCase {
     XCTAssertTrue(waitForHittable(squatNext))
     XCTAssertTrue(previous.waitForExistence(timeout: 2))
     XCTAssertTrue(alexPicker.isHittable)
+    let alexLoads = app.textFields.matching(
+      NSPredicate(format: "label == %@", "Pounds for Alex"))
+    let alexLoad = (0..<alexLoads.count)
+      .map { alexLoads.element(boundBy: $0) }
+      .first(where: { $0.isHittable })
+    XCTAssertNotNil(alexLoad)
+    XCTAssertLessThan(abs(alexPicker.frame.width - 108), 2)
+    XCTAssertLessThan(abs(alexPicker.frame.midX - (alexLoad?.frame.midX ?? 0)), 2)
 
     previous.tap()
     XCTAssertTrue(app.navigationBars["Bench Press"].waitForExistence(timeout: 3))
