@@ -20,7 +20,9 @@
         equipment: "barbell",
         primaryMuscle: "chest",
         unit: .pounds,
-        instructions: "Lower the bar with control, then press it up.")
+        instructions: "Lower the bar with control, then press it up.",
+        imagePath: "Barbell_Bench_Press_-_Medium_Grip/0.webp",
+        additionalImagePaths: ["Barbell_Bench_Press_-_Medium_Grip/1.webp"])
       let customExercise = Exercise(
         name: "Fixture Custom Curl",
         category: "strength",
@@ -36,7 +38,9 @@
         equipment: "barbell",
         primaryMuscle: "quadriceps",
         unit: .pounds,
-        instructions: "Brace, sit between the hips, then stand tall.")
+        instructions: "Brace, sit between the hips, then stand tall.",
+        imagePath: "Barbell_Full_Squat/0.webp",
+        additionalImagePaths: ["Barbell_Full_Squat/1.webp"])
       let basicRoutineExercise = RoutineExercise(
         exerciseName: benchPress.name,
         unit: .pounds,

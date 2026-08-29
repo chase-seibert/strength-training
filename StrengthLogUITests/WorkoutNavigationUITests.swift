@@ -103,29 +103,78 @@ final class WorkoutNavigationUITests: XCTestCase {
     XCTAssertTrue(app.textFields["Base reps for Alex"].waitForNonExistence(timeout: 2))
     XCTAssertEqual(alexPicker.label, "Alex, excluded")
     XCTAssertFalse(app.buttons["Hide Person"].exists)
+    XCTAssertLessThan(app.buttons["participant-picker-Jordan"].frame.minX, alexPicker.frame.minX)
+    XCTAssertLessThan(app.buttons["participant-picker-Owen"].frame.minX, alexPicker.frame.minX)
 
     alexPicker.tap()
     XCTAssertTrue(alexSet.waitForExistence(timeout: 2))
     XCTAssertEqual(alexSet.label, "Remove completed Bench Press set 1")
   }
 
-  func testSinglePersonWorkoutShowsTwoExerciseCardsSideBySide() {
+  func testSinglePersonWorkoutUsesHorizontalFullWidthCard() {
     app.terminate()
     app.launchArguments = [
       "-basicWorkoutFixture",
       "-activeWorkoutFixture",
       "-activeWorkoutOnePersonFixture",
       "-activeWorkoutNavigationFixture",
+      "-activeWorkoutWrappingFixture",
     ]
     app.launch()
 
     let benchHistory = app.buttons["exercise-history-Bench Press"]
-    let squatHistory = app.buttons["exercise-history-Barbell Back Squat"]
+    let benchImages = app.buttons["exercise-images-Bench Press"]
+    let load = firstHittableElement(
+      in: app.textFields.matching(NSPredicate(format: "label == %@", "Pounds for Alex")))
+    let reps = firstHittableElement(
+      in: app.textFields.matching(NSPredicate(format: "label == %@", "Base reps for Alex")))
+    let loadMinus = firstHittableElement(
+      in: app.buttons.matching(
+        NSPredicate(format: "identifier == %@", "measurement-minus-Alex")))
+    let firstSet = firstHittableElement(
+      in: app.buttons.matching(
+        NSPredicate(format: "identifier == %@", "participant-set-Alex-1")))
+    let eighthSet = firstHittableElement(
+      in: app.buttons.matching(
+        NSPredicate(format: "identifier == %@", "participant-set-Alex-8")))
+    let ninthSet = firstHittableElement(
+      in: app.buttons.matching(
+        NSPredicate(format: "identifier == %@", "participant-set-Alex-9")))
+    let tenthSet = firstHittableElement(
+      in: app.buttons.matching(
+        NSPredicate(format: "identifier == %@", "participant-set-Alex-10")))
+    let loadPlus = firstHittableElement(
+      in: app.buttons.matching(
+        NSPredicate(format: "identifier == %@", "measurement-plus-Alex")))
+    let repsMinus = firstHittableElement(
+      in: app.buttons.matching(
+        NSPredicate(format: "identifier == %@", "base-reps-minus-Alex")))
+    let setOptions = firstHittableElement(
+      in: app.buttons.matching(
+        NSPredicate(format: "identifier == %@", "last-set-menu-Alex")))
     XCTAssertTrue(benchHistory.waitForExistence(timeout: 5))
-    XCTAssertTrue(squatHistory.exists)
-    XCTAssertLessThan(abs(benchHistory.frame.minY - squatHistory.frame.minY), 2)
-    XCTAssertLessThan(benchHistory.frame.midX, app.frame.midX)
-    XCTAssertGreaterThan(squatHistory.frame.midX, app.frame.midX)
+    XCTAssertTrue(benchImages.exists)
+    XCTAssertNotNil(load)
+    XCTAssertNotNil(reps)
+    XCTAssertNotNil(loadMinus)
+    XCTAssertNotNil(firstSet)
+    XCTAssertNotNil(eighthSet)
+    XCTAssertNotNil(ninthSet)
+    XCTAssertNotNil(tenthSet)
+    XCTAssertNotNil(loadPlus)
+    XCTAssertNotNil(repsMinus)
+    XCTAssertNotNil(setOptions)
+    XCTAssertLessThan(abs((load?.frame.midY ?? 0) - (reps?.frame.midY ?? 0)), 2)
+    XCTAssertLessThan(load?.frame.midX ?? 0, reps?.frame.midX ?? 0)
+    XCTAssertLessThan(abs((firstSet?.frame.minX ?? 0) - (loadMinus?.frame.minX ?? 0)), 2)
+    XCTAssertLessThan(abs((firstSet?.frame.midY ?? 0) - (eighthSet?.frame.midY ?? 0)), 2)
+    XCTAssertGreaterThan(ninthSet?.frame.minY ?? 0, firstSet?.frame.maxY ?? 0)
+    XCTAssertGreaterThanOrEqual(
+      (repsMinus?.frame.minX ?? 0) - (loadPlus?.frame.maxX ?? 0), 0)
+    XCTAssertLessThan(
+      (repsMinus?.frame.minX ?? 0) - (loadPlus?.frame.maxX ?? 0), 20)
+    XCTAssertGreaterThan(setOptions?.frame.minX ?? 0, tenthSet?.frame.maxX ?? 0)
+    XCTAssertLessThan(abs((setOptions?.frame.midY ?? 0) - (ninthSet?.frame.midY ?? 0)), 2)
 
     app.buttons["next-exercise-Bench Press"].tap()
     XCTAssertTrue(app.navigationBars["Barbell Back Squat"].waitForExistence(timeout: 2))
@@ -133,12 +182,57 @@ final class WorkoutNavigationUITests: XCTestCase {
     XCTAssertTrue(app.navigationBars["Barbell Back Squat"].exists)
   }
 
+  func testTwoPersonColumnsAndScrolledPillsShareHorizontalCenters() {
+    app.terminate()
+    app.launchArguments = [
+      "-basicWorkoutFixture",
+      "-activeWorkoutFixture",
+      "-activeWorkoutTwoPersonFixture",
+      "-activeWorkoutNavigationFixture",
+      "-activeWorkoutLongNamesFixture",
+    ]
+    app.launch()
+
+    let benchNext = app.buttons["next-exercise-Bench Press"]
+    XCTAssertTrue(benchNext.waitForExistence(timeout: 5))
+    benchNext.tap()
+    XCTAssertTrue(app.navigationBars["Barbell Back Squat"].waitForExistence(timeout: 5))
+    let alexanderLoads = app.textFields.matching(
+      NSPredicate(format: "label == %@", "Pounds for Alexander"))
+    let danielleLoads = app.textFields.matching(
+      NSPredicate(format: "label == %@", "Pounds for Danielle"))
+    let alexanderLoad = (0..<alexanderLoads.count)
+      .map { alexanderLoads.element(boundBy: $0) }
+      .first(where: { $0.isHittable })
+    let danielleLoad = (0..<danielleLoads.count)
+      .map { danielleLoads.element(boundBy: $0) }
+      .first(where: { $0.isHittable })
+    XCTAssertNotNil(alexanderLoad)
+    XCTAssertNotNil(danielleLoad)
+
+    let alexanderPicker = app.buttons["participant-picker-Alexander"]
+    let daniellePicker = app.buttons["participant-picker-Danielle"]
+    let benjaminPicker = app.buttons["participant-picker-Benjamin"]
+    XCTAssertTrue(alexanderPicker.exists)
+    XCTAssertTrue(daniellePicker.exists)
+    XCTAssertTrue(benjaminPicker.exists)
+    XCTAssertLessThan(
+      abs(alexanderPicker.frame.midX - (alexanderLoad?.frame.midX ?? 0)), 2)
+    XCTAssertLessThan(
+      abs(daniellePicker.frame.midX - (danielleLoad?.frame.midX ?? 0)), 2)
+    XCTAssertGreaterThan(
+      (danielleLoad?.frame.midX ?? 0) - (alexanderLoad?.frame.midX ?? 0), 140)
+    XCTAssertGreaterThan(alexanderPicker.frame.width, 108)
+    XCTAssertGreaterThan(benjaminPicker.frame.minX, app.frame.maxX - 48)
+    XCTAssertLessThan(benjaminPicker.frame.minX, app.frame.maxX)
+  }
+
   func testSetCompletionControlsWrapByParticipantCount() {
     assertSetWrap(
       extraArguments: ["-activeWorkoutOnePersonFixture"],
       person: "Alex",
-      lastSetOnFirstRow: 2,
-      firstSetOnNextRow: 3)
+      lastSetOnFirstRow: 8,
+      firstSetOnNextRow: 9)
     assertSetWrap(
       extraArguments: ["-activeWorkoutTwoPersonFixture"],
       person: "Alex",
@@ -154,7 +248,8 @@ final class WorkoutNavigationUITests: XCTestCase {
   func testParticipantControlsKeepFixedWidthAndVerticalAxis() {
     let onePersonFrame = assertParticipantControlAlignment(
       extraArguments: ["-activeWorkoutOnePersonFixture"],
-      person: "Alex")
+      person: "Alex",
+      usesHorizontalSinglePersonLayout: true)
     let twoPersonFrame = assertParticipantControlAlignment(
       extraArguments: ["-activeWorkoutTwoPersonFixture"],
       person: "Alex")
@@ -399,7 +494,8 @@ final class WorkoutNavigationUITests: XCTestCase {
 
   private func assertParticipantControlAlignment(
     extraArguments: [String],
-    person: String
+    person: String,
+    usesHorizontalSinglePersonLayout: Bool = false
   ) -> CGRect {
     app.terminate()
     app.launchArguments =
@@ -417,10 +513,16 @@ final class WorkoutNavigationUITests: XCTestCase {
     XCTAssertTrue(firstSet.exists)
     XCTAssertTrue(secondSet.exists)
 
-    let setPairMidX = (firstSet.frame.midX + secondSet.frame.midX) / 2
-    XCTAssertLessThan(abs(loadMinus.frame.midX - repsMinus.frame.midX), 2)
-    XCTAssertLessThan(abs(load.frame.midX - reps.frame.midX), 2)
-    XCTAssertLessThan(abs(reps.frame.midX - setPairMidX), 2)
+    if usesHorizontalSinglePersonLayout {
+      XCTAssertLessThan(abs(load.frame.midY - reps.frame.midY), 2)
+      XCTAssertGreaterThan(repsMinus.frame.midX, loadMinus.frame.midX)
+      XCTAssertLessThan(abs(firstSet.frame.minX - loadMinus.frame.minX), 2)
+    } else {
+      let setPairMidX = (firstSet.frame.midX + secondSet.frame.midX) / 2
+      XCTAssertLessThan(abs(loadMinus.frame.midX - repsMinus.frame.midX), 2)
+      XCTAssertLessThan(abs(load.frame.midX - reps.frame.midX), 2)
+      XCTAssertLessThan(abs(reps.frame.midX - setPairMidX), 2)
+    }
     return load.frame
   }
 
@@ -429,6 +531,12 @@ final class WorkoutNavigationUITests: XCTestCase {
       app.swipeUp()
     }
     XCTAssertTrue(element.isHittable)
+  }
+
+  private func firstHittableElement(in query: XCUIElementQuery) -> XCUIElement? {
+    (0..<query.count)
+      .map { query.element(boundBy: $0) }
+      .first(where: \.isHittable)
   }
 
   private func waitForHittable(_ element: XCUIElement, timeout: TimeInterval = 3) -> Bool {

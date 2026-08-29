@@ -12,6 +12,30 @@ private struct ExerciseCardOffsetPreferenceKey: PreferenceKey {
 
 private let activeWorkoutParticipantColumnWidth: CGFloat = 108
 
+private struct DashTruncatedName: View {
+  let name: String
+
+  private var candidates: [String] {
+    guard name.count > 1 else { return [name, "-"] }
+    return [name]
+      + stride(from: name.count - 1, through: 1, by: -1).map {
+        "\(name.prefix($0))-"
+      }
+      + ["-"]
+  }
+
+  var body: some View {
+    ViewThatFits(in: .horizontal) {
+      ForEach(candidates, id: \.self) { candidate in
+        Text(candidate)
+          .font(.subheadline.weight(.semibold))
+          .lineLimit(1)
+          .fixedSize(horizontal: true, vertical: false)
+      }
+    }
+  }
+}
+
 struct ActiveWorkoutView: View {
   @Environment(\.modelContext) private var context
   @Query(filter: #Predicate<PersonProfile> { !$0.isArchived }, sort: \PersonProfile.sortOrder)
@@ -32,35 +56,13 @@ struct ActiveWorkoutView: View {
   var body: some View {
     ScrollViewReader { proxy in
       List {
-        if usesTwoColumnSinglePersonLayout {
-          ForEach(
-            Array(stride(from: 0, to: orderedExercises.count, by: 2)), id: \.self
-          ) { firstIndex in
-            HStack(alignment: .top, spacing: 8) {
-              exerciseCard(
-                orderedExercises[firstIndex], index: firstIndex, isCompactTwoColumn: true)
-              if orderedExercises.indices.contains(firstIndex + 1) {
-                exerciseCard(
-                  orderedExercises[firstIndex + 1], index: firstIndex + 1,
-                  isCompactTwoColumn: true)
-              } else {
-                Color.clear
-                  .frame(maxWidth: .infinity)
-              }
-            }
-            .listRowInsets(EdgeInsets(top: 8, leading: 8, bottom: 12, trailing: 8))
+        ForEach(Array(orderedExercises.enumerated()), id: \.element.id) { index, exercise in
+          exerciseCard(exercise, index: index)
+            .listRowInsets(EdgeInsets(top: 8, leading: 12, bottom: 12, trailing: 12))
             .listRowSeparator(.hidden)
             .listRowBackground(Color.clear)
-          }
-        } else {
-          ForEach(Array(orderedExercises.enumerated()), id: \.element.id) { index, exercise in
-            exerciseCard(exercise, index: index, isCompactTwoColumn: false)
-              .listRowInsets(EdgeInsets(top: 8, leading: 12, bottom: 12, trailing: 12))
-              .listRowSeparator(.hidden)
-              .listRowBackground(Color.clear)
-          }
-          .onMove(perform: moveExercises)
         }
+        .onMove(perform: moveExercises)
 
         HStack(spacing: 10) {
           workoutAction(
@@ -121,7 +123,7 @@ struct ActiveWorkoutView: View {
       .background(DismissKeyboardOnTap())
       .safeAreaInset(edge: .top, spacing: 0) {
         participantPills
-          .padding(.horizontal, usesAlignedParticipantPicker ? 24 : 16)
+          .padding(.horizontal, participantPickerOuterPadding)
           .padding(.vertical, 8)
           .background(.regularMaterial)
           .overlay(alignment: .bottom) { Divider() }
@@ -204,6 +206,11 @@ struct ActiveWorkoutView: View {
 
   private var resumeExerciseID: UUID? {
     guard let first = orderedExercises.first else { return nil }
+    #if DEBUG
+      if ProcessInfo.processInfo.arguments.contains("-activeWorkoutScrolledPeopleFixture") {
+        return orderedExercises.dropFirst().first?.id ?? first.id
+      }
+    #endif
     guard
       let progressedIndex = orderedExercises.lastIndex(where: { exercise in
         exercise.participants
@@ -251,8 +258,19 @@ struct ActiveWorkoutView: View {
 
   private var usesAlignedParticipantPicker: Bool { currentExerciseIndex > 0 }
 
-  private var usesTwoColumnSinglePersonLayout: Bool {
-    visiblePeople.count == 1 && !editMode.isEditing
+  private var usesTwoPersonAlignedParticipantPicker: Bool {
+    usesAlignedParticipantPicker && visiblePeople.count == 2
+  }
+
+  private var participantPickerOuterPadding: CGFloat {
+    if usesTwoPersonAlignedParticipantPicker { return 0 }
+    return usesAlignedParticipantPicker ? 24 : 16
+  }
+
+  private var participantPickerPeople: [PersonProfile] {
+    let orderedPeople = PersonProfile.ordered(people)
+    return orderedPeople.filter { session.isParticipantActive($0.name) }
+      + orderedPeople.filter { !session.isParticipantActive($0.name) }
   }
 
   private func exerciseNearestStickyHeader(in offsets: [UUID: CGFloat]) -> UUID? {
@@ -271,9 +289,7 @@ struct ActiveWorkoutView: View {
     return orderedExercises.first(where: { closestIDs.contains($0.id) })?.id
   }
 
-  private func exerciseCard(
-    _ exercise: ExerciseLog, index: Int, isCompactTwoColumn: Bool
-  ) -> some View {
+  private func exerciseCard(_ exercise: ExerciseLog, index: Int) -> some View {
     ActiveExerciseCard(
       exercise: exercise,
       catalogExercise: catalogByName[exercise.exerciseName],
@@ -281,10 +297,9 @@ struct ActiveWorkoutView: View {
       colors: participantColors,
       position: index + 1,
       total: orderedExercises.count,
-      isCompactTwoColumn: isCompactTwoColumn,
+      usesSinglePersonHorizontalLayout: visiblePeople.count == 1,
       onAdvance: { jumpExercise(after: exercise, by: 1) }
     )
-    .fixedSize(horizontal: false, vertical: isCompactTwoColumn)
     .frame(maxWidth: .infinity, alignment: .top)
     .id(exercise.id)
     .background {
@@ -298,15 +313,41 @@ struct ActiveWorkoutView: View {
     }
   }
 
+  @ViewBuilder
   private var participantPills: some View {
+    if usesTwoPersonAlignedParticipantPicker {
+      GeometryReader { geometry in
+        let columnGap = max(
+          6,
+          (geometry.size.width - (2 * activeWorkoutParticipantColumnWidth) - 48) / 3)
+        let centerDistance = activeWorkoutParticipantColumnWidth + columnGap
+        let pillWidth = min(140, centerDistance - 8)
+        let firstColumnCenter = 24 + columnGap + (activeWorkoutParticipantColumnWidth / 2)
+        participantPillScrollView(
+          spacing: centerDistance - pillWidth,
+          leadingPadding: firstColumnCenter - (pillWidth / 2),
+          pillWidth: pillWidth)
+      }
+      .frame(height: 46)
+    } else {
+      participantPillScrollView(
+        spacing: usesAlignedParticipantPicker ? 6 : 8,
+        leadingPadding: 0,
+        pillWidth: usesAlignedParticipantPicker ? activeWorkoutParticipantColumnWidth : nil)
+    }
+  }
+
+  private func participantPillScrollView(
+    spacing: CGFloat, leadingPadding: CGFloat, pillWidth: CGFloat?
+  ) -> some View {
     ScrollView(.horizontal, showsIndicators: false) {
-      HStack(spacing: usesAlignedParticipantPicker ? 6 : 8) {
-        ForEach(PersonProfile.ordered(people)) { person in
+      HStack(spacing: spacing) {
+        ForEach(participantPickerPeople) { person in
           let isSelected = session.isParticipantActive(person.name)
           Button {
             toggleParticipant(person.name)
           } label: {
-            participantPickerLabel(for: person, isSelected: isSelected)
+            participantPickerLabel(for: person, isSelected: isSelected, pillWidth: pillWidth)
           }
           .buttonStyle(.plain)
           .accessibilityIdentifier("participant-picker-\(person.name)")
@@ -314,31 +355,40 @@ struct ActiveWorkoutView: View {
           .accessibilityHint("Double tap to \(isSelected ? "hide" : "include") this person")
         }
       }
+      .padding(.leading, leadingPadding)
+      .padding(.trailing, 16)
       .padding(.vertical, 2)
-      .animation(.snappy, value: usesAlignedParticipantPicker)
+      .animation(.snappy, value: session.participantNames)
     }
     .accessibilityIdentifier("sticky-participant-picker")
   }
 
   @ViewBuilder
-  private func participantPickerLabel(for person: PersonProfile, isSelected: Bool) -> some View {
+  private func participantPickerLabel(
+    for person: PersonProfile, isSelected: Bool, pillWidth: CGFloat?
+  ) -> some View {
     HStack(spacing: usesAlignedParticipantPicker ? 5 : 6) {
       InitialBadge(name: person.name, colorHex: person.colorHex, size: 26)
-      Text(person.name)
-        .font(.subheadline.weight(.semibold))
-        .foregroundStyle(isSelected ? .primary : .secondary)
-        .lineLimit(1)
-        .truncationMode(.tail)
-        .frame(
-          maxWidth: usesAlignedParticipantPicker ? .infinity : nil,
-          alignment: .leading)
+      Group {
+        if usesAlignedParticipantPicker {
+          DashTruncatedName(name: person.name)
+        } else {
+          Text(person.name)
+            .font(.subheadline.weight(.semibold))
+            .lineLimit(1)
+        }
+      }
+      .foregroundStyle(isSelected ? .primary : .secondary)
+      .frame(
+        maxWidth: usesAlignedParticipantPicker ? .infinity : nil,
+        alignment: .leading)
       Image(systemName: isSelected ? "checkmark" : "plus")
         .font(.caption.bold())
         .foregroundStyle(isSelected ? Theme.coral : .secondary)
     }
     .padding(.horizontal, usesAlignedParticipantPicker ? 8 : 10)
     .frame(
-      width: usesAlignedParticipantPicker ? activeWorkoutParticipantColumnWidth : nil,
+      width: pillWidth,
       height: 42
     )
     .background(
@@ -471,7 +521,7 @@ struct ActiveExerciseCard: View {
   let colors: [String: String]
   let position: Int
   let total: Int
-  let isCompactTwoColumn: Bool
+  let usesSinglePersonHorizontalLayout: Bool
   let onAdvance: () -> Void
   @State private var showingImages = false
   @State private var showingHistory = false
@@ -493,6 +543,10 @@ struct ActiveExerciseCard: View {
     visibleLogs.compactMap { setStatus(for: $0) }
   }
 
+  private var usesTwoPersonParticipantColumns: Bool {
+    visibleLogs.count == 2
+  }
+
   private var repGuidance: String? {
     let name = exercise.exerciseName.lowercased()
     if ["alternating", "alternate"].contains(where: name.contains) {
@@ -511,7 +565,7 @@ struct ActiveExerciseCard: View {
   var body: some View {
     VStack(spacing: 12) {
       HStack(alignment: .top, spacing: 10) {
-        if !isCompactTwoColumn, let catalogExercise, !catalogExercise.imageURLs.isEmpty {
+        if let catalogExercise, !catalogExercise.imageURLs.isEmpty {
           Button {
             showingImages = true
           } label: {
@@ -521,10 +575,11 @@ struct ActiveExerciseCard: View {
               .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
           }
           .buttonStyle(.plain)
+          .accessibilityIdentifier("exercise-images-\(exercise.exerciseName)")
         }
         VStack(alignment: .leading, spacing: 3) {
           Text(exercise.exerciseName)
-            .font(isCompactTwoColumn ? .headline.bold() : .title3.bold())
+            .font(.title3.bold())
             .lineLimit(2)
             .fixedSize(horizontal: false, vertical: true)
           Text("\(position) of \(total) · \(exercise.unit.title)")
@@ -542,47 +597,57 @@ struct ActiveExerciseCard: View {
           showingHistory = true
         } label: {
           Image(systemName: "chart.xyaxis.line")
-            .font(isCompactTwoColumn ? .subheadline : .headline)
+            .font(.headline)
             .foregroundStyle(.blue)
-            .frame(
-              width: isCompactTwoColumn ? 32 : 44,
-              height: isCompactTwoColumn ? 32 : 44)
+            .frame(width: 44, height: 44)
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("exercise-history-\(exercise.exerciseName)")
         .accessibilityLabel("Show group history for \(exercise.exerciseName)")
       }
 
-      participantLoadControls
+      if usesSinglePersonHorizontalLayout, let participant = visibleLogs.first {
+        singlePersonMeasurementControls(for: participant)
 
-      Divider()
+        Divider()
 
-      HStack(alignment: .top, spacing: 6) {
-        ForEach(visibleLogs) { participant in
-          ParticipantExerciseCell(
-            participant: participant,
-            exerciseName: exercise.exerciseName,
-            colorHex: colors[participant.participantName] ?? "FF5A45",
-            onCustomizeLastSet: { lastSetEditorParticipant = participant },
-            onResetLastSet: { resetLastSet(for: participant) },
-            onSkipLastSets: { skipLastSets($0, for: participant) },
-            onRestoreSkippedSets: { restoreSkippedSets(for: participant) },
-            reservedSetStatuses: participantSetStatuses
-          )
-          .frame(width: activeWorkoutParticipantColumnWidth)
-        }
-      }
-      .frame(maxWidth: .infinity, alignment: isCompactTwoColumn ? .center : .leading)
-
-      Divider()
-
-      if isCompactTwoColumn {
-        compactSetCountControls
+        SinglePersonSetCompletionGrid(
+          participant: participant,
+          exerciseName: exercise.exerciseName,
+          colorHex: colors[participant.participantName] ?? "FF5A45",
+          setsPerRow: 8,
+          onCustomizeLastSet: { lastSetEditorParticipant = participant },
+          onResetLastSet: { resetLastSet(for: participant) },
+          onSkipLastSets: { skipLastSets($0, for: participant) },
+          onRestoreSkippedSets: { restoreSkippedSets(for: participant) }
+        )
+        .frame(maxWidth: .infinity, alignment: .leading)
       } else {
-        setCountControls
+        participantLoadControls
+
+        Divider()
+
+        HStack(alignment: .top, spacing: usesTwoPersonParticipantColumns ? 0 : 6) {
+          if usesTwoPersonParticipantColumns {
+            ForEach(visibleLogs) { participant in
+              Spacer(minLength: 0)
+              participantExerciseControl(for: participant)
+            }
+            Spacer(minLength: 0)
+          } else {
+            ForEach(visibleLogs) { participant in
+              participantExerciseControl(for: participant)
+            }
+          }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
       }
+
+      Divider()
+
+      setCountControls
     }
-    .padding(isCompactTwoColumn ? 10 : 12)
+    .padding(12)
     .background(
       Color(.systemBackground),
       in: RoundedRectangle(cornerRadius: 20, style: .continuous)
@@ -610,58 +675,64 @@ struct ActiveExerciseCard: View {
   }
 
   private var participantLoadControls: some View {
-    HStack(alignment: .top, spacing: 6) {
-      ForEach(visibleLogs) { participant in
-        MeasurementStepper(
-          participant: participant,
-          unit: exercise.unit,
-          colorHex: colors[participant.participantName] ?? "FF5A45"
-        )
-        .frame(width: activeWorkoutParticipantColumnWidth)
+    HStack(alignment: .top, spacing: usesTwoPersonParticipantColumns ? 0 : 6) {
+      if usesTwoPersonParticipantColumns {
+        ForEach(visibleLogs) { participant in
+          Spacer(minLength: 0)
+          participantLoadControl(for: participant)
+        }
+        Spacer(minLength: 0)
+      } else {
+        ForEach(visibleLogs) { participant in
+          participantLoadControl(for: participant)
+        }
       }
     }
-    .frame(maxWidth: .infinity, alignment: isCompactTwoColumn ? .center : .leading)
+    .frame(maxWidth: .infinity, alignment: .leading)
   }
 
-  private var compactSetCountControls: some View {
-    HStack(spacing: 8) {
-      Button(action: removeLastSetForEveryone) {
-        Image(systemName: "minus.circle")
-          .font(.title3.weight(.semibold))
-          .frame(width: 44, height: 44)
-          .contentShape(Rectangle())
-      }
-      .buttonStyle(.plain)
-      .foregroundStyle(setCount > 1 ? Theme.navy : Color.secondary.opacity(0.4))
-      .disabled(setCount <= 1)
-      .accessibilityIdentifier("remove-shared-set")
-      .accessibilityLabel("Remove set")
+  private func participantLoadControl(for participant: ParticipantLog) -> some View {
+    MeasurementStepper(
+      participant: participant,
+      unit: exercise.unit,
+      colorHex: colors[participant.participantName] ?? "FF5A45"
+    )
+    .fixedSize(horizontal: false, vertical: true)
+    .frame(width: activeWorkoutParticipantColumnWidth)
+  }
 
-      Button(action: addSetForEveryone) {
-        Image(systemName: "plus.circle.fill")
-          .font(.title3.weight(.semibold))
-          .frame(width: 44, height: 44)
-          .contentShape(Rectangle())
-      }
-      .buttonStyle(.plain)
-      .foregroundStyle(Theme.coral)
-      .accessibilityIdentifier("add-shared-set")
-      .accessibilityLabel("Add set")
+  private func participantExerciseControl(
+    for participant: ParticipantLog,
+    showsSetCompletions: Bool = true,
+    showsSetOptions: Bool = true
+  ) -> some View {
+    ParticipantExerciseCell(
+      participant: participant,
+      exerciseName: exercise.exerciseName,
+      colorHex: colors[participant.participantName] ?? "FF5A45",
+      onCustomizeLastSet: { lastSetEditorParticipant = participant },
+      onResetLastSet: { resetLastSet(for: participant) },
+      onSkipLastSets: { skipLastSets($0, for: participant) },
+      onRestoreSkippedSets: { restoreSkippedSets(for: participant) },
+      reservedSetStatuses: participantSetStatuses,
+      showsSetCompletions: showsSetCompletions,
+      showsSetOptions: showsSetOptions
+    )
+    .frame(width: activeWorkoutParticipantColumnWidth)
+  }
 
-      Button(action: onAdvance) {
-        Image(systemName: "chevron.down")
-          .font(.headline.weight(.bold))
-          .foregroundStyle(Theme.coral)
-          .frame(width: 44, height: 44)
-          .contentShape(Rectangle())
-      }
-      .buttonStyle(.plain)
-      .disabled(position >= total)
-      .opacity(position >= total ? 0.45 : 1)
-      .accessibilityLabel("Next exercise")
-      .accessibilityIdentifier("next-exercise-\(exercise.exerciseName)")
+  private func singlePersonMeasurementControls(for participant: ParticipantLog) -> some View {
+    HStack(alignment: .top, spacing: 12) {
+      participantLoadControl(for: participant)
+      participantExerciseControl(
+        for: participant,
+        showsSetCompletions: false,
+        showsSetOptions: false
+      )
+      .padding(.top, 4)
+      Spacer(minLength: 0)
     }
-    .frame(maxWidth: .infinity)
+    .frame(maxWidth: .infinity, alignment: .leading)
   }
 
   private var setCountControls: some View {
@@ -833,6 +904,8 @@ struct ParticipantExerciseCell: View {
   let onSkipLastSets: (Int) -> Void
   let onRestoreSkippedSets: () -> Void
   let reservedSetStatuses: [String]
+  let showsSetCompletions: Bool
+  let showsSetOptions: Bool
 
   private var orderedSets: [WorkoutSet] { participant.orderedSets }
 
@@ -858,14 +931,6 @@ struct ParticipantExerciseCell: View {
     return last.reps
   }
 
-  private var completionRows: [[(offset: Int, element: WorkoutSet)]] {
-    let indexedSets = Array(activeSets.enumerated())
-    guard !indexedSets.isEmpty else { return [] }
-    return stride(from: 0, to: indexedSets.count, by: 2).map { start in
-      Array(indexedSets[start..<min(start + 2, indexedSets.count)])
-    }
-  }
-
   var body: some View {
     VStack(spacing: 6) {
       VStack(spacing: 0) {
@@ -876,11 +941,20 @@ struct ParticipantExerciseCell: View {
         )
         .frame(maxWidth: .infinity)
 
-        HStack(spacing: 0) {
-          Spacer(minLength: 0)
-          setOptionsMenu
+        if showsSetOptions {
+          HStack(spacing: 0) {
+            Spacer(minLength: 0)
+            ParticipantSetOptionsMenu(
+              participant: participant,
+              baseReps: baseReps,
+              colorHex: colorHex,
+              onCustomizeLastSet: onCustomizeLastSet,
+              onResetLastSet: onResetLastSet,
+              onSkipLastSets: onSkipLastSets,
+              onRestoreSkippedSets: onRestoreSkippedSets)
+          }
+          .frame(height: 36)
         }
-        .frame(height: 36)
       }
 
       if !reservedSetStatuses.isEmpty {
@@ -897,27 +971,66 @@ struct ParticipantExerciseCell: View {
         .frame(maxWidth: .infinity, alignment: .top)
       }
 
-      VStack(spacing: 4) {
-        ForEach(completionRows.indices, id: \.self) { rowIndex in
-          HStack(spacing: 4) {
-            ForEach(completionRows[rowIndex], id: \.element.id) { indexedSet in
-              SetCompletionButton(
-                set: indexedSet.element,
-                participant: participant,
-                exerciseName: exerciseName,
-                setNumber: indexedSet.offset + 1,
-                colorHex: colorHex,
-                size: 36)
-            }
-          }
-        }
+      if showsSetCompletions {
+        ParticipantSetCompletionGrid(
+          participant: participant,
+          exerciseName: exerciseName,
+          colorHex: colorHex,
+          setsPerRow: 2)
       }
-      .frame(maxWidth: .infinity)
     }
     .fixedSize(horizontal: false, vertical: true)
   }
 
-  private var setOptionsMenu: some View {
+  private var setStatus: String? {
+    var status: [String] = []
+    if let lastSetOverride {
+      status.append("Last set: \(lastSetOverride) reps")
+    }
+    if skippedSetCount > 0 {
+      status.append(
+        skippedSetCount == 1
+          ? "Last set skipped"
+          : "Last \(skippedSetCount) sets skipped")
+    }
+    return status.isEmpty ? nil : status.joined(separator: " · ")
+  }
+
+  private func setStatusText(_ status: String) -> some View {
+    Text(status)
+      .font(.caption2.weight(.semibold))
+      .foregroundStyle(Color(hex: colorHex))
+      .multilineTextAlignment(.center)
+      .fixedSize(horizontal: false, vertical: true)
+      .frame(maxWidth: .infinity)
+  }
+}
+
+struct ParticipantSetOptionsMenu: View {
+  @Bindable var participant: ParticipantLog
+  let baseReps: Int
+  let colorHex: String
+  let onCustomizeLastSet: () -> Void
+  let onResetLastSet: () -> Void
+  let onSkipLastSets: (Int) -> Void
+  let onRestoreSkippedSets: () -> Void
+
+  private var activeSets: [WorkoutSet] {
+    participant.orderedSets.filter { !$0.isSkipped }
+  }
+
+  private var skippedSetCount: Int {
+    participant.orderedSets.filter(\.isSkipped).count
+  }
+
+  private var lastSetOverride: Int? {
+    guard activeSets.count > 1, let last = activeSets.last, last.reps != baseReps else {
+      return nil
+    }
+    return last.reps
+  }
+
+  var body: some View {
     Menu {
       if activeSets.count >= 2 {
         Button("Customize Last Set…", systemImage: "slider.horizontal.3") {
@@ -961,28 +1074,100 @@ struct ParticipantExerciseCell: View {
     )
     .accessibilityIdentifier("last-set-menu-\(participant.participantName)")
   }
+}
 
-  private var setStatus: String? {
-    var status: [String] = []
-    if let lastSetOverride {
-      status.append("Last set: \(lastSetOverride) reps")
-    }
-    if skippedSetCount > 0 {
-      status.append(
-        skippedSetCount == 1
-          ? "Last set skipped"
-          : "Last \(skippedSetCount) sets skipped")
-    }
-    return status.isEmpty ? nil : status.joined(separator: " · ")
+struct SinglePersonSetCompletionGrid: View {
+  @Bindable var participant: ParticipantLog
+  let exerciseName: String
+  let colorHex: String
+  let setsPerRow: Int
+  let onCustomizeLastSet: () -> Void
+  let onResetLastSet: () -> Void
+  let onSkipLastSets: (Int) -> Void
+  let onRestoreSkippedSets: () -> Void
+
+  private var activeSets: [WorkoutSet] {
+    participant.orderedSets.filter { !$0.isSkipped }
   }
 
-  private func setStatusText(_ status: String) -> some View {
-    Text(status)
-      .font(.caption2.weight(.semibold))
-      .foregroundStyle(Color(hex: colorHex))
-      .multilineTextAlignment(.center)
-      .fixedSize(horizontal: false, vertical: true)
-      .frame(maxWidth: .infinity)
+  private var baseReps: Int {
+    activeSets.dropLast().first?.reps
+      ?? activeSets.first?.reps
+      ?? participant.orderedSets.first?.reps
+      ?? WorkoutPreferences.defaultReps
+  }
+
+  private var itemRows: [[Int]] {
+    let itemIndices = Array(0...activeSets.count)
+    return stride(from: 0, to: itemIndices.count, by: setsPerRow).map { start in
+      Array(itemIndices[start..<min(start + setsPerRow, itemIndices.count)])
+    }
+  }
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 4) {
+      ForEach(itemRows.indices, id: \.self) { rowIndex in
+        HStack(spacing: 4) {
+          ForEach(itemRows[rowIndex], id: \.self) { itemIndex in
+            if itemIndex < activeSets.count {
+              SetCompletionButton(
+                set: activeSets[itemIndex],
+                participant: participant,
+                exerciseName: exerciseName,
+                setNumber: itemIndex + 1,
+                colorHex: colorHex,
+                size: 36)
+            } else {
+              ParticipantSetOptionsMenu(
+                participant: participant,
+                baseReps: baseReps,
+                colorHex: colorHex,
+                onCustomizeLastSet: onCustomizeLastSet,
+                onResetLastSet: onResetLastSet,
+                onSkipLastSets: onSkipLastSets,
+                onRestoreSkippedSets: onRestoreSkippedSets)
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+struct ParticipantSetCompletionGrid: View {
+  @Bindable var participant: ParticipantLog
+  let exerciseName: String
+  let colorHex: String
+  let setsPerRow: Int
+
+  private var activeSets: [WorkoutSet] {
+    participant.orderedSets.filter { !$0.isSkipped }
+  }
+
+  private var completionRows: [[(offset: Int, element: WorkoutSet)]] {
+    let indexedSets = Array(activeSets.enumerated())
+    guard !indexedSets.isEmpty else { return [] }
+    return stride(from: 0, to: indexedSets.count, by: setsPerRow).map { start in
+      Array(indexedSets[start..<min(start + setsPerRow, indexedSets.count)])
+    }
+  }
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 4) {
+      ForEach(completionRows.indices, id: \.self) { rowIndex in
+        HStack(spacing: 4) {
+          ForEach(completionRows[rowIndex], id: \.element.id) { indexedSet in
+            SetCompletionButton(
+              set: indexedSet.element,
+              participant: participant,
+              exerciseName: exerciseName,
+              setNumber: indexedSet.offset + 1,
+              colorHex: colorHex,
+              size: 36)
+          }
+        }
+      }
+    }
   }
 }
 
