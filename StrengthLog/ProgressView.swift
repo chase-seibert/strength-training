@@ -197,7 +197,10 @@ struct ProgressView: View {
     session.deletedAt = .now
     session.isActive = false
     session.endedAt = session.endedAt ?? .now
+    session.restTimerStartedAt = nil
+    session.restTimerDurationSeconds = nil
     try? context.save()
+    LiveActivityManager.shared.end()
     pendingDeletion = nil
   }
 
@@ -254,6 +257,8 @@ struct SessionDetailView: View {
         LabeledContent(
           "Date", value: session.startedAt.formatted(date: .abbreviated, time: .shortened))
         LabeledContent(
+          "Length", value: session.workoutDuration?.workoutDurationText ?? "—")
+        LabeledContent(
           "Completed", value: "\(session.completedSetCount) of \(session.totalSetCount) sets")
         if let notes = session.notes, !notes.isEmpty {
           LabeledContent("Notes", value: notes)
@@ -303,14 +308,20 @@ struct SessionDetailView: View {
   private func open() {
     session.endedAt = nil
     session.isActive = true
+    session.restTimerStartedAt = nil
+    session.restTimerDurationSeconds = nil
     try? context.save()
+    LiveActivityManager.shared.end()
   }
 
   private func delete() {
     session.deletedAt = .now
     session.isActive = false
     session.endedAt = session.endedAt ?? .now
+    session.restTimerStartedAt = nil
+    session.restTimerDurationSeconds = nil
     try? context.save()
+    LiveActivityManager.shared.end()
     dismiss()
   }
 

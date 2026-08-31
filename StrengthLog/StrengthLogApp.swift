@@ -224,13 +224,19 @@ struct RootView: View {
     guard session.isActive else { return }
     session.endedAt = .now
     session.isActive = false
+    session.restTimerStartedAt = nil
+    session.restTimerDurationSeconds = nil
     try? context.save()
+    LiveActivityManager.shared.end()
   }
 
   private func delete(_ session: WorkoutSession) {
     session.deletedAt = .now
     session.isActive = false
     session.endedAt = session.endedAt ?? .now
+    session.restTimerStartedAt = nil
+    session.restTimerDurationSeconds = nil
     try? context.save()
+    LiveActivityManager.shared.end()
   }
 }

@@ -1,3 +1,4 @@
+import AudioToolbox
 import Charts
 import SwiftData
 import SwiftUI
@@ -38,6 +39,7 @@ private struct DashTruncatedName: View {
 
 struct ActiveWorkoutView: View {
   @Environment(\.modelContext) private var context
+  @Environment(\.scenePhase) private var scenePhase
   @Query(filter: #Predicate<PersonProfile> { !$0.isArchived }, sort: \PersonProfile.sortOrder)
   private var people: [PersonProfile]
   @Query private var routines: [Routine]
@@ -52,114 +54,155 @@ struct ActiveWorkoutView: View {
   @State private var didRestoreScrollPosition = false
   @State private var currentExerciseID: UUID?
   @State private var requestedExerciseID: UUID?
+  @AppStorage(WorkoutPreferences.restTimerNotificationsEnabledKey)
+  private var restTimerNotificationsEnabled = false
 
   var body: some View {
-    ScrollViewReader { proxy in
-      List {
-        ForEach(Array(orderedExercises.enumerated()), id: \.element.id) { index, exercise in
-          exerciseCard(exercise, index: index)
-            .listRowInsets(EdgeInsets(top: 8, leading: 12, bottom: 12, trailing: 12))
-            .listRowSeparator(.hidden)
-            .listRowBackground(Color.clear)
-        }
-        .onMove(perform: moveExercises)
+    TimelineView(.animation(minimumInterval: 1, paused: false)) { timeline in
+      ScrollViewReader { proxy in
+        List {
+          ForEach(Array(orderedExercises.enumerated()), id: \.element.id) { index, exercise in
+            exerciseCard(exercise, index: index)
+              .listRowInsets(EdgeInsets(top: 8, leading: 12, bottom: 12, trailing: 12))
+              .listRowSeparator(.hidden)
+              .listRowBackground(Color.clear)
+          }
+          .onMove(perform: moveExercises)
 
-        HStack(spacing: 10) {
-          workoutAction(
-            editMode.isEditing ? "Finish Reorder" : "Reorder",
-            systemImage: editMode.isEditing ? "checkmark" : "arrow.up.arrow.down"
-          ) {
-            withAnimation(.snappy) {
-              editMode = editMode.isEditing ? .inactive : .active
+          HStack(spacing: 10) {
+            workoutAction(
+              editMode.isEditing ? "Finish Reorder" : "Reorder",
+              systemImage: editMode.isEditing ? "checkmark" : "arrow.up.arrow.down"
+            ) {
+              withAnimation(.snappy) {
+                editMode = editMode.isEditing ? .inactive : .active
+              }
+            }
+            workoutAction("Add Exercise", systemImage: "plus") {
+              showingExercisePicker = true
             }
           }
-          workoutAction("Add Exercise", systemImage: "plus") {
-            showingExercisePicker = true
+          .listRowInsets(EdgeInsets(top: 16, leading: 16, bottom: 24, trailing: 16))
+          .listRowSeparator(.hidden)
+          .listRowBackground(Color.clear)
+
+          VStack(spacing: 12) {
+            if let duration = session.workoutDuration(at: timeline.date) {
+              Text("Workout length \(duration.workoutDurationText)")
+                .font(.subheadline.monospacedDigit().weight(.semibold))
+                .foregroundStyle(.secondary)
+                .accessibilityLabel("Workout length \(duration.workoutDurationText)")
+            }
+            Button(action: onDone) {
+              Text("Complete Workout")
+                .font(.headline)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 13)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(Theme.coral)
+
+            Button("Delete Workout", role: .destructive) {
+              showingDeleteConfirmation = true
+            }
+            .font(.body.weight(.semibold))
+            .buttonStyle(.plain)
+            .foregroundStyle(.red)
+            .alert(
+              "Delete workout?",
+              isPresented: $showingDeleteConfirmation
+            ) {
+              Button("Delete Workout", role: .destructive, action: onDelete)
+              Button("Cancel", role: .cancel) {}
+            } message: {
+              Text(
+                "This moves the \(routineName) workout from \(session.startedAt.formatted(date: .abbreviated, time: .shortened)) to Deleted Workouts, where it can be restored."
+              )
+            }
+          }
+          .frame(maxWidth: .infinity)
+          .listRowInsets(EdgeInsets(top: 8, leading: 12, bottom: 32, trailing: 12))
+          .listRowSeparator(.hidden)
+          .listRowBackground(Color.clear)
+        }
+        .listStyle(.plain)
+        .coordinateSpace(name: "active-workout-scroll")
+        .scrollContentBackground(.hidden)
+        .scrollDismissesKeyboard(.interactively)
+        .environment(\.editMode, $editMode)
+        .background(Color(.systemGroupedBackground))
+        .background(DismissKeyboardOnTap())
+        .safeAreaInset(edge: .top, spacing: 0) {
+          participantPills
+            .padding(.horizontal, participantPickerOuterPadding)
+            .padding(.vertical, 8)
+            .background(.regularMaterial)
+            .overlay(alignment: .bottom) { Divider() }
+        }
+        .onAppear {
+          guard !didRestoreScrollPosition else { return }
+          didRestoreScrollPosition = true
+          guard let target = resumeExerciseID else { return }
+          currentExerciseID = target
+          DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+            withAnimation(.easeOut(duration: 0.25)) {
+              proxy.scrollTo(target, anchor: .top)
+            }
           }
         }
-        .listRowInsets(EdgeInsets(top: 16, leading: 16, bottom: 24, trailing: 16))
-        .listRowSeparator(.hidden)
-        .listRowBackground(Color.clear)
-
-        VStack(spacing: 12) {
-          Button(action: onDone) {
-            Text("Complete Workout")
-              .font(.headline)
-              .frame(maxWidth: .infinity)
-              .padding(.vertical, 13)
-          }
-          .buttonStyle(.borderedProminent)
-          .tint(Theme.coral)
-
-          Button("Delete Workout", role: .destructive) {
-            showingDeleteConfirmation = true
-          }
-          .font(.body.weight(.semibold))
-          .buttonStyle(.plain)
-          .foregroundStyle(.red)
-          .alert(
-            "Delete workout?",
-            isPresented: $showingDeleteConfirmation
-          ) {
-            Button("Delete Workout", role: .destructive, action: onDelete)
-            Button("Cancel", role: .cancel) {}
-          } message: {
-            Text(
-              "This moves the \(routineName) workout from \(session.startedAt.formatted(date: .abbreviated, time: .shortened)) to Deleted Workouts, where it can be restored."
-            )
-          }
+        .onPreferenceChange(ExerciseCardOffsetPreferenceKey.self) { offsets in
+          guard requestedExerciseID == nil else { return }
+          currentExerciseID = exerciseNearestStickyHeader(in: offsets)
         }
-        .frame(maxWidth: .infinity)
-        .listRowInsets(EdgeInsets(top: 8, leading: 12, bottom: 32, trailing: 12))
-        .listRowSeparator(.hidden)
-        .listRowBackground(Color.clear)
-      }
-      .listStyle(.plain)
-      .coordinateSpace(name: "active-workout-scroll")
-      .scrollContentBackground(.hidden)
-      .scrollDismissesKeyboard(.interactively)
-      .environment(\.editMode, $editMode)
-      .background(Color(.systemGroupedBackground))
-      .background(DismissKeyboardOnTap())
-      .safeAreaInset(edge: .top, spacing: 0) {
-        participantPills
-          .padding(.horizontal, participantPickerOuterPadding)
-          .padding(.vertical, 8)
-          .background(.regularMaterial)
-          .overlay(alignment: .bottom) { Divider() }
-      }
-      .onAppear {
-        guard !didRestoreScrollPosition else { return }
-        didRestoreScrollPosition = true
-        guard let target = resumeExerciseID else { return }
-        currentExerciseID = target
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-          withAnimation(.easeOut(duration: 0.25)) {
+        .onChange(of: requestedExerciseID) { _, target in
+          guard let target else { return }
+          currentExerciseID = target
+          withAnimation(.snappy) {
             proxy.scrollTo(target, anchor: .top)
           }
-        }
-      }
-      .onPreferenceChange(ExerciseCardOffsetPreferenceKey.self) { offsets in
-        guard requestedExerciseID == nil else { return }
-        currentExerciseID = exerciseNearestStickyHeader(in: offsets)
-      }
-      .onChange(of: requestedExerciseID) { _, target in
-        guard let target else { return }
-        currentExerciseID = target
-        withAnimation(.snappy) {
-          proxy.scrollTo(target, anchor: .top)
-        }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
-          if requestedExerciseID == target {
-            requestedExerciseID = nil
+          DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
+            if requestedExerciseID == target {
+              requestedExerciseID = nil
+            }
           }
         }
       }
     }
-    .navigationTitle(currentExerciseName)
     .navigationBarTitleDisplayMode(.inline)
     .navigationBarBackButtonHidden(true)
     .toolbar {
+      ToolbarItem(placement: .principal) {
+        TimelineView(.animation(minimumInterval: 1, paused: false)) { timeline in
+          let remaining = restRemaining(at: timeline.date)
+          Group {
+            if let remaining {
+              HStack(spacing: 8) {
+                Text("Rest \(Int(ceil(remaining)))s")
+                  .monospacedDigit()
+                Button("Skip", action: clearRestTimer)
+                  .font(.caption.weight(.semibold))
+                  .buttonStyle(.bordered)
+                  .tint(Theme.coral)
+              }
+              .foregroundStyle(Theme.coral)
+              .font(.headline.weight(.semibold))
+              .accessibilityElement(children: .combine)
+              .accessibilityIdentifier("live-workout-header")
+              .accessibilityLabel(
+                "Rest timer, \(Int(ceil(remaining))) seconds remaining. Skip")
+            } else {
+              Text(currentExerciseName)
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+                .font(.headline)
+                .accessibilityLabel(currentExerciseName)
+            }
+          }
+          .onChange(of: remaining) { oldValue, newValue in
+            handleRestTimerExpiry(oldValue: oldValue, newValue: newValue)
+          }
+        }
+      }
       ToolbarItem(placement: .topBarLeading) {
         Button(action: onClose) {
           Image(systemName: "chevron.left")
@@ -186,6 +229,134 @@ struct ActiveWorkoutView: View {
     .sheet(isPresented: $showingExercisePicker) {
       AddExerciseToWorkoutSheet(session: session)
     }
+    .onAppear(perform: syncLiveActivity)
+    .onChange(of: session.restTimerStartedAt) { _, _ in
+      syncLiveActivity()
+    }
+    .onChange(of: scenePhase) { _, phase in
+      if phase == .active {
+        syncLiveActivity()
+      }
+    }
+    .onChange(of: restTimerNotificationsEnabled) { _, _ in
+      syncLiveActivity()
+    }
+  }
+
+  private var activeRoutine: Routine? {
+    routines.first(where: { $0.id == session.routineID })
+  }
+
+  private func restRemaining(at now: Date) -> TimeInterval? {
+    session.restTimerRemaining(at: max(now, .now))
+  }
+
+  private func handleRestTimerExpiry(oldValue: TimeInterval?, newValue: TimeInterval?) {
+    guard oldValue != nil, newValue == nil else { return }
+    guard
+      let startedAt = session.restTimerStartedAt,
+      let duration = session.restTimerDurationSeconds,
+      startedAt.addingTimeInterval(TimeInterval(duration)) <= .now
+    else { return }
+    AudioServicesPlayAlertSound(1005)
+    LiveActivityManager.shared.end()
+  }
+
+  private func startRestTimer() {
+    guard let duration = activeRoutine?.restDurationSeconds, duration > 0 else { return }
+    if restTimerNotificationsEnabled {
+      LiveActivityManager.shared.requestRestTimerNotificationPermission()
+    }
+    session.restTimerStartedAt = .now
+    session.restTimerDurationSeconds = duration
+    try? context.save()
+    syncLiveActivity()
+  }
+
+  private func syncLiveActivity() {
+    guard
+      let startedAt = session.restTimerStartedAt,
+      let duration = session.restTimerDurationSeconds,
+      duration > 0
+    else {
+      LiveActivityManager.shared.end()
+      return
+    }
+    let restEndDate = startedAt.addingTimeInterval(TimeInterval(duration))
+    guard restEndDate > .now else {
+      LiveActivityManager.shared.end()
+      return
+    }
+    if !restTimerNotificationsEnabled {
+      LiveActivityManager.shared.cancelRestTimerNotification()
+    }
+    LiveActivityManager.shared.startOrUpdate(
+      sessionID: session.id.uuidString,
+      routineName: activeRoutine?.name ?? "Workout",
+      restEndDate: restEndDate,
+      exerciseName: liveActivityDetails.exerciseName,
+      setProgress: liveActivityDetails.setProgress,
+      effort: liveActivityDetails.effort)
+    if restTimerNotificationsEnabled {
+      LiveActivityManager.shared.scheduleRestTimerNotification(
+        at: restEndDate, exerciseName: liveActivityDetails.exerciseName)
+    }
+  }
+
+  private var liveActivityDetails:
+    (
+      exerciseName: String, setProgress: String, effort: String
+    )
+  {
+    guard let exercise = currentExerciseLog else {
+      return (currentExerciseName, "", "")
+    }
+    let participants = visiblePeople.compactMap { name in
+      exercise.participants.first {
+        $0.participantName.caseInsensitiveCompare(name) == .orderedSame
+      }
+    }
+    let participantsToUse = participants.isEmpty ? exercise.participants : participants
+    let totalSets = max(
+      participantsToUse.map { $0.orderedSets.filter { !$0.isSkipped }.count }.max() ?? 0, 1)
+    let latestCompletedSet =
+      participantsToUse
+      .flatMap { $0.orderedSets.filter(\.isCompleted) }
+      .max { lhs, rhs in
+        let lhsDate = lhs.completedAt ?? .distantPast
+        let rhsDate = rhs.completedAt ?? .distantPast
+        if lhsDate != rhsDate { return lhsDate < rhsDate }
+        return lhs.sortOrder < rhs.sortOrder
+      }
+    let setNumber = min(max((latestCompletedSet?.sortOrder ?? 0) + 1, 1), totalSets)
+    let participant = participantsToUse.first
+    let set =
+      participant?.orderedSets.first {
+        !$0.isSkipped && $0.sortOrder + 1 == setNumber
+      } ?? participant?.orderedSets.first(where: { !$0.isSkipped })
+    let reps = set?.reps ?? participant?.nextSetReps ?? WorkoutPreferences.defaultReps
+    let measurement = set?.measurement ?? participant?.measurement ?? 0
+    let effort =
+      measurement > 0
+      ? "\(measurement.tidy) \(exercise.unit.label) × \(reps)"
+      : "\(reps) reps"
+    return (
+      exerciseName: exercise.exerciseName,
+      setProgress: "Set \(setNumber) of \(totalSets)",
+      effort: effort
+    )
+  }
+
+  private var currentExerciseLog: ExerciseLog? {
+    guard let currentExerciseID else { return orderedExercises.first }
+    return orderedExercises.first(where: { $0.id == currentExerciseID }) ?? orderedExercises.first
+  }
+
+  private func clearRestTimer() {
+    session.restTimerStartedAt = nil
+    session.restTimerDurationSeconds = nil
+    try? context.save()
+    LiveActivityManager.shared.end()
   }
 
   private var catalogByName: [String: Exercise] {
@@ -305,7 +476,8 @@ struct ActiveWorkoutView: View {
       position: index + 1,
       total: orderedExercises.count,
       usesSinglePersonHorizontalLayout: visiblePeople.count == 1,
-      onAdvance: { jumpExercise(after: exercise, by: 1) }
+      onAdvance: { jumpExercise(after: exercise, by: 1) },
+      onSetCompleted: startRestTimer
     )
     .frame(maxWidth: .infinity, alignment: .top)
     .id(exercise.id)
@@ -539,6 +711,7 @@ struct ActiveExerciseCard: View {
   let total: Int
   let usesSinglePersonHorizontalLayout: Bool
   let onAdvance: () -> Void
+  let onSetCompleted: () -> Void
   @State private var showingImages = false
   @State private var showingHistory = false
   @State private var lastSetEditorParticipant: ParticipantLog?
@@ -635,7 +808,8 @@ struct ActiveExerciseCard: View {
           onCustomizeLastSet: { lastSetEditorParticipant = participant },
           onResetLastSet: { resetLastSet(for: participant) },
           onSkipLastSets: { skipLastSets($0, for: participant) },
-          onRestoreSkippedSets: { restoreSkippedSets(for: participant) }
+          onRestoreSkippedSets: { restoreSkippedSets(for: participant) },
+          onSetCompleted: onSetCompleted
         )
         .frame(maxWidth: .infinity, alignment: .leading)
       } else {
@@ -733,7 +907,8 @@ struct ActiveExerciseCard: View {
       onRestoreSkippedSets: { restoreSkippedSets(for: participant) },
       reservedSetStatuses: participantSetStatuses,
       showsSetCompletions: showsSetCompletions,
-      showsSetOptions: showsSetOptions
+      showsSetOptions: showsSetOptions,
+      onSetCompleted: onSetCompleted
     )
     .frame(width: activeWorkoutParticipantColumnWidth)
   }
@@ -882,6 +1057,7 @@ struct ActiveExerciseCard: View {
     for set in activeSets.suffix(count) {
       set.isSkipped = true
       set.isCompleted = false
+      set.completedAt = nil
       set.isLeftCompleted = false
       set.isRightCompleted = false
     }
@@ -923,6 +1099,7 @@ struct ParticipantExerciseCell: View {
   let reservedSetStatuses: [String]
   let showsSetCompletions: Bool
   let showsSetOptions: Bool
+  let onSetCompleted: () -> Void
 
   private var orderedSets: [WorkoutSet] { participant.orderedSets }
 
@@ -993,7 +1170,8 @@ struct ParticipantExerciseCell: View {
           participant: participant,
           exerciseName: exerciseName,
           colorHex: colorHex,
-          setsPerRow: 2)
+          setsPerRow: 2,
+          onSetCompleted: onSetCompleted)
       }
     }
     .fixedSize(horizontal: false, vertical: true)
@@ -1102,6 +1280,7 @@ struct SinglePersonSetCompletionGrid: View {
   let onResetLastSet: () -> Void
   let onSkipLastSets: (Int) -> Void
   let onRestoreSkippedSets: () -> Void
+  let onSetCompleted: () -> Void
 
   private var activeSets: [WorkoutSet] {
     participant.orderedSets.filter { !$0.isSkipped }
@@ -1133,7 +1312,8 @@ struct SinglePersonSetCompletionGrid: View {
                 exerciseName: exerciseName,
                 setNumber: itemIndex + 1,
                 colorHex: colorHex,
-                size: 36)
+                size: 36,
+                onSetCompleted: onSetCompleted)
             } else {
               ParticipantSetOptionsMenu(
                 participant: participant,
@@ -1156,6 +1336,7 @@ struct ParticipantSetCompletionGrid: View {
   let exerciseName: String
   let colorHex: String
   let setsPerRow: Int
+  let onSetCompleted: () -> Void
 
   private var activeSets: [WorkoutSet] {
     participant.orderedSets.filter { !$0.isSkipped }
@@ -1180,7 +1361,8 @@ struct ParticipantSetCompletionGrid: View {
               exerciseName: exerciseName,
               setNumber: indexedSet.offset + 1,
               colorHex: colorHex,
-              size: 36)
+              size: 36,
+              onSetCompleted: onSetCompleted)
           }
         }
       }
@@ -1196,6 +1378,7 @@ struct SetCompletionButton: View {
   let setNumber: Int
   let colorHex: String
   let size: CGFloat
+  let onSetCompleted: () -> Void
 
   var body: some View {
     Button(action: toggleCompletion) {
@@ -1241,10 +1424,14 @@ struct SetCompletionButton: View {
   }
 
   private func toggleCompletion() {
+    let wasCompleted = set.isCompleted
     withAnimation(.snappy) {
       participant.toggleCompletion(of: set).forEach(context.delete)
     }
     try? context.save()
+    if !wasCompleted && set.isCompleted {
+      onSetCompleted()
+    }
   }
 }
 

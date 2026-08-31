@@ -25,6 +25,11 @@
 		A10000000000000000000012 /* ExerciseImages in Resources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000013 /* ExerciseImages */; };
 		A10000000000000000000013 /* BasicWorkoutFixture.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000014 /* BasicWorkoutFixture.swift */; };
 		B10000000000000000000001 /* WorkoutNavigationUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000001 /* WorkoutNavigationUITests.swift */; };
+		C10000000000000000000001 /* LiveActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000000000000000000001 /* LiveActivityAttributes.swift */; };
+		C10000000000000000000002 /* LiveActivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000000000000000000002 /* LiveActivityManager.swift */; };
+		C10000000000000000000003 /* LiveActivityAttributes.swift in LiveActivity Sources */ = {isa = PBXBuildFile; fileRef = C20000000000000000000001 /* LiveActivityAttributes.swift */; };
+		C10000000000000000000004 /* LiveActivityWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000000000000000000003 /* LiveActivityWidget.swift */; };
+		C10000000000000000000005 /* LiftChaseLiveActivity.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = C20000000000000000000005 /* LiftChaseLiveActivity.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -34,6 +39,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = A50000000000000000000001;
 			remoteInfo = StrengthLog;
+		};
+		C70000000000000000000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A70000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C50000000000000000000001;
+			remoteInfo = LiftChaseLiveActivity;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -60,11 +72,18 @@
 		A20000000000000000000014 /* BasicWorkoutFixture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BasicWorkoutFixture.swift; sourceTree = "<group>"; };
 		B20000000000000000000001 /* WorkoutNavigationUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutNavigationUITests.swift; sourceTree = "<group>"; };
 		B20000000000000000000002 /* StrengthLogUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = StrengthLogUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		C20000000000000000000001 /* LiveActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveActivityAttributes.swift; sourceTree = "<group>"; };
+		C20000000000000000000002 /* LiveActivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveActivityManager.swift; sourceTree = "<group>"; };
+		C20000000000000000000003 /* LiveActivityWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveActivityWidget.swift; sourceTree = "<group>"; };
+		C20000000000000000000004 /* LiveActivityInfo.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = LiveActivityInfo.plist; sourceTree = "<group>"; };
+		C20000000000000000000005 /* LiftChaseLiveActivity.appex */ = {isa = PBXFileReference; explicitFileType = wrapper.app-extension; includeInIndex = 0; path = LiftChaseLiveActivity.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		A30000000000000000000001 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
 		B30000000000000000000001 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		C30000000000000000000001 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		C30000000000000000000004 /* Embed App Extensions */ = {isa = PBXCopyFilesBuildPhase; buildActionMask = 2147483647; dstPath = ""; dstSubfolderSpec = 13; files = (C10000000000000000000005 /* LiftChaseLiveActivity.appex in Embed App Extensions */,); name = "Embed App Extensions"; runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -73,6 +92,7 @@
 			children = (
 				A40000000000000000000002 /* StrengthLog */,
 				B40000000000000000000001 /* StrengthLogUITests */,
+				C40000000000000000000001 /* LiftChaseLiveActivity */,
 				A40000000000000000000004 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -96,6 +116,8 @@
 				A20000000000000000000011 /* Info.plist */,
 				A20000000000000000000012 /* HevyImportSmokeTest.swift */,
 				A20000000000000000000014 /* BasicWorkoutFixture.swift */,
+				C20000000000000000000001 /* LiveActivityAttributes.swift */,
+				C20000000000000000000002 /* LiveActivityManager.swift */,
 				A2000000000000000000000B /* Assets.xcassets */,
 				A40000000000000000000003 /* Resources */,
 			);
@@ -113,7 +135,7 @@
 		};
 		A40000000000000000000004 /* Products */ = {
 			isa = PBXGroup;
-			children = (A2000000000000000000000D /* StrengthLog.app */, B20000000000000000000002 /* StrengthLogUITests.xctest */,);
+			children = (A2000000000000000000000D /* StrengthLog.app */, B20000000000000000000002 /* StrengthLogUITests.xctest */, C20000000000000000000005 /* LiftChaseLiveActivity.appex */,);
 			name = Products;
 			sourceTree = "<group>";
 		};
@@ -121,6 +143,15 @@
 			isa = PBXGroup;
 			children = (B20000000000000000000001 /* WorkoutNavigationUITests.swift */,);
 			path = StrengthLogUITests;
+			sourceTree = "<group>";
+		};
+		C40000000000000000000001 /* LiftChaseLiveActivity */ = {
+			isa = PBXGroup;
+			children = (
+				C20000000000000000000003 /* LiveActivityWidget.swift */,
+				C20000000000000000000004 /* LiveActivityInfo.plist */,
+			);
+			path = StrengthLog;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -133,9 +164,10 @@
 				A30000000000000000000002 /* Sources */,
 				A30000000000000000000001 /* Frameworks */,
 				A30000000000000000000003 /* Resources */,
+				C30000000000000000000004 /* Embed App Extensions */,
 			);
 			buildRules = ();
-			dependencies = ();
+			dependencies = (C90000000000000000000002 /* PBXTargetDependency */);
 			name = StrengthLog;
 			productName = StrengthLog;
 			productReference = A2000000000000000000000D /* StrengthLog.app */;
@@ -155,6 +187,21 @@
 			productName = StrengthLogUITests;
 			productReference = B20000000000000000000002 /* StrengthLogUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+		C50000000000000000000001 /* LiftChaseLiveActivity */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C60000000000000000000001 /* Build configuration list for PBXNativeTarget "LiftChaseLiveActivity" */;
+			buildPhases = (
+				C30000000000000000000002 /* Sources */,
+				C30000000000000000000001 /* Frameworks */,
+				C30000000000000000000003 /* Resources */,
+			);
+			buildRules = ();
+			dependencies = ();
+			name = LiftChaseLiveActivity;
+			productName = LiftChaseLiveActivity;
+			productReference = C20000000000000000000005 /* LiftChaseLiveActivity.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -179,13 +226,14 @@
 			productRefGroup = A40000000000000000000004 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
-			targets = (A50000000000000000000001 /* StrengthLog */, B50000000000000000000001 /* StrengthLogUITests */,);
+			targets = (A50000000000000000000001 /* StrengthLog */, B50000000000000000000001 /* StrengthLogUITests */, C50000000000000000000001 /* LiftChaseLiveActivity */,);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		A30000000000000000000003 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (A1000000000000000000000B /* Assets.xcassets in Resources */, A1000000000000000000000C /* exercise-catalog.json in Resources */, A10000000000000000000012 /* ExerciseImages in Resources */,); runOnlyForDeploymentPostprocessing = 0; };
 		B30000000000000000000003 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		C30000000000000000000003 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -208,6 +256,8 @@
 				A10000000000000000000010 /* HevyImportView.swift in Sources */,
 				A10000000000000000000011 /* HevyImportSmokeTest.swift in Sources */,
 				A10000000000000000000013 /* BasicWorkoutFixture.swift in Sources */,
+				C10000000000000000000001 /* LiveActivityAttributes.swift in Sources */,
+				C10000000000000000000002 /* LiveActivityManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -215,6 +265,15 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (B10000000000000000000001 /* WorkoutNavigationUITests.swift in Sources */,);
+			 runOnlyForDeploymentPostprocessing = 0;
+		};
+		C30000000000000000000002 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C10000000000000000000003 /* LiveActivityAttributes.swift in LiveActivity Sources */,
+				C10000000000000000000004 /* LiveActivityWidget.swift in Sources */,
+			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
@@ -224,6 +283,11 @@
 			isa = PBXTargetDependency;
 			target = A50000000000000000000001 /* StrengthLog */;
 			targetProxy = B80000000000000000000001 /* PBXContainerItemProxy */;
+		};
+		C90000000000000000000002 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C50000000000000000000001 /* LiftChaseLiveActivity */;
+			targetProxy = C70000000000000000000001 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -324,12 +388,55 @@
 			};
 			name = Release;
 		};
+		C80000000000000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 96NAC4VTEN;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = StrengthLog/LiveActivityInfo.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.cseibert.StrengthLog.LiveActivity;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		C80000000000000000000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 96NAC4VTEN;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = StrengthLog/LiveActivityInfo.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.cseibert.StrengthLog.LiveActivity;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
 		A60000000000000000000001 /* Build configuration list for PBXProject "StrengthLog" */ = {isa = XCConfigurationList; buildConfigurations = (A80000000000000000000001 /* Debug */, A80000000000000000000002 /* Release */,); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
 		A60000000000000000000002 /* Build configuration list for PBXNativeTarget "StrengthLog" */ = {isa = XCConfigurationList; buildConfigurations = (A80000000000000000000003 /* Debug */, A80000000000000000000004 /* Release */,); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
 		B60000000000000000000001 /* Build configuration list for PBXNativeTarget "StrengthLogUITests" */ = {isa = XCConfigurationList; buildConfigurations = (B70000000000000000000001 /* Debug */, B70000000000000000000002 /* Release */,); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		C60000000000000000000001 /* Build configuration list for PBXNativeTarget "LiftChaseLiveActivity" */ = {isa = XCConfigurationList; buildConfigurations = (C80000000000000000000001 /* Debug */, C80000000000000000000002 /* Release */,); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
 /* End XCConfigurationList section */
 	};
 	rootObject = A70000000000000000000001 /* Project object */;

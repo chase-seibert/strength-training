@@ -65,6 +65,9 @@
         symbol: "dumbbell.fill",
         colorHex: "FF5A45",
         exercises: [basicRoutineExercise])
+      if ProcessInfo.processInfo.arguments.contains("-restTimerFixture") {
+        basicRoutine.restDurationSeconds = 60
+      }
       basicRoutine.participantNames = [alex.name, jordan.name, owen.name]
 
       let lowerRoutineExercise = RoutineExercise(

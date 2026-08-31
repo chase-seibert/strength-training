@@ -5,6 +5,7 @@ import SwiftUI
 enum WorkoutPreferences {
   static let defaultSetsKey = "defaultWorkoutSets"
   static let defaultRepsKey = "defaultWorkoutReps"
+  static let restTimerNotificationsEnabledKey = "restTimerNotificationsEnabled"
   static let fallbackSets = 3
   static let fallbackReps = 8
 
@@ -199,6 +200,9 @@ final class Routine {
   var name: String
   var symbol: String
   var colorHex: String
+  /// A shared pause after each completed set. Nil or zero disables the rest timer.
+  // Optional keeps the new field lightweight-migration safe for existing stores.
+  var restDurationSeconds: Int?
   var createdAt: Date
   var deletedAt: Date?
   // Legacy field retained so existing stores can be opened; new workouts own participants.
@@ -209,7 +213,7 @@ final class Routine {
     name: String, symbol: String = "dumbbell.fill", colorHex: String = "FF5A45",
     exercises: [RoutineExercise] = [],
     externalID: String? = nil, notes: String? = nil,
-    deletedAt: Date? = nil
+    deletedAt: Date? = nil, restDurationSeconds: Int = 0
   ) {
     id = UUID()
     self.externalID = externalID
@@ -217,6 +221,7 @@ final class Routine {
     self.name = name
     self.symbol = symbol
     self.colorHex = colorHex
+    self.restDurationSeconds = max(0, restDurationSeconds)
     createdAt = .now
     self.deletedAt = deletedAt
     self.exercises = exercises
@@ -337,6 +342,8 @@ final class WorkoutSession {
   var startedAt: Date
   var endedAt: Date?
   var isActive: Bool
+  var restTimerStartedAt: Date?
+  var restTimerDurationSeconds: Int?
   var deletedAt: Date?
   var participantNames: [String]
   @Relationship(deleteRule: .cascade) var exercises: [ExerciseLog]
@@ -344,7 +351,8 @@ final class WorkoutSession {
   init(
     routineID: UUID, participantNames: [String], exercises: [ExerciseLog],
     startedAt: Date = .now, endedAt: Date? = nil, isActive: Bool = true,
-    externalID: String? = nil, notes: String? = nil, deletedAt: Date? = nil
+    externalID: String? = nil, notes: String? = nil, deletedAt: Date? = nil,
+    restTimerStartedAt: Date? = nil, restTimerDurationSeconds: Int? = nil
   ) {
     id = UUID()
     self.externalID = externalID
@@ -354,6 +362,8 @@ final class WorkoutSession {
     self.startedAt = startedAt
     self.endedAt = endedAt
     self.isActive = isActive
+    self.restTimerStartedAt = restTimerStartedAt
+    self.restTimerDurationSeconds = restTimerDurationSeconds
     self.deletedAt = deletedAt
     self.participantNames = participantNames
     self.exercises = exercises
@@ -366,6 +376,38 @@ final class WorkoutSession {
   var totalSetCount: Int {
     exercises.flatMap(\.participants).filter { isParticipantActive($0.participantName) }
       .flatMap(\.sets).filter { !$0.isSkipped }.count
+  }
+
+  var lastSetCompletedAt: Date? {
+    exercises.flatMap(\.participants).filter { isParticipantActive($0.participantName) }
+      .flatMap(\.sets).compactMap(\.completedAt).max()
+  }
+
+  var workoutDuration: TimeInterval? {
+    let endpoint = lastSetCompletedAt ?? endedAt
+    guard let endpoint else { return nil }
+    return max(0, endpoint.timeIntervalSince(startedAt))
+  }
+
+  /// While a workout is open, show elapsed time live from its start.
+  /// Once it is closed, preserve the recorded start-to-last-set duration.
+  func workoutDuration(at now: Date) -> TimeInterval? {
+    if isActive {
+      return max(0, now.timeIntervalSince(startedAt))
+    }
+    return workoutDuration
+  }
+
+  var restTimerEndDate: Date? {
+    guard let startedAt = restTimerStartedAt, let duration = restTimerDurationSeconds, duration > 0
+    else { return nil }
+    return startedAt.addingTimeInterval(TimeInterval(duration))
+  }
+
+  func restTimerRemaining(at now: Date) -> TimeInterval? {
+    guard let endDate = restTimerEndDate else { return nil }
+    let remaining = endDate.timeIntervalSince(now)
+    return remaining > 0 ? remaining : nil
   }
 
   func isParticipantActive(_ name: String) -> Bool {
@@ -480,11 +522,13 @@ final class ParticipantLog {
       set.isCompleted = true
       set.isLeftCompleted = true
       set.isRightCompleted = true
+      set.completedAt = .now
       return []
     }
     set.isCompleted = false
     set.isLeftCompleted = false
     set.isRightCompleted = false
+    set.completedAt = nil
     return []
   }
 
@@ -496,7 +540,8 @@ final class ParticipantLog {
       sortOrder: sets.count,
       reps: sets.sorted(by: { $0.sortOrder < $1.sortOrder }).last?.reps
         ?? WorkoutPreferences.defaultReps,
-      isCompleted: true)
+      isCompleted: true,
+      completedAt: .now)
     set.isLeftCompleted = true
     set.isRightCompleted = true
     sets.append(set)
@@ -516,6 +561,7 @@ final class WorkoutSet {
   var sortOrder: Int
   var reps: Int
   var isCompleted: Bool
+  var completedAt: Date?
   // A declaration-level default lets SwiftData add this field to existing stores
   // through its lightweight migration path without requiring the user to reset data.
   var isSkipped: Bool = false
@@ -534,12 +580,14 @@ final class WorkoutSet {
     measurement: Double? = nil,
     distanceMiles: Double? = nil, durationSeconds: Double? = nil, rpe: Double? = nil,
     setType: String? = nil, leftReps: Int? = nil, rightReps: Int? = nil,
-    isLeftCompleted: Bool? = nil, isRightCompleted: Bool? = nil
+    isLeftCompleted: Bool? = nil, isRightCompleted: Bool? = nil,
+    completedAt: Date? = nil
   ) {
     id = UUID()
     self.sortOrder = sortOrder
     self.reps = reps
     self.isCompleted = isCompleted
+    self.completedAt = completedAt
     self.isSkipped = isSkipped
     self.measurement = measurement
     self.distanceMiles = distanceMiles
@@ -579,6 +627,7 @@ final class WorkoutSet {
     case .right: isRightCompleted.toggle()
     }
     isCompleted = isLeftCompleted && isRightCompleted
+    completedAt = isCompleted ? .now : nil
   }
 }
 
@@ -695,5 +744,17 @@ extension Color {
 extension Double {
   var tidy: String {
     rounded() == self ? String(Int(self)) : formatted(.number.precision(.fractionLength(1)))
+  }
+}
+
+extension TimeInterval {
+  var workoutDurationText: String {
+    let totalSeconds = max(0, Int(rounded()))
+    let hours = totalSeconds / 3_600
+    let minutes = (totalSeconds % 3_600) / 60
+    let seconds = totalSeconds % 60
+    if hours > 0 { return "\(hours)h \(minutes)m" }
+    if minutes > 0 { return "\(minutes)m \(seconds)s" }
+    return "\(seconds)s"
   }
 }

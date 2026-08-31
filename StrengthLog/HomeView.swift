@@ -37,7 +37,9 @@ struct HomeView: View {
             recentResumeSection(sessions: recentSessions)
           }
           if let activeSession = activeSessions.first {
-            activeWorkoutCard(activeSession)
+            TimelineView(.animation(minimumInterval: 1, paused: false)) { activeTimeline in
+              activeWorkoutCard(activeSession, now: activeTimeline.date)
+            }
           }
           routineSection
           activityCard
@@ -80,11 +82,9 @@ struct HomeView: View {
               Text(routineName(for: session))
                 .font(.headline)
                 .foregroundStyle(.primary)
-              Text(
-                "\(session.completedSetCount) of \(session.totalSetCount) sets completed · Started \(session.startedAt.formatted(date: .omitted, time: .shortened))"
-              )
-              .font(.caption)
-              .foregroundStyle(.secondary)
+              Text(resumeSummary(for: session))
+                .font(.caption)
+                .foregroundStyle(.secondary)
             }
             Spacer()
             Image(systemName: "chevron.right")
@@ -100,7 +100,7 @@ struct HomeView: View {
     }
   }
 
-  private func activeWorkoutCard(_ session: WorkoutSession) -> some View {
+  private func activeWorkoutCard(_ session: WorkoutSession, now: Date) -> some View {
     Button {
       onOpenWorkout(session)
     } label: {
@@ -117,6 +117,16 @@ struct HomeView: View {
           Text(routineName(for: session))
             .font(.subheadline)
             .foregroundStyle(.secondary)
+          if let duration = session.workoutDuration(at: now) {
+            Text("Length \(duration.workoutDurationText)")
+              .font(.caption)
+              .foregroundStyle(.secondary)
+          }
+          if let remaining = session.restTimerRemaining(at: max(now, .now)) {
+            Text("Rest \(Int(ceil(remaining)))s")
+              .font(.caption.monospacedDigit().weight(.semibold))
+              .foregroundStyle(Theme.coral)
+          }
         }
         Spacer()
         Image(systemName: "chevron.up")
@@ -221,10 +231,22 @@ struct HomeView: View {
     allRoutines.first(where: { $0.id == session.routineID })?.name ?? "Unknown Routine"
   }
 
+  private func resumeSummary(for session: WorkoutSession) -> String {
+    let sets = "\(session.completedSetCount) of \(session.totalSetCount) sets completed"
+    let started = "Started \(session.startedAt.formatted(date: .omitted, time: .shortened))"
+    if let duration = session.workoutDuration {
+      return "\(sets) · \(started) · Length \(duration.workoutDurationText)"
+    }
+    return "\(sets) · \(started)"
+  }
+
   private func resume(_ session: WorkoutSession) {
     session.endedAt = nil
     session.isActive = true
+    session.restTimerStartedAt = nil
+    session.restTimerDurationSeconds = nil
     try? context.save()
+    LiveActivityManager.shared.end()
     onOpenWorkout(session)
   }
 }
@@ -614,6 +636,9 @@ private struct DayWorkoutPickerView: View {
           Text(
             "\(session.completedSetCount) of \(session.totalSetCount) sets completed"
           )
+          if let duration = session.workoutDuration {
+            Text("Length \(duration.workoutDurationText)")
+          }
         }
         .font(.caption)
         .foregroundStyle(.secondary)
@@ -764,6 +789,9 @@ private struct DayWorkoutSummaryView: View {
         Label(
           "\(session.completedSetCount) set\(session.completedSetCount == 1 ? "" : "s") completed",
           systemImage: "checkmark.circle")
+        if let duration = session.workoutDuration {
+          Label("Length \(duration.workoutDurationText)", systemImage: "hourglass")
+        }
       }
       .font(.subheadline)
       .foregroundStyle(.secondary)

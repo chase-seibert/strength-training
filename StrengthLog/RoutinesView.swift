@@ -28,6 +28,15 @@ private let routineColors = [
   "E96BA8", "2F80ED", "27AE60", "EB5757", "6B7280",
 ]
 
+private let routineRestDurations = [0, 30, 60, 90, 120, 180, 300]
+
+private func restDurationTitle(_ seconds: Int) -> String {
+  guard seconds > 0 else { return "Off" }
+  if seconds < 60 { return "\(seconds) sec" }
+  if seconds.isMultiple(of: 60) { return "\(seconds / 60) min" }
+  return "\(seconds / 60)m \(seconds % 60)s"
+}
+
 struct RoutinesView: View {
   @Environment(\.modelContext) private var context
   @Query(filter: #Predicate<Routine> { $0.deletedAt == nil }, sort: \Routine.createdAt)
@@ -297,6 +306,7 @@ struct NewRoutineSheet: View {
   @State private var name = ""
   @State private var symbol = "dumbbell.fill"
   @State private var colorHex = "FF5A45"
+  @State private var restDurationSeconds = 0
 
   var body: some View {
     NavigationStack {
@@ -314,10 +324,17 @@ struct NewRoutineSheet: View {
                   Color(hex: colorHex).opacity(0.12), in: RoundedRectangle(cornerRadius: 9))
             }
           }
+          Picker("Rest timer", selection: $restDurationSeconds) {
+            ForEach(routineRestDurations, id: \.self) { duration in
+              Text(restDurationTitle(duration)).tag(duration)
+            }
+          }
         }
         Section {
-          Text("After creating it, add exercises from the catalog and tune sets for each person.")
-            .foregroundStyle(.secondary)
+          Text(
+            "After creating it, add exercises from the catalog and tune sets for each person. Rest starts after every completed set."
+          )
+          .foregroundStyle(.secondary)
         }
       }
       .navigationTitle("New Routine")
@@ -329,7 +346,7 @@ struct NewRoutineSheet: View {
             context.insert(
               Routine(
                 name: name.trimmingCharacters(in: .whitespacesAndNewlines), symbol: symbol,
-                colorHex: colorHex))
+                colorHex: colorHex, restDurationSeconds: restDurationSeconds))
             try? context.save()
             dismiss()
           }
@@ -456,6 +473,7 @@ struct RoutineDetailView: View {
   @State private var draftName = ""
   @State private var draftSymbol = "dumbbell.fill"
   @State private var draftColorHex = "FF5A45"
+  @State private var draftRestDurationSeconds = 0
   @State private var draftExercises: [RoutineExercise] = []
 
   init(
@@ -497,6 +515,23 @@ struct RoutineDetailView: View {
                 .foregroundStyle(.tertiary)
             }
           }
+          Picker("Rest timer", selection: $draftRestDurationSeconds) {
+            ForEach(routineRestDurations, id: \.self) { duration in
+              Text(restDurationTitle(duration)).tag(duration)
+            }
+          }
+          Text(
+            "Starts after each completed set and uses the same duration throughout this routine."
+          )
+          .font(.caption)
+          .foregroundStyle(.secondary)
+        }
+      }
+
+      if !editMode.isEditing {
+        Section("Workout settings") {
+          LabeledContent(
+            "Rest timer", value: restDurationTitle(routine.restDurationSeconds ?? 0))
         }
       }
 
@@ -679,6 +714,7 @@ struct RoutineDetailView: View {
     draftName = routine.name
     draftSymbol = routine.symbol
     draftColorHex = routine.colorHex
+    draftRestDurationSeconds = routine.restDurationSeconds ?? 0
     draftExercises = routine.exercises.sorted(by: { $0.sortOrder < $1.sortOrder })
     editMode = .active
   }
@@ -696,6 +732,7 @@ struct RoutineDetailView: View {
     routine.name = trimmedName
     routine.symbol = draftSymbol
     routine.colorHex = draftColorHex
+    routine.restDurationSeconds = max(0, draftRestDurationSeconds)
     routine.exercises = draftExercises
     for (index, exercise) in draftExercises.enumerated() { exercise.sortOrder = index }
     deleted.forEach(context.delete)

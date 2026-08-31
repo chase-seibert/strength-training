@@ -38,6 +38,8 @@
 - As a lifter, I want every workout edit saved as I make it and the freedom to close at any point, so that logging never depends on a finish ceremony.
 - As a lifter, I want to reopen any workout log directly, so that interruptions and later corrections are effortless.
 - As a lifter, I want reopening to jump to the exercise after the last meaningfully progressed exercise and move an offscreen exercise name into the navigation title, so that I immediately recover my place.
+- As a lifter, I want an optional rest timer configured once per routine that starts after each completed set, so that everyone follows the same recovery interval without resetting it manually.
+- As a lifter, I want an active rest countdown to replace the exercise title and elapsed workout length above Complete Workout, plus the same countdown on the Workout home card and a recorded workout length from start to the latest completed set, so that timing stays available without consuming vertical space while I log and scroll. The Lock Screen activity should also identify the current exercise, set progress, reps, and load, with an optional local notification when rest ends.
 
 ## Persistence and progress
 

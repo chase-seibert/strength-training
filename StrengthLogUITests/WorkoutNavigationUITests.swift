@@ -37,6 +37,29 @@ final class WorkoutNavigationUITests: XCTestCase {
     XCTAssertTrue(app.staticTexts["Default reps"].exists)
     XCTAssertTrue(app.staticTexts["3"].exists)
     XCTAssertTrue(app.staticTexts["8"].exists)
+    XCTAssertTrue(app.switches["Rest timer notifications"].exists)
+  }
+
+  func testRoutineRestTimerCanBeConfigured() {
+    app.tabBars.buttons["Routines"].tap()
+    app.staticTexts["Basic Workout"].tap()
+    app.buttons["Edit"].tap()
+
+    XCTAssertTrue(app.staticTexts["Rest timer"].waitForExistence(timeout: 3))
+    XCTAssertTrue(
+      app.staticTexts[
+        "Starts after each completed set and uses the same duration throughout this routine."
+      ].exists)
+  }
+
+  func testLiveWorkoutHeaderShowsRestTimer() {
+    app.terminate()
+    app.launchArguments = ["-basicWorkoutFixture", "-activeWorkoutFixture", "-restTimerFixture"]
+    app.launch()
+
+    app.buttons["participant-set-Alex-1"].tap()
+    XCTAssertTrue(app.otherElements["live-workout-header"].waitForExistence(timeout: 3))
+    XCTAssertTrue(app.buttons["Skip"].waitForExistence(timeout: 3))
   }
 
   func testExerciseFilterMenuOrdersCustomAfterAllAndExcludesCatalogExercises() {

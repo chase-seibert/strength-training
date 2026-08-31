@@ -10,6 +10,8 @@ struct SettingsView: View {
     WorkoutPreferences.fallbackSets
   @AppStorage(WorkoutPreferences.defaultRepsKey) private var defaultWorkoutReps =
     WorkoutPreferences.fallbackReps
+  @AppStorage(WorkoutPreferences.restTimerNotificationsEnabledKey)
+  private var restTimerNotificationsEnabled = false
   @State private var showingNewPerson = false
   @State private var showingHevyImporter = false
 
@@ -55,10 +57,13 @@ struct SettingsView: View {
         Stepper(value: $defaultWorkoutReps, in: 1...30) {
           LabeledContent("Default reps", value: "\(defaultWorkoutReps)")
         }
+        Toggle("Rest timer notifications", isOn: $restTimerNotificationsEnabled)
       } header: {
         Text("Workouts")
       } footer: {
-        Text("Used for new exercises and for people without completed-set history.")
+        Text(
+          "Used for new exercises and for people without completed-set history. When enabled, Lift Chase can notify you when a rest timer ends."
+        )
       }
 
       Section("Data") {

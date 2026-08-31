@@ -47,3 +47,9 @@
 - Restored the earlier diagonal rotation to the balanced Teal LC icon.
 - Added a two-hour Workout-tab resume section for completed workouts, allowing them to be reopened and continued after completion.
 - Added a configurable default set count for new workout exercises alongside default reps.
+- Added routine-level optional rest timers, set-completion timestamps, workout-length reporting, and a live active-workout timer header.
+- Simplified the live workout status into a pinned elapsed/rest header, made elapsed time tick live, and added an audio alert when rest expires.
+- Moved elapsed time into the navigation title, pinned only active rest timers, and added an ActivityKit Lock Screen/Dynamic Island rest countdown.
+- Tightened the Live Activity layout, added coral countdown styling and Lift Chase branding on the Lock Screen, moved Skip beside the sticky rest title, and corrected the initial countdown rounding.
+- Added current exercise, set progress, reps, and load to the Lock Screen Live Activity, plus an opt-in rest-complete notification scheduled when a rest timer is first used.
+- Reduced the Dynamic Island content to center-only expanded and timer-only compact presentations, and added a Workouts setting to enable or disable rest-complete notifications.
