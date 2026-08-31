@@ -111,6 +111,22 @@ final class WorkoutNavigationUITests: XCTestCase {
     XCTAssertTrue(app.navigationBars["Bench Press"].exists)
   }
 
+  func testRecentlyCompletedWorkoutCanBeResumedFromWorkoutScreen() {
+    app.terminate()
+    app.launchArguments = ["-basicWorkoutFixture", "-recentCompletedWorkoutFixture"]
+    app.launch()
+
+    XCTAssertTrue(app.staticTexts["Resume workout"].waitForExistence(timeout: 5))
+    let resumeButton = app.buttons.matching(
+      NSPredicate(format: "identifier BEGINSWITH 'resume-completed-workout-'")
+    ).firstMatch
+    XCTAssertTrue(resumeButton.waitForExistence(timeout: 3))
+    resumeButton.tap()
+
+    XCTAssertTrue(app.otherElements["active-workout-screen"].waitForExistence(timeout: 5))
+    XCTAssertTrue(app.navigationBars["Bench Press"].exists)
+  }
+
   func testThreePersonWorkoutMatrixAndSharedCompletion() {
     app.terminate()
     app.launchArguments = ["-basicWorkoutFixture", "-activeWorkoutFixture"]

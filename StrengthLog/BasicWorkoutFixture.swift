@@ -91,7 +91,7 @@
 
       // The offsets deliberately leave gaps and include two workouts three days ago so the
       // paged four-week calendar exercises sporadic history and its multi-workout counter.
-      let workoutHistory = [
+      var workoutHistory = [
         makeWorkout(
           routine: lowerRoutine, daysAgo: 1, hour: 18,
           efforts: [(alex.name, squat.name, 145, [5, 5, 5])]),
@@ -130,6 +130,11 @@
           routine: basicRoutine, daysAgo: 29, hour: 17,
           efforts: [(alex.name, benchPress.name, 90, [10, 10, 10])]),
       ]
+      if ProcessInfo.processInfo.arguments.contains("-recentCompletedWorkoutFixture") {
+        workoutHistory.append(
+          makeRecentCompletedWorkout(
+            routine: basicRoutine, person: alex, exercise: benchPress))
+      }
 
       context.insert(alex)
       context.insert(jordan)
@@ -263,6 +268,34 @@
         routineID: routine.id,
         participantNames: participantNames,
         exercises: logs,
+        startedAt: startedAt,
+        endedAt: endedAt,
+        isActive: false)
+    }
+
+    private static func makeRecentCompletedWorkout(
+      routine: Routine, person: PersonProfile, exercise: Exercise
+    ) -> WorkoutSession {
+      let startedAt = Date.now.addingTimeInterval(-30 * 60)
+      let endedAt = Date.now.addingTimeInterval(-5 * 60)
+      let participant = ParticipantLog(
+        participantName: person.name,
+        measurement: 95,
+        sets: [
+          WorkoutSet(sortOrder: 0, reps: 8, isCompleted: true, measurement: 95),
+          WorkoutSet(sortOrder: 1, reps: 8, measurement: 95),
+          WorkoutSet(sortOrder: 2, reps: 8, measurement: 95),
+        ])
+      let log = ExerciseLog(
+        exerciseID: exercise.id,
+        exerciseName: exercise.name,
+        unit: exercise.unit,
+        sortOrder: 0,
+        participants: [participant])
+      return WorkoutSession(
+        routineID: routine.id,
+        participantNames: [person.name],
+        exercises: [log],
         startedAt: startedAt,
         endedAt: endedAt,
         isActive: false)

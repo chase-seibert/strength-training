@@ -29,20 +29,75 @@ struct HomeView: View {
   }
 
   var body: some View {
-    ScrollView {
-      VStack(alignment: .leading, spacing: 24) {
-        if let activeSession = activeSessions.first {
-          activeWorkoutCard(activeSession)
+    TimelineView(.periodic(from: .now, by: 60)) { timeline in
+      ScrollView {
+        VStack(alignment: .leading, spacing: 24) {
+          let recentSessions = recentlyCompletedSessions(at: timeline.date)
+          if !recentSessions.isEmpty {
+            recentResumeSection(sessions: recentSessions)
+          }
+          if let activeSession = activeSessions.first {
+            activeWorkoutCard(activeSession)
+          }
+          routineSection
+          activityCard
+          if !deletedSessions.isEmpty { deletedWorkoutsLink }
         }
-        routineSection
-        activityCard
-        if !deletedSessions.isEmpty { deletedWorkoutsLink }
+        .padding()
       }
-      .padding()
     }
     .background(Color(.systemGroupedBackground))
     .navigationTitle("Workout")
     .toolbarTitleDisplayMode(.large)
+  }
+
+  private func recentlyCompletedSessions(at now: Date) -> [WorkoutSession] {
+    let cutoff = now.addingTimeInterval(-WorkoutSession.resumeWindow)
+    return sessions.filter { session in
+      !session.isActive && session.endedAt != nil && session.startedAt >= cutoff
+    }
+  }
+
+  private func recentResumeSection(sessions: [WorkoutSession]) -> some View {
+    VStack(alignment: .leading, spacing: 12) {
+      Text("Resume workout")
+        .font(.title3.bold())
+      Text("Continue a workout started within the last two hours.")
+        .font(.subheadline)
+        .foregroundStyle(.secondary)
+
+      ForEach(sessions) { session in
+        Button {
+          resume(session)
+        } label: {
+          HStack(spacing: 12) {
+            Image(systemName: "arrow.uturn.forward.circle.fill")
+              .font(.title3)
+              .foregroundStyle(.white)
+              .frame(width: 44, height: 44)
+              .background(Theme.coral, in: Circle())
+            VStack(alignment: .leading, spacing: 3) {
+              Text(routineName(for: session))
+                .font(.headline)
+                .foregroundStyle(.primary)
+              Text(
+                "\(session.completedSetCount) of \(session.totalSetCount) sets completed · Started \(session.startedAt.formatted(date: .omitted, time: .shortened))"
+              )
+              .font(.caption)
+              .foregroundStyle(.secondary)
+            }
+            Spacer()
+            Image(systemName: "chevron.right")
+              .font(.caption.bold())
+              .foregroundStyle(.secondary)
+          }
+          .padding(14)
+          .background(Theme.coral.opacity(0.10), in: RoundedRectangle(cornerRadius: 18))
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("resume-completed-workout-\(session.id.uuidString)")
+      }
+    }
   }
 
   private func activeWorkoutCard(_ session: WorkoutSession) -> some View {
@@ -164,6 +219,13 @@ struct HomeView: View {
 
   private func routineName(for session: WorkoutSession) -> String {
     allRoutines.first(where: { $0.id == session.routineID })?.name ?? "Unknown Routine"
+  }
+
+  private func resume(_ session: WorkoutSession) {
+    session.endedAt = nil
+    session.isActive = true
+    try? context.save()
+    onOpenWorkout(session)
   }
 }
 

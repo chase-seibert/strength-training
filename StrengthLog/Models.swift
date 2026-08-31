@@ -318,6 +318,8 @@ final class SetTemplate {
 
 @Model
 final class WorkoutSession {
+  static let resumeWindow: TimeInterval = 2 * 60 * 60
+
   var id: UUID
   var externalID: String?
   var notes: String?

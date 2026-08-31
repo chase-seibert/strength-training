@@ -41,3 +41,8 @@
 - Tightened Workout quick start and live-workout secondary actions, strengthened participant-colored selection and set affordances, and made next-exercise navigation more visible.
 - Added person, routine, and 4W/12W/All filters to Progress and renamed chart sections to Training Volume.
 - Kept three routines in Workout Quick Start, replaced Progress person/routine controls with a compact duration menu, and changed Training Volume to a person-separated line chart with data-point dots.
+- Updated the Teal LC app icon so the orange bar runs through the C with matching clearance on both sides of its vertical stroke.
+- Enlarged the Teal LC app icon vertically, tightening the mark and extending the end plates and letterforms to better fill the square.
+- Balanced the Teal LC icon so the letters and mirrored plates share matching heights and align around the center bar.
+- Restored the earlier diagonal rotation to the balanced Teal LC icon.
+- Added a two-hour Workout-tab resume section for completed workouts, allowing them to be reopened and continued after completion.
