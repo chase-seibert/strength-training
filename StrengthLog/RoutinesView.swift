@@ -73,7 +73,7 @@ struct RoutinesView: View {
                   in: RoundedRectangle(cornerRadius: 13))
               VStack(alignment: .leading, spacing: 4) {
                 Text(routine.name).font(.headline)
-                Text("\(routine.exercises.count) exercises")
+                Text(exerciseCountText(routine.exercises.count))
                   .font(.subheadline).foregroundStyle(.secondary)
               }
             }
@@ -501,7 +501,7 @@ struct RoutineDetailView: View {
       }
 
       if !routineSessions.isEmpty {
-        Section("Pounds volume") {
+        Section("Training volume") {
           Chart(routineSessions.suffix(10)) { session in
             LineMark(
               x: .value("Date", session.startedAt),
@@ -539,7 +539,7 @@ struct RoutineDetailView: View {
         Text(
           editMode.isEditing
             ? "Exercise additions, deletions, and ordering changes are applied only when you tap Save."
-            : "Change an exercise's tracking unit from the Exercises tab. Workout weights, reps, and sets are saved per person in each workout."
+            : "Exercises define what each set records. Each person's weights, reps, and completed sets are saved with the workout."
         )
       }
     }
@@ -628,7 +628,17 @@ struct RoutineDetailView: View {
   }
 
   private func summary(_ item: RoutineExercise) -> String {
-    "\(unit(for: item).title) · configured per person when you start a workout"
+    switch unit(for: item) {
+    case .pounds: "Log weight (lb) and reps"
+    case .kilograms: "Log weight (kg) and reps"
+    case .repetitions: "Log reps"
+    case .seconds: "Log time in seconds"
+    case .minutes: "Log time in minutes"
+    case .miles: "Log distance in miles"
+    case .kilometers: "Log distance in kilometers"
+    case .meters: "Log distance in meters"
+    case .steps: "Log step count"
+    }
   }
 
   private func unit(for item: RoutineExercise) -> TrackingUnit {

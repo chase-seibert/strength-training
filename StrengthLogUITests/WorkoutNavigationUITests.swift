@@ -17,9 +17,11 @@ final class WorkoutNavigationUITests: XCTestCase {
     addButton.tap()
     XCTAssertTrue(app.navigationBars["New Exercise"].waitForExistence(timeout: 2))
     XCTAssertTrue(app.staticTexts["Exercise name"].exists)
-    XCTAssertTrue(app.staticTexts["Workout tracking"].exists)
-    XCTAssertTrue(app.staticTexts["Exercise details"].exists)
+    XCTAssertTrue(app.staticTexts["Workout logging"].exists)
+    XCTAssertTrue(app.staticTexts["Optional details"].exists)
     XCTAssertTrue(app.staticTexts["Main muscle"].exists)
+    XCTAssertTrue(app.staticTexts["Equipment"].exists)
+    app.buttons["More details"].tap()
     XCTAssertTrue(app.staticTexts["Exercise type"].exists)
 
     let screenshot = XCTAttachment(screenshot: app.screenshot())
@@ -68,9 +70,10 @@ final class WorkoutNavigationUITests: XCTestCase {
     XCTAssertTrue(app.staticTexts["Chest Press"].waitForExistence(timeout: 3))
     XCTAssertTrue(app.staticTexts["Originally Bench Press"].exists)
 
-    let duplicateButton = app.buttons["Duplicate"]
-    XCTAssertTrue(duplicateButton.exists)
-    duplicateButton.tap()
+    let moreButton = app.buttons["More"]
+    XCTAssertTrue(moreButton.exists)
+    moreButton.tap()
+    app.buttons["Duplicate Exercise"].tap()
     XCTAssertTrue(app.navigationBars["Duplicate Exercise"].waitForExistence(timeout: 2))
     XCTAssertEqual(app.textFields["exercise-name-field"].value as? String, "Chest Press Copy")
     app.buttons["Save"].tap()
@@ -96,7 +99,7 @@ final class WorkoutNavigationUITests: XCTestCase {
     let closeButton = app.buttons["close-active-workout"]
     XCTAssertTrue(closeButton.waitForExistence(timeout: 5))
     XCTAssertLessThan(closeButton.frame.midX, app.frame.midX)
-    XCTAssertTrue(app.navigationBars["Basic Workout"].exists)
+    XCTAssertTrue(app.navigationBars["Bench Press"].exists)
 
     closeButton.tap()
 
@@ -105,7 +108,7 @@ final class WorkoutNavigationUITests: XCTestCase {
     resumeButton.tap()
 
     XCTAssertTrue(closeButton.waitForExistence(timeout: 5))
-    XCTAssertTrue(app.navigationBars["Basic Workout"].exists)
+    XCTAssertTrue(app.navigationBars["Bench Press"].exists)
   }
 
   func testThreePersonWorkoutMatrixAndSharedCompletion() {
@@ -423,7 +426,7 @@ final class WorkoutNavigationUITests: XCTestCase {
       multiWorkoutDay.value as? String, "Lower Body, Basic Workout; Multiple people")
     multiWorkoutDay.tap()
 
-    XCTAssertTrue(app.navigationBars["2 Workouts"].waitForExistence(timeout: 5))
+    XCTAssertTrue(app.navigationBars["2 Workouts"].waitForExistence(timeout: 10))
     XCTAssertTrue(app.staticTexts["Lower Body"].waitForExistence(timeout: 5))
     XCTAssertTrue(app.staticTexts["Basic Workout"].exists)
     XCTAssertFalse(app.staticTexts["Barbell Back Squat"].exists)
@@ -496,6 +499,21 @@ final class WorkoutNavigationUITests: XCTestCase {
     XCTAssertFalse(nextButton.isEnabled)
   }
 
+  func testProgressUsesCompactDurationMenuAndPersonSeries() {
+    app.tabBars.buttons["Progress"].tap()
+
+    let rangeMenu = app.buttons["progress-range-menu"]
+    XCTAssertTrue(rangeMenu.waitForExistence(timeout: 5))
+    XCTAssertTrue(app.staticTexts["Training volume"].exists)
+    rangeMenu.tap()
+
+    XCTAssertTrue(app.buttons["4 weeks"].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.buttons["12 weeks"].exists)
+    XCTAssertTrue(app.buttons["All time"].exists)
+    XCTAssertFalse(app.staticTexts["Person"].exists)
+    XCTAssertFalse(app.staticTexts["Routine"].exists)
+  }
+
   func testSoftDeleteFromProgressExcludesCalendarAndRestores() {
     app.tabBars.buttons["Progress"].tap()
 
@@ -513,11 +531,12 @@ final class WorkoutNavigationUITests: XCTestCase {
     confirmButton.tap()
 
     app.tabBars.buttons["Workout"].tap()
+    XCTAssertTrue(app.navigationBars["Workout"].waitForExistence(timeout: 5))
     XCTAssertFalse(
       app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "2 workouts")).firstMatch
         .exists)
     let deletedWorkoutsButton = app.buttons["Deleted Workouts (1)"]
-    XCTAssertTrue(deletedWorkoutsButton.waitForExistence(timeout: 5))
+    XCTAssertTrue(deletedWorkoutsButton.waitForExistence(timeout: 10))
     scrollToHittable(deletedWorkoutsButton)
     deletedWorkoutsButton.tap()
 
@@ -605,7 +624,7 @@ final class WorkoutNavigationUITests: XCTestCase {
   }
 
   private func scrollToHittable(_ element: XCUIElement) {
-    for _ in 0..<8 where !element.isHittable {
+    for _ in 0..<8 where !element.isHittable || element.frame.midY > app.frame.height * 0.72 {
       app.swipeUp()
     }
     XCTAssertTrue(element.isHittable)

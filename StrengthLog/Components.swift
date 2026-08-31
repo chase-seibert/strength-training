@@ -1,6 +1,10 @@
 import SwiftUI
 import UIKit
 
+func exerciseCountText(_ count: Int) -> String {
+  "\(count) \(count == 1 ? "exercise" : "exercises")"
+}
+
 struct SectionEyebrow: View {
   let text: String
 

@@ -86,9 +86,9 @@ struct HomeView: View {
   private var routineSection: some View {
     VStack(alignment: .leading, spacing: 12) {
       HStack {
-        Text("Choose a routine").font(.title3.bold())
+        Text("Quick start").font(.title3.bold())
         Spacer()
-        NavigationLink("See all") { RoutinesView(onOpenWorkout: onOpenWorkout) }
+        NavigationLink("All routines") { RoutinesView(onOpenWorkout: onOpenWorkout) }
           .font(.subheadline.weight(.semibold))
       }
       if routines.isEmpty {
@@ -132,7 +132,7 @@ struct HomeView: View {
                 )
               VStack(alignment: .leading, spacing: 4) {
                 Text(routine.name).font(.headline).foregroundStyle(.primary)
-                Text("\(routine.exercises.count) exercises")
+                Text(exerciseCountText(routine.exercises.count))
                   .font(.subheadline).foregroundStyle(.secondary)
               }
               Spacer()

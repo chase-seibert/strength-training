@@ -5,6 +5,8 @@ import SwiftUI
 struct ProgressView: View {
   @Environment(\.modelContext) private var context
   @Query private var routines: [Routine]
+  @Query(filter: #Predicate<PersonProfile> { !$0.isArchived }, sort: \PersonProfile.sortOrder)
+  private var people: [PersonProfile]
   @Query(
     filter: #Predicate<WorkoutSession> { $0.deletedAt == nil },
     sort: \WorkoutSession.startedAt,
@@ -12,8 +14,18 @@ struct ProgressView: View {
   private var sessions: [WorkoutSession]
   @State private var pendingDeletion: WorkoutSession?
   @State private var showingDeleteConfirmation = false
+  @State private var selectedRange: ProgressRange = .fourWeeks
 
-  private var chronological: [WorkoutSession] { sessions.sorted { $0.startedAt < $1.startedAt } }
+  private var filteredSessions: [WorkoutSession] {
+    sessions.filter { session in
+      let matchesRange = selectedRange.startDate.map { session.startedAt >= $0 } ?? true
+      return matchesRange
+    }
+  }
+
+  private var chronological: [WorkoutSession] {
+    filteredSessions.sorted { $0.startedAt < $1.startedAt }
+  }
 
   var body: some View {
     Group {
@@ -23,49 +35,86 @@ struct ProgressView: View {
           message: "Start a routine to see volume and workout history.")
       } else {
         List {
-          Section("Pounds volume") {
-            Chart(chronological.suffix(14)) { session in
-              BarMark(
-                x: .value("Date", session.startedAt, unit: .day),
-                y: .value("Volume", volume(session))
+          Section("Training volume") {
+            if chronological.isEmpty {
+              Text("No workouts match these filters.")
+                .foregroundStyle(.secondary)
+            } else {
+              Chart(volumePoints) { point in
+                LineMark(
+                  x: .value("Date", point.startedAt, unit: .day),
+                  y: .value("Volume", point.volume),
+                  series: .value("Person", point.personName)
+                )
+                .foregroundStyle(by: .value("Person", point.personName))
+                .interpolationMethod(.catmullRom)
+                PointMark(
+                  x: .value("Date", point.startedAt, unit: .day),
+                  y: .value("Volume", point.volume)
+                )
+                .foregroundStyle(by: .value("Person", point.personName))
+              }
+              .chartForegroundStyleScale(
+                domain: progressPeople,
+                range: progressPeople.map { Color(hex: colorHex(for: $0)) }
               )
-              .foregroundStyle(Theme.coral.gradient)
-              .cornerRadius(4)
+              .chartLegend(position: .bottom, alignment: .leading)
+              .frame(height: 220)
+              .chartYAxisLabel("lb × reps")
             }
-            .frame(height: 190)
-            .chartYAxisLabel("lb × reps")
           }
 
           Section("Workout history") {
-            ForEach(sessions) { session in
-              NavigationLink {
-                SessionDetailView(session: session)
-              } label: {
-                HStack {
-                  VStack(alignment: .leading, spacing: 4) {
-                    Text(routineName(for: session)).font(.headline)
-                    Text(session.startedAt.formatted(date: .abbreviated, time: .shortened))
+            if filteredSessions.isEmpty {
+              Text("No workouts match these filters.")
+                .foregroundStyle(.secondary)
+            } else {
+              ForEach(filteredSessions) { session in
+                NavigationLink {
+                  SessionDetailView(session: session)
+                } label: {
+                  HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                      Text(routineName(for: session)).font(.headline)
+                      Text(session.startedAt.formatted(date: .abbreviated, time: .shortened))
+                        .font(.caption).foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Text("\(session.completedSetCount)/\(session.totalSetCount) sets")
                       .font(.caption).foregroundStyle(.secondary)
                   }
-                  Spacer()
-                  Text("\(session.completedSetCount)/\(session.totalSetCount) sets")
-                    .font(.caption).foregroundStyle(.secondary)
+                }
+                .accessibilityIdentifier("workout-history-\(routineName(for: session))")
+                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                  Button("Delete", systemImage: "trash", role: .destructive) {
+                    requestDelete(session)
+                  }
                 }
               }
-              .accessibilityIdentifier("workout-history-\(routineName(for: session))")
-              .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                Button("Delete", systemImage: "trash", role: .destructive) {
-                  requestDelete(session)
-                }
-              }
+              .onDelete(perform: requestDelete)
             }
-            .onDelete(perform: requestDelete)
           }
         }
         .listStyle(.insetGrouped)
       }
     }
     .navigationTitle("Progress")
+    .toolbar {
+      ToolbarItem(placement: .topBarTrailing) {
+        Menu {
+          ForEach(ProgressRange.allCases) { range in
+            Button {
+              selectedRange = range
+            } label: {
+              Label(range.title, systemImage: selectedRange == range ? "checkmark" : "circle")
+            }
+          }
+        } label: {
+          Label(selectedRange.title, systemImage: "line.3.horizontal.decrease.circle")
+        }
+        .accessibilityIdentifier("progress-range-menu")
+      }
+    }
     .alert(
       "Delete workout?",
       isPresented: $showingDeleteConfirmation
@@ -81,10 +130,46 @@ struct ProgressView: View {
     }
   }
 
-  private func volume(_ session: WorkoutSession) -> Double {
+  private var progressPeople: [String] {
+    var names: [String] = []
+    for session in filteredSessions {
+      for name in session.participantNames
+      where !names.contains(where: {
+        $0.caseInsensitiveCompare(name) == .orderedSame
+      }) {
+        names.append(name)
+      }
+    }
+    return names.sorted { lhs, rhs in
+      let leftOrder =
+        people.first(where: { $0.name.caseInsensitiveCompare(lhs) == .orderedSame })?.sortOrder
+        ?? Int.max
+      let rightOrder =
+        people.first(where: { $0.name.caseInsensitiveCompare(rhs) == .orderedSame })?.sortOrder
+        ?? Int.max
+      if leftOrder != rightOrder { return leftOrder < rightOrder }
+      return lhs.localizedCaseInsensitiveCompare(rhs) == .orderedAscending
+    }
+  }
+
+  private var volumePoints: [PersonVolumePoint] {
+    chronological.flatMap { session in
+      session.participantNames.compactMap { name in
+        let volume = volume(for: session, participantName: name)
+        guard volume > 0 else { return nil }
+        return PersonVolumePoint(
+          sessionID: session.id, personName: name, startedAt: session.startedAt, volume: volume)
+      }
+    }
+  }
+
+  private func volume(for session: WorkoutSession, participantName: String) -> Double {
     session.exercises.filter { $0.unit == .pounds }.flatMap(\.participants).reduce(0) {
       total, participant in
-      guard session.isParticipantActive(participant.participantName) else { return total }
+      guard participant.participantName.caseInsensitiveCompare(participantName) == .orderedSame
+      else {
+        return total
+      }
       return total
         + participant.sets.filter(\.isCompleted).reduce(0) {
           $0 + Double($1.reps) * ($1.measurement ?? participant.measurement)
@@ -92,9 +177,14 @@ struct ProgressView: View {
     }
   }
 
+  private func colorHex(for name: String) -> String {
+    people.first(where: { $0.name.caseInsensitiveCompare(name) == .orderedSame })?.colorHex
+      ?? "6B7280"
+  }
+
   private func requestDelete(_ offsets: IndexSet) {
-    guard let offset = offsets.first, sessions.indices.contains(offset) else { return }
-    requestDelete(sessions[offset])
+    guard let offset = offsets.first, filteredSessions.indices.contains(offset) else { return }
+    requestDelete(filteredSessions[offset])
   }
 
   private func requestDelete(_ session: WorkoutSession) {
@@ -114,6 +204,41 @@ struct ProgressView: View {
   private func routineName(for session: WorkoutSession) -> String {
     routines.first(where: { $0.id == session.routineID })?.name ?? "Unknown Routine"
   }
+}
+
+private enum ProgressRange: String, CaseIterable, Identifiable {
+  case fourWeeks = "4W"
+  case twelveWeeks = "12W"
+  case all = "All"
+
+  var id: Self { self }
+
+  var title: String {
+    switch self {
+    case .fourWeeks: "4 weeks"
+    case .twelveWeeks: "12 weeks"
+    case .all: "All time"
+    }
+  }
+
+  var startDate: Date? {
+    let days: Int
+    switch self {
+    case .fourWeeks: days = 28
+    case .twelveWeeks: days = 84
+    case .all: return nil
+    }
+    return Calendar.current.date(byAdding: .day, value: -days, to: .now)
+  }
+}
+
+private struct PersonVolumePoint: Identifiable {
+  let sessionID: UUID
+  let personName: String
+  let startedAt: Date
+  let volume: Double
+
+  var id: String { "\(sessionID.uuidString)-\(personName)" }
 }
 
 struct SessionDetailView: View {

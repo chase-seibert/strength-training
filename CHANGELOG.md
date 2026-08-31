@@ -36,3 +36,8 @@
 - Added guided create/edit exercise forms, exercise renaming and duplication, original-name search and display, and stable canonical identity links across routines and workout history.
 - Replaced the long exercise-filter chip row with a compact filter menu ordered All, Custom, then muscles alphabetically.
 - Replaced the original barbell/progress app icon with the selected Teal LC dumbbell monogram.
+- Clarified exercise creation with workout-language labels, an optional More Details disclosure, and explanations of how muscle, equipment, and type are used.
+- Made exercise duplication discoverable from a labeled More menu and simplified routine exercise summaries to describe what each set logs.
+- Tightened Workout quick start and live-workout secondary actions, strengthened participant-colored selection and set affordances, and made next-exercise navigation more visible.
+- Added person, routine, and 4W/12W/All filters to Progress and renamed chart sections to Training Volume.
+- Kept three routines in Workout Quick Start, replaced Progress person/routine controls with a compact duration menu, and changed Training Volume to a person-separated line chart with data-point dots.

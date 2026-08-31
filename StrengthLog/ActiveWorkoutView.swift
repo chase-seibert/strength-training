@@ -374,6 +374,7 @@ struct ActiveWorkoutView: View {
   private func participantPickerLabel(
     for person: PersonProfile, isSelected: Bool, pillWidth: CGFloat?
   ) -> some View {
+    let participantColor = Color(hex: person.colorHex)
     HStack(spacing: usesAlignedParticipantPicker ? 5 : 6) {
       InitialBadge(name: person.name, colorHex: person.colorHex, size: 26)
       Group {
@@ -391,7 +392,7 @@ struct ActiveWorkoutView: View {
         alignment: .leading)
       Image(systemName: isSelected ? "checkmark" : "plus")
         .font(.caption.bold())
-        .foregroundStyle(isSelected ? Theme.coral : .secondary)
+        .foregroundStyle(isSelected ? participantColor : .secondary)
     }
     .padding(.horizontal, usesAlignedParticipantPicker ? 8 : 10)
     .frame(
@@ -399,13 +400,13 @@ struct ActiveWorkoutView: View {
       height: 42
     )
     .background(
-      isSelected ? Theme.coral.opacity(0.14) : Color.secondary.opacity(0.08),
+      isSelected ? participantColor.opacity(0.10) : Color.secondary.opacity(0.06),
       in: Capsule()
     )
     .overlay {
       Capsule()
         .stroke(
-          isSelected ? Theme.coral.opacity(0.45) : Color.secondary.opacity(0.18),
+          isSelected ? participantColor.opacity(0.45) : Color.secondary.opacity(0.18),
           lineWidth: 1)
     }
   }
@@ -444,18 +445,24 @@ struct ActiveWorkoutView: View {
     _ title: String, systemImage: String, action: @escaping () -> Void
   ) -> some View {
     Button(action: action) {
-      VStack(spacing: 7) {
+      HStack(spacing: 7) {
         Image(systemName: systemImage)
-          .font(.headline)
+          .font(.subheadline.weight(.semibold))
         Text(title)
-          .font(.caption.weight(.semibold))
+          .font(.subheadline.weight(.semibold))
           .lineLimit(1)
           .minimumScaleFactor(0.75)
       }
       .foregroundStyle(Theme.navy)
       .frame(maxWidth: .infinity)
-      .padding(.vertical, 12)
-      .background(.background, in: RoundedRectangle(cornerRadius: 15, style: .continuous))
+      .padding(.vertical, 10)
+      .background(
+        Color.secondary.opacity(0.06), in: RoundedRectangle(cornerRadius: 13, style: .continuous)
+      )
+      .overlay {
+        RoundedRectangle(cornerRadius: 13, style: .continuous)
+          .stroke(Color.secondary.opacity(0.12), lineWidth: 1)
+      }
     }
     .buttonStyle(.plain)
   }
@@ -781,9 +788,9 @@ struct ActiveExerciseCard: View {
       .frame(maxWidth: .infinity)
 
       Button(action: onAdvance) {
-        Image(systemName: "chevron.down")
-          .font(.headline.weight(.bold))
-          .foregroundStyle(Theme.coral)
+        Image(systemName: "arrow.down.circle.fill")
+          .font(.title2.weight(.semibold))
+          .foregroundStyle(position >= total ? Color.secondary.opacity(0.35) : Theme.coral)
           .frame(width: 44, height: 44)
           .contentShape(Rectangle())
       }
@@ -1191,25 +1198,30 @@ struct SetCompletionButton: View {
   var body: some View {
     Button(action: toggleCompletion) {
       ZStack(alignment: .topTrailing) {
+        let participantColor = Color(hex: colorHex)
+        let canToggle = participant.canToggleCompletion(of: set)
         Text("\(setNumber)")
           .font(.system(size: 15, weight: .bold, design: .rounded))
-          .foregroundStyle(set.isCompleted ? Color(hex: colorHex) : .secondary)
+          .foregroundStyle(
+            set.isCompleted
+              ? participantColor : participantColor.opacity(canToggle ? 0.85 : 0.35)
+          )
           .frame(width: size - 4, height: size - 4)
           .background(
-            set.isCompleted ? Color(hex: colorHex).opacity(0.14) : Color.secondary.opacity(0.08),
+            participantColor.opacity(set.isCompleted ? 0.16 : (canToggle ? 0.07 : 0.03)),
             in: RoundedRectangle(cornerRadius: 8, style: .continuous)
           )
           .overlay {
             RoundedRectangle(cornerRadius: 8, style: .continuous)
               .stroke(
-                set.isCompleted ? Color(hex: colorHex).opacity(0.6) : Color.secondary.opacity(0.2),
-                lineWidth: 1)
+                participantColor.opacity(set.isCompleted ? 0.65 : (canToggle ? 0.4 : 0.14)),
+                lineWidth: set.isCompleted ? 1.5 : 1)
           }
 
         if set.isCompleted {
           Image(systemName: "checkmark.circle.fill")
             .font(.system(size: 11, weight: .bold))
-            .foregroundStyle(Color(hex: colorHex))
+            .foregroundStyle(participantColor)
             .background(Color(.systemBackground), in: Circle())
             .offset(x: 3, y: -3)
         }

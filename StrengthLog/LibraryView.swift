@@ -38,7 +38,7 @@ struct ExerciseLibraryView: View {
         }
       } header: {
         HStack {
-          Text("\(filtered.count) exercises")
+          Text(exerciseCountText(filtered.count))
           Spacer()
           if selectedFilter != "All" {
             Text(selectedFilter)
@@ -60,16 +60,20 @@ struct ExerciseLibraryView: View {
       }
     }
     .listStyle(.insetGrouped)
-    .searchable(text: $searchText, prompt: "Name or original name")
+    .searchable(text: $searchText, prompt: "Search exercises")
     .navigationTitle("Exercises")
     .toolbar {
       ToolbarItemGroup(placement: .primaryAction) {
         Menu {
-          Picker("Filter exercises", selection: $selectedFilter) {
-            ForEach(filters, id: \.self) { filter in
-              Text(filter)
-                .tag(filter)
-                .accessibilityIdentifier("exercise-filter-option-\(filter)")
+          Section {
+            ForEach(["All", "Custom"], id: \.self) { filter in
+              filterButton(filter)
+            }
+          }
+          Divider()
+          Section("Main muscle") {
+            ForEach(Array(filters.dropFirst(2)), id: \.self) { filter in
+              filterButton(filter)
             }
           }
         } label: {
@@ -85,6 +89,20 @@ struct ExerciseLibraryView: View {
       }
     }
     .sheet(isPresented: $showingNewExercise) { NewExerciseSheet() }
+  }
+
+  private func filterButton(_ filter: String) -> some View {
+    Button {
+      selectedFilter = filter
+    } label: {
+      if selectedFilter == filter {
+        (Text("✓  ").foregroundStyle(Theme.coral) + Text(filter))
+      } else {
+        Text(filter)
+      }
+    }
+    .accessibilityLabel(filter)
+    .accessibilityIdentifier("exercise-filter-option-\(filter)")
   }
 }
 
@@ -161,7 +179,7 @@ struct ExerciseDetailView: View {
         }
 
         VStack(alignment: .leading, spacing: 10) {
-          LabeledContent("Workout tracking", value: exercise.unit.title)
+          LabeledContent("Log each set", value: loggingTitle(for: exercise.unit))
             .font(.headline)
           Text("Edit the exercise to change what each set records.")
             .font(.caption).foregroundStyle(.secondary)
@@ -171,7 +189,7 @@ struct ExerciseDetailView: View {
 
         if !exercise.instructions.isEmpty {
           VStack(alignment: .leading, spacing: 10) {
-            Text("Form notes").font(.headline)
+            Text("Technique notes").font(.headline)
             Text(exercise.instructions)
               .font(.body).foregroundStyle(.secondary)
           }
@@ -187,8 +205,12 @@ struct ExerciseDetailView: View {
     .navigationBarTitleDisplayMode(.inline)
     .toolbar {
       ToolbarItemGroup(placement: .primaryAction) {
-        Button("Duplicate", systemImage: "plus.square.on.square") {
-          showingDuplicateEditor = true
+        Menu {
+          Button("Duplicate Exercise", systemImage: "plus.square.on.square") {
+            showingDuplicateEditor = true
+          }
+        } label: {
+          Label("More", systemImage: "ellipsis")
         }
         Button("Edit", systemImage: "pencil") { showingEditor = true }
       }
@@ -241,6 +263,17 @@ struct ExerciseDetailView: View {
     exercise.deletedAt = .now
     try? context.save()
     dismiss()
+  }
+
+  private func loggingTitle(for unit: TrackingUnit) -> String {
+    switch unit {
+    case .pounds: "Weight (lb) + reps"
+    case .kilograms: "Weight (kg) + reps"
+    case .repetitions: "Reps only"
+    case .seconds, .minutes: "Duration"
+    case .miles, .kilometers, .meters: "Distance"
+    case .steps: "Step count"
+    }
   }
 }
 
@@ -326,7 +359,7 @@ struct AddExerciseFromLibrarySheet: View {
                     .frame(width: 32)
                   VStack(alignment: .leading, spacing: 3) {
                     Text(routine.name).foregroundStyle(.primary)
-                    Text("\(routine.exercises.count) exercises")
+                    Text(exerciseCountText(routine.exercises.count))
                       .font(.caption).foregroundStyle(.secondary)
                   }
                   Spacer()
@@ -471,11 +504,11 @@ private struct ExerciseEditorSheet: View {
         }
 
         Section {
-          Picker("Tracking unit", selection: $unit) {
-            ForEach(TrackingUnit.allCases) { Text($0.title).tag($0) }
+          Picker("Log each set by", selection: $unit) {
+            ForEach(TrackingUnit.allCases) { Text(loggingTitle(for: $0)).tag($0) }
           }
         } header: {
-          Text("Workout tracking")
+          Text("Workout logging")
         } footer: {
           Text(trackingExplanation)
         }
@@ -491,24 +524,26 @@ private struct ExerciseEditorSheet: View {
               Text(friendlyName($0)).tag($0)
             }
           }
-          Picker("Exercise type", selection: $category) {
-            ForEach(options(including: category, defaults: Self.categoryOptions), id: \.self) {
-              Text(friendlyName($0)).tag($0)
+          DisclosureGroup("More details") {
+            Picker("Exercise type", selection: $category) {
+              ForEach(options(including: category, defaults: Self.categoryOptions), id: \.self) {
+                Text(friendlyName($0)).tag($0)
+              }
             }
           }
         } header: {
-          Text("Exercise details")
+          Text("Optional details")
         } footer: {
           Text(
-            "Main muscle is the area doing most of the work. Exercise type groups similar movements."
+            "Main muscle controls filters. Equipment appears in exercise lists and improves import matching. Exercise type is descriptive only."
           )
         }
 
         Section {
-          TextField("Optional technique cues", text: $instructions, axis: .vertical)
+          TextField("e.g. Keep your chest up", text: $instructions, axis: .vertical)
             .lineLimit(4...8)
         } header: {
-          Text("Form notes")
+          Text("Technique notes")
         } footer: {
           Text("Add reminders such as stance, setup, or range of motion.")
         }
@@ -535,6 +570,20 @@ private struct ExerciseEditorSheet: View {
     case "e-z curl bar": "EZ Curl Bar"
     case "kettlebells": "Kettlebell"
     default: raw.capitalized
+    }
+  }
+
+  private func loggingTitle(for unit: TrackingUnit) -> String {
+    switch unit {
+    case .pounds: "Weight (lb) + reps"
+    case .kilograms: "Weight (kg) + reps"
+    case .repetitions: "Reps only"
+    case .seconds: "Time in seconds"
+    case .minutes: "Time in minutes"
+    case .miles: "Distance in miles"
+    case .kilometers: "Distance in kilometers"
+    case .meters: "Distance in meters"
+    case .steps: "Step count"
     }
   }
 
