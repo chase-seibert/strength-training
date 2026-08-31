@@ -6,6 +6,8 @@ struct SettingsView: View {
   @Environment(\.modelContext) private var context
   @Environment(HevyImportCoordinator.self) private var importCoordinator
   @Query(sort: \PersonProfile.sortOrder) private var people: [PersonProfile]
+  @AppStorage(WorkoutPreferences.defaultSetsKey) private var defaultWorkoutSets =
+    WorkoutPreferences.fallbackSets
   @AppStorage(WorkoutPreferences.defaultRepsKey) private var defaultWorkoutReps =
     WorkoutPreferences.fallbackReps
   @State private var showingNewPerson = false
@@ -47,13 +49,16 @@ struct SettingsView: View {
       }
 
       Section {
+        Stepper(value: $defaultWorkoutSets, in: 1...12) {
+          LabeledContent("Default sets", value: "\(defaultWorkoutSets)")
+        }
         Stepper(value: $defaultWorkoutReps, in: 1...30) {
           LabeledContent("Default reps", value: "\(defaultWorkoutReps)")
         }
       } header: {
         Text("Workouts")
       } footer: {
-        Text("Used when an exercise or person does not have completed-set history yet.")
+        Text("Used for new exercises and for people without completed-set history.")
       }
 
       Section("Data") {

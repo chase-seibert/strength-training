@@ -46,3 +46,4 @@
 - Balanced the Teal LC icon so the letters and mirrored plates share matching heights and align around the center bar.
 - Restored the earlier diagonal rotation to the balanced Teal LC icon.
 - Added a two-hour Workout-tab resume section for completed workouts, allowing them to be reopened and continued after completion.
+- Added a configurable default set count for new workout exercises alongside default reps.

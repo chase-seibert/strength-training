@@ -30,6 +30,15 @@ final class WorkoutNavigationUITests: XCTestCase {
     add(screenshot)
   }
 
+  func testWorkoutSettingsShowDefaultSetAndRepCounts() {
+    app.tabBars.buttons["Settings"].tap()
+
+    XCTAssertTrue(app.staticTexts["Default sets"].waitForExistence(timeout: 5))
+    XCTAssertTrue(app.staticTexts["Default reps"].exists)
+    XCTAssertTrue(app.staticTexts["3"].exists)
+    XCTAssertTrue(app.staticTexts["8"].exists)
+  }
+
   func testExerciseFilterMenuOrdersCustomAfterAllAndExcludesCatalogExercises() {
     app.tabBars.buttons["Exercises"].tap()
     let filterMenu = app.buttons["exercise-filter-menu"]

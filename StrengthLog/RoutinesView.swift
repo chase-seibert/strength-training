@@ -872,7 +872,7 @@ enum WorkoutSessionStarter {
       return ParticipantLog(
         participantName: name, measurement: previous.measurement,
         sets: completedSets.isEmpty
-          ? (0..<3).map {
+          ? (0..<WorkoutPreferences.defaultSets).map {
             WorkoutSet(sortOrder: $0, reps: WorkoutPreferences.defaultReps)
           }
           : completedSets.enumerated().map { index, set in
@@ -895,7 +895,9 @@ enum WorkoutSessionStarter {
     }
     return ParticipantLog(
       participantName: name, measurement: 0,
-      sets: (0..<3).map { WorkoutSet(sortOrder: $0, reps: WorkoutPreferences.defaultReps) })
+      sets: (0..<WorkoutPreferences.defaultSets).map {
+        WorkoutSet(sortOrder: $0, reps: WorkoutPreferences.defaultReps)
+      })
   }
 
   private static func matches(_ log: ExerciseLog, _ exercise: RoutineExercise) -> Bool {

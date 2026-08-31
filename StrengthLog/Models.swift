@@ -3,8 +3,15 @@ import SwiftData
 import SwiftUI
 
 enum WorkoutPreferences {
+  static let defaultSetsKey = "defaultWorkoutSets"
   static let defaultRepsKey = "defaultWorkoutReps"
+  static let fallbackSets = 3
   static let fallbackReps = 8
+
+  static var defaultSets: Int {
+    let stored = UserDefaults.standard.integer(forKey: defaultSetsKey)
+    return stored > 0 ? stored : fallbackSets
+  }
 
   static var defaultReps: Int {
     let stored = UserDefaults.standard.integer(forKey: defaultRepsKey)
@@ -380,7 +387,9 @@ final class WorkoutSession {
       ParticipantLog(
         participantName: name,
         measurement: 0,
-        sets: (0..<3).map { WorkoutSet(sortOrder: $0, reps: WorkoutPreferences.defaultReps) })
+        sets: (0..<WorkoutPreferences.defaultSets).map {
+          WorkoutSet(sortOrder: $0, reps: WorkoutPreferences.defaultReps)
+        })
     }
     exercises.append(
       ExerciseLog(

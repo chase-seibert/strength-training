@@ -422,7 +422,9 @@ struct ActiveWorkoutView: View {
       where !exercise.participants.contains(where: {
         $0.participantName.caseInsensitiveCompare(name) == .orderedSame
       }) {
-        let setCount = exercise.participants.map(\.sets.count).max() ?? 3
+        let setCount =
+          exercise.participants.map(\.sets.count).max()
+          ?? WorkoutPreferences.defaultSets
         exercise.participants.append(
           ParticipantLog(
             participantName: name, measurement: 0,
