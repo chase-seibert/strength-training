@@ -218,6 +218,35 @@ final class WorkoutNavigationUITests: XCTestCase {
     XCTAssertLessThan(abs(addSet.frame.midY - nextExercise.frame.midY), 2)
   }
 
+  func testCompleteOneSetForEveryoneCatchesUpParticipants() {
+    app.terminate()
+    app.launchArguments = ["-basicWorkoutFixture", "-activeWorkoutFixture"]
+    app.launch()
+
+    let completeOneSet = app.buttons["complete-one-set"]
+    XCTAssertTrue(completeOneSet.waitForExistence(timeout: 5))
+
+    // Put one participant ahead, then use the shared action to catch up the others.
+    app.buttons["participant-set-Alex-1"].tap()
+    completeOneSet.tap()
+    XCTAssertEqual(
+      app.buttons["participant-set-Alex-2"].label,
+      "Complete Bench Press set 2")
+    for name in ["Jordan", "Owen"] {
+      XCTAssertEqual(
+        app.buttons["participant-set-\(name)-1"].label,
+        "Remove completed Bench Press set 1")
+    }
+
+    // Once everyone is caught up, the next press advances everyone together.
+    completeOneSet.tap()
+    for name in ["Alex", "Jordan", "Owen"] {
+      XCTAssertEqual(
+        app.buttons["participant-set-\(name)-2"].label,
+        "Remove completed Bench Press set 2")
+    }
+  }
+
   func testParticipantWithCompletedSetsTogglesWithoutConfirmation() {
     app.terminate()
     app.launchArguments = ["-basicWorkoutFixture", "-activeWorkoutFixture"]

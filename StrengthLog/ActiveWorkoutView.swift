@@ -60,112 +60,124 @@ struct ActiveWorkoutView: View {
   private var restTimerNotificationsEnabled = false
 
   var body: some View {
-    TimelineView(.animation(minimumInterval: 1, paused: false)) { timeline in
-      ScrollViewReader { proxy in
-        List {
-          ForEach(Array(orderedExercises.enumerated()), id: \.element.id) { index, exercise in
-            exerciseCard(exercise, index: index)
-              .listRowInsets(EdgeInsets(top: 8, leading: 12, bottom: 12, trailing: 12))
-              .listRowSeparator(.hidden)
-              .listRowBackground(Color.clear)
-          }
-          .onMove(perform: moveExercises)
+    let personalRecordExerciseKeys = Set(
+      PersonalRecords.achievements(in: workoutHistory)
+        .filter { $0.sessionID == session.id }
+        .map(\.exerciseKey)
+    )
 
-          HStack(spacing: 10) {
-            workoutAction(
-              editMode.isEditing ? "Finish Reorder" : "Reorder",
-              systemImage: editMode.isEditing ? "checkmark" : "arrow.up.arrow.down"
-            ) {
-              withAnimation(.snappy) {
-                editMode = editMode.isEditing ? .inactive : .active
-              }
-            }
-            workoutAction("Add Exercise", systemImage: "plus") {
-              showingExercisePicker = true
-            }
-          }
-          .listRowInsets(EdgeInsets(top: 16, leading: 16, bottom: 24, trailing: 16))
+    ScrollViewReader { proxy in
+      List {
+        ForEach(Array(orderedExercises.enumerated()), id: \.element.id) { index, exercise in
+          exerciseCard(
+            exercise,
+            index: index,
+            personalRecordExerciseKeys: personalRecordExerciseKeys
+          )
+          .listRowInsets(EdgeInsets(top: 8, leading: 12, bottom: 12, trailing: 12))
           .listRowSeparator(.hidden)
           .listRowBackground(Color.clear)
+        }
+        .onMove(perform: moveExercises)
 
-          VStack(spacing: 12) {
+        HStack(spacing: 10) {
+          workoutAction(
+            editMode.isEditing ? "Finish Reorder" : "Reorder",
+            systemImage: editMode.isEditing ? "checkmark" : "arrow.up.arrow.down"
+          ) {
+            withAnimation(.snappy) {
+              editMode = editMode.isEditing ? .inactive : .active
+            }
+          }
+          workoutAction("Add Exercise", systemImage: "plus") {
+            showingExercisePicker = true
+          }
+        }
+        .listRowInsets(EdgeInsets(top: 16, leading: 16, bottom: 24, trailing: 16))
+        .listRowSeparator(.hidden)
+        .listRowBackground(Color.clear)
+
+        VStack(spacing: 12) {
+          TimelineView(.animation(minimumInterval: 1, paused: false)) { timeline in
             if let duration = session.workoutDuration(at: timeline.date) {
               Text("Workout length \(duration.workoutDurationText)")
                 .font(.subheadline.monospacedDigit().weight(.semibold))
                 .foregroundStyle(.secondary)
                 .accessibilityLabel("Workout length \(duration.workoutDurationText)")
             }
-            Button(action: onDone) {
-              Text("Complete Workout")
-                .font(.headline)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 13)
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(Theme.coral)
+          }
+          Button(action: onDone) {
+            Text("Complete Workout")
+              .font(.headline)
+              .frame(maxWidth: .infinity)
+              .padding(.vertical, 13)
+          }
+          .buttonStyle(.borderedProminent)
+          .tint(Theme.coral)
 
-            Button("Delete Workout", role: .destructive) {
-              showingDeleteConfirmation = true
-            }
-            .font(.body.weight(.semibold))
-            .buttonStyle(.plain)
-            .foregroundStyle(.red)
-            .alert(
-              "Delete workout?",
-              isPresented: $showingDeleteConfirmation
-            ) {
-              Button("Delete Workout", role: .destructive, action: onDelete)
-              Button("Cancel", role: .cancel) {}
-            } message: {
-              Text(
-                "This moves the \(routineName) workout from \(session.startedAt.formatted(date: .abbreviated, time: .shortened)) to Deleted Workouts, where it can be restored."
-              )
-            }
+          Button("Delete Workout", role: .destructive) {
+            showingDeleteConfirmation = true
           }
-          .frame(maxWidth: .infinity)
-          .listRowInsets(EdgeInsets(top: 8, leading: 12, bottom: 32, trailing: 12))
-          .listRowSeparator(.hidden)
-          .listRowBackground(Color.clear)
-        }
-        .listStyle(.plain)
-        .coordinateSpace(name: "active-workout-scroll")
-        .scrollContentBackground(.hidden)
-        .scrollDismissesKeyboard(.interactively)
-        .environment(\.editMode, $editMode)
-        .background(Color(.systemGroupedBackground))
-        .background(DismissKeyboardOnTap())
-        .safeAreaInset(edge: .top, spacing: 0) {
-          participantPills
-            .padding(.horizontal, participantPickerOuterPadding)
-            .padding(.vertical, 8)
-            .background(.regularMaterial)
-            .overlay(alignment: .bottom) { Divider() }
-        }
-        .onAppear {
-          guard !didRestoreScrollPosition else { return }
-          didRestoreScrollPosition = true
-          guard let target = resumeExerciseID else { return }
-          currentExerciseID = target
-          DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-            withAnimation(.easeOut(duration: 0.25)) {
-              proxy.scrollTo(target, anchor: .top)
-            }
+          .font(.body.weight(.semibold))
+          .buttonStyle(.plain)
+          .foregroundStyle(.red)
+          .alert(
+            "Delete workout?",
+            isPresented: $showingDeleteConfirmation
+          ) {
+            Button("Delete Workout", role: .destructive, action: onDelete)
+            Button("Cancel", role: .cancel) {}
+          } message: {
+            Text(
+              "This moves the \(routineName) workout from \(session.startedAt.formatted(date: .abbreviated, time: .shortened)) to Deleted Workouts, where it can be restored."
+            )
           }
         }
-        .onPreferenceChange(ExerciseCardOffsetPreferenceKey.self) { offsets in
-          guard requestedExerciseID == nil else { return }
-          currentExerciseID = exerciseNearestStickyHeader(in: offsets)
-        }
-        .onChange(of: requestedExerciseID) { _, target in
-          guard let target else { return }
-          currentExerciseID = target
-          withAnimation(.snappy) {
+        .frame(maxWidth: .infinity)
+        .listRowInsets(EdgeInsets(top: 8, leading: 12, bottom: 32, trailing: 12))
+        .listRowSeparator(.hidden)
+        .listRowBackground(Color.clear)
+      }
+      .listStyle(.plain)
+      .coordinateSpace(name: "active-workout-scroll")
+      .scrollContentBackground(.hidden)
+      .scrollDismissesKeyboard(.interactively)
+      .environment(\.editMode, $editMode)
+      .background(Color(.systemGroupedBackground))
+      .background(DismissKeyboardOnTap())
+      .safeAreaInset(edge: .top, spacing: 0) {
+        participantPills
+          .padding(.horizontal, participantPickerOuterPadding)
+          .padding(.vertical, 8)
+          .background(.regularMaterial)
+          .overlay(alignment: .bottom) { Divider() }
+      }
+      .onAppear {
+        guard !didRestoreScrollPosition else { return }
+        didRestoreScrollPosition = true
+        guard let target = resumeExerciseID else { return }
+        currentExerciseID = target
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+          withAnimation(.easeOut(duration: 0.25)) {
             proxy.scrollTo(target, anchor: .top)
           }
-          DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
-            if requestedExerciseID == target {
-              requestedExerciseID = nil
-            }
+        }
+      }
+      .onPreferenceChange(ExerciseCardOffsetPreferenceKey.self) { offsets in
+        guard requestedExerciseID == nil else { return }
+        let nearestExerciseID = exerciseNearestStickyHeader(in: offsets)
+        guard nearestExerciseID != currentExerciseID else { return }
+        currentExerciseID = nearestExerciseID
+      }
+      .onChange(of: requestedExerciseID) { _, target in
+        guard let target else { return }
+        currentExerciseID = target
+        withAnimation(.snappy) {
+          proxy.scrollTo(target, anchor: .top)
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
+          if requestedExerciseID == target {
+            requestedExerciseID = nil
           }
         }
       }
@@ -468,7 +480,11 @@ struct ActiveWorkoutView: View {
     return orderedExercises.first(where: { closestIDs.contains($0.id) })?.id
   }
 
-  private func exerciseCard(_ exercise: ExerciseLog, index: Int) -> some View {
+  private func exerciseCard(
+    _ exercise: ExerciseLog,
+    index: Int,
+    personalRecordExerciseKeys: Set<String>
+  ) -> some View {
     ActiveExerciseCard(
       exercise: exercise,
       catalogExercise: exercise.exerciseID.flatMap { catalogByID[$0] }
@@ -480,8 +496,7 @@ struct ActiveWorkoutView: View {
       usesSinglePersonHorizontalLayout: visiblePeople.count == 1,
       onAdvance: { jumpExercise(after: exercise, by: 1) },
       onSetCompleted: startRestTimer,
-      showsPersonalRecord: PersonalRecords.isRecord(
-        for: exercise, in: session, history: workoutHistory)
+      showsPersonalRecord: personalRecordExerciseKeys.contains(PersonalRecords.key(for: exercise))
     )
     .frame(maxWidth: .infinity, alignment: .top)
     .id(exercise.id)
@@ -941,56 +956,117 @@ struct ActiveExerciseCard: View {
     .frame(maxWidth: .infinity, alignment: .leading)
   }
 
+  @ViewBuilder
   private var setCountControls: some View {
-    ZStack(alignment: .bottomTrailing) {
-      HStack(spacing: 26) {
-        Button(action: removeLastSetForEveryone) {
-          HStack(spacing: 12) {
-            Image(systemName: "minus.circle")
-              .font(.title3.weight(.semibold))
-            Text("Remove Set")
-          }
-          .font(.subheadline.weight(.semibold))
-          .frame(minHeight: 44)
-          .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .foregroundStyle(setCount > 1 ? Theme.navy : Color.secondary.opacity(0.4))
-        .disabled(setCount <= 1)
-        .accessibilityIdentifier("remove-shared-set")
-        .accessibilityLabel("Remove set")
-
-        Button(action: addSetForEveryone) {
-          HStack(spacing: 12) {
-            Image(systemName: "plus.circle.fill")
-              .font(.title3.weight(.semibold))
-            Text("Add Set")
-          }
-          .font(.subheadline.weight(.semibold))
-          .frame(minHeight: 44)
-          .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .foregroundStyle(Theme.coral)
-        .accessibilityIdentifier("add-shared-set")
-        .accessibilityLabel("Add set")
+    if usesSinglePersonHorizontalLayout {
+      HStack(spacing: 10) {
+        sharedSetButtons
+        Spacer(minLength: 0)
+        nextExerciseButton
       }
-      .padding(.trailing, 64)
-      .frame(maxWidth: .infinity)
+    } else {
+      ZStack {
+        sharedSetButtons
 
-      Button(action: onAdvance) {
-        Image(systemName: "arrow.down.circle.fill")
-          .font(.title2.weight(.semibold))
-          .foregroundStyle(position >= total ? Color.secondary.opacity(0.35) : Theme.coral)
-          .frame(width: 44, height: 44)
-          .contentShape(Rectangle())
+        HStack {
+          Spacer(minLength: 0)
+          nextExerciseButton
+        }
+      }
+    }
+  }
+
+  private var sharedSetButtons: some View {
+    HStack(spacing: 10) {
+      Button(action: removeLastSetForEveryone) {
+        Image(systemName: "minus")
+          .font(.caption.weight(.bold))
+          .foregroundStyle(setCount > 1 ? Theme.navy : Color.secondary.opacity(0.4))
+          .frame(width: 30, height: 30)
+          .background(Color.secondary.opacity(0.08), in: Circle())
       }
       .buttonStyle(.plain)
-      .disabled(position >= total)
-      .opacity(position >= total ? 0.45 : 1)
-      .accessibilityLabel("Next exercise")
-      .accessibilityIdentifier("next-exercise-\(exercise.exerciseName)")
+      .disabled(setCount <= 1)
+      .accessibilityIdentifier("remove-shared-set")
+      .accessibilityLabel("Remove set")
+
+      Button(action: completeOneSetForEveryone) {
+        Label("1 set", systemImage: "checkmark")
+          .font(.caption.weight(.bold))
+          .foregroundStyle(Theme.navy)
+          .padding(.horizontal, 9)
+          .padding(.vertical, 6)
+          .background(Theme.mint.opacity(0.18), in: Capsule())
+      }
+      .buttonStyle(.plain)
+      .accessibilityIdentifier("complete-one-set")
+      .accessibilityLabel("Complete one set for everyone")
+
+      Button(action: addSetForEveryone) {
+        Image(systemName: "plus")
+          .font(.caption.weight(.bold))
+          .foregroundStyle(Theme.coral)
+          .frame(width: 30, height: 30)
+          .background(Theme.coral.opacity(0.12), in: Circle())
+      }
+      .buttonStyle(.plain)
+      .accessibilityIdentifier("add-shared-set")
+      .accessibilityLabel("Add set")
     }
+  }
+
+  private var nextExerciseButton: some View {
+    Button(action: onAdvance) {
+      Image(systemName: "arrow.down.circle.fill")
+        .font(.title3.weight(.semibold))
+        .foregroundStyle(position >= total ? Color.secondary.opacity(0.35) : Theme.coral)
+        .frame(width: 36, height: 36)
+        .contentShape(Rectangle())
+    }
+    .buttonStyle(.plain)
+    .disabled(position >= total)
+    .opacity(position >= total ? 0.45 : 1)
+    .accessibilityLabel("Next exercise")
+    .accessibilityIdentifier("next-exercise-\(exercise.exerciseName)")
+  }
+
+  private func completeOneSetForEveryone() {
+    let participants = visibleLogs
+    guard !participants.isEmpty else { return }
+    let completedCounts = participants.map { participant in
+      participant.orderedSets.filter { !$0.isSkipped && $0.isCompleted }.count
+    }
+    guard let maximumCompleted = completedCounts.max() else { return }
+    let everyoneIsAtMaximum = completedCounts.allSatisfy { $0 == maximumCompleted }
+    let targetCompletedCount = maximumCompleted + (everyoneIsAtMaximum ? 1 : 0)
+    var didComplete = false
+
+    withAnimation(.snappy) {
+      for participant in participants {
+        let completedCount = participant.orderedSets.filter { !$0.isSkipped && $0.isCompleted }
+          .count
+        guard completedCount < targetCompletedCount else { continue }
+        if let nextSet = participant.orderedSets.first(where: { !$0.isSkipped && !$0.isCompleted })
+        {
+          nextSet.isCompleted = true
+          nextSet.isLeftCompleted = true
+          nextSet.isRightCompleted = true
+          nextSet.completedAt = .now
+          didComplete = true
+        } else {
+          let set = WorkoutSet(
+            sortOrder: participant.sets.count,
+            reps: baseReps(for: participant),
+            isCompleted: true,
+            completedAt: .now)
+          participant.sets.append(set)
+          didComplete = true
+        }
+      }
+    }
+    guard didComplete else { return }
+    try? context.save()
+    onSetCompleted()
   }
 
   private func addSetForEveryone() {
