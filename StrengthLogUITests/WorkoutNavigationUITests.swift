@@ -553,11 +553,18 @@ final class WorkoutNavigationUITests: XCTestCase {
     let rangeMenu = app.buttons["progress-range-menu"]
     XCTAssertTrue(rangeMenu.waitForExistence(timeout: 5))
     XCTAssertTrue(app.staticTexts["Training volume"].exists)
+
+    let progressScreenshot = XCTAttachment(screenshot: app.screenshot())
+    progressScreenshot.name = "personal-records-progress"
+    progressScreenshot.lifetime = .keepAlways
+    add(progressScreenshot)
+
     rangeMenu.tap()
 
-    XCTAssertTrue(app.buttons["4 weeks"].waitForExistence(timeout: 2))
-    XCTAssertTrue(app.buttons["12 weeks"].exists)
-    XCTAssertTrue(app.buttons["All time"].exists)
+    XCTAssertTrue(app.buttons["12 weeks"].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.buttons["1 year"].exists)
+    XCTAssertFalse(app.buttons["4 weeks"].exists)
+    XCTAssertFalse(app.buttons["All time"].exists)
     XCTAssertFalse(app.staticTexts["Person"].exists)
     XCTAssertFalse(app.staticTexts["Routine"].exists)
   }

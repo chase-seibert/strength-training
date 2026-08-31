@@ -44,6 +44,8 @@ struct ActiveWorkoutView: View {
   private var people: [PersonProfile]
   @Query private var routines: [Routine]
   @Query private var catalog: [Exercise]
+  @Query(filter: #Predicate<WorkoutSession> { $0.deletedAt == nil })
+  private var workoutHistory: [WorkoutSession]
   @Bindable var session: WorkoutSession
   let onDone: () -> Void
   let onDelete: () -> Void
@@ -477,7 +479,9 @@ struct ActiveWorkoutView: View {
       total: orderedExercises.count,
       usesSinglePersonHorizontalLayout: visiblePeople.count == 1,
       onAdvance: { jumpExercise(after: exercise, by: 1) },
-      onSetCompleted: startRestTimer
+      onSetCompleted: startRestTimer,
+      showsPersonalRecord: PersonalRecords.isRecord(
+        for: exercise, in: session, history: workoutHistory)
     )
     .frame(maxWidth: .infinity, alignment: .top)
     .id(exercise.id)
@@ -712,6 +716,7 @@ struct ActiveExerciseCard: View {
   let usesSinglePersonHorizontalLayout: Bool
   let onAdvance: () -> Void
   let onSetCompleted: () -> Void
+  let showsPersonalRecord: Bool
   @State private var showingImages = false
   @State private var showingHistory = false
   @State private var lastSetEditorParticipant: ParticipantLog?
@@ -782,6 +787,15 @@ struct ActiveExerciseCard: View {
           }
         }
         Spacer(minLength: 4)
+        if showsPersonalRecord {
+          Label("PR", systemImage: "trophy.fill")
+            .font(.caption.bold())
+            .foregroundStyle(Theme.prYellow)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 6)
+            .background(Theme.prYellow.opacity(0.18), in: Capsule())
+            .accessibilityLabel("Personal record")
+        }
         Button {
           showingHistory = true
         } label: {
@@ -1687,10 +1701,12 @@ struct MeasurementStepper: View {
 
 private struct ExerciseHistoryPoint: Identifiable {
   let id: String
+  let exerciseKey: String
   let personName: String
   let date: Date
   let measurement: Double
   let reps: Int
+  let isPR: Bool
 }
 
 struct ExerciseGroupHistoryView: View {
@@ -1706,7 +1722,8 @@ struct ExerciseGroupHistoryView: View {
   let unit: TrackingUnit
 
   private var points: [ExerciseHistoryPoint] {
-    sessions.flatMap { session -> [ExerciseHistoryPoint] in
+    let achievements = PersonalRecords.achievements(in: sessions)
+    return sessions.flatMap { session -> [ExerciseHistoryPoint] in
       guard
         let exercise = session.exercises.first(where: {
           if let exerciseID, let loggedExerciseID = $0.exerciseID {
@@ -1725,12 +1742,20 @@ struct ExerciseGroupHistoryView: View {
         guard !completed.isEmpty else { return nil }
         let measurement = completed.map { $0.measurement ?? participant.measurement }.max() ?? 0
         let reps = completed.map(\.reps).max() ?? 0
+        let exerciseKey = PersonalRecords.key(for: exercise)
+        let isPR = achievements.contains {
+          $0.sessionID == session.id
+            && $0.exerciseKey == exerciseKey
+            && $0.personName.caseInsensitiveCompare(personName) == .orderedSame
+        }
         return ExerciseHistoryPoint(
           id: "\(session.id.uuidString)-\(personName.lowercased())",
+          exerciseKey: exerciseKey,
           personName: personName,
           date: session.startedAt,
           measurement: measurement,
-          reps: reps)
+          reps: reps,
+          isPR: isPR)
       }
     }
   }
@@ -1755,6 +1780,15 @@ struct ExerciseGroupHistoryView: View {
                       .frame(width: 9, height: 9)
                   }
                 }
+              }
+              let personalRecordCount = points.filter(\.isPR).count
+              if personalRecordCount > 0 {
+                Label(
+                  "\(personalRecordCount) personal record\(personalRecordCount == 1 ? "" : "s")",
+                  systemImage: "trophy.fill"
+                )
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Theme.coral)
               }
               historyChart(
                 title: unit.title,
@@ -1794,6 +1828,20 @@ struct ExerciseGroupHistoryView: View {
           y: .value(title, value(point))
         )
         .foregroundStyle(Color(hex: colors[point.personName] ?? "FF5A45"))
+        if point.isPR {
+          PointMark(
+            x: .value("Date", point.date),
+            y: .value(title, value(point))
+          )
+          .foregroundStyle(Theme.prYellow)
+          .symbolSize(28)
+          .annotation(position: .top, spacing: 2) {
+            Image(systemName: "trophy.fill")
+              .font(.caption2)
+              .foregroundStyle(Theme.prYellow)
+              .accessibilityLabel("Personal record")
+          }
+        }
       }
       .frame(height: 150)
     }

@@ -420,6 +420,11 @@ struct ActivityGrid: View {
             let daySessions = sessionsByDay[day, default: []]
             let markers = routineMarkers(for: daySessions)
             let participantCount = participantCount(for: daySessions)
+            let personalRecordCount = PersonalRecords.achievements(in: sessions)
+              .filter { achievement in
+                daySessions.contains { $0.id == achievement.sessionID }
+              }
+              .count
             NavigationLink {
               if daySessions.count > 1 {
                 DayWorkoutPickerView(
@@ -439,6 +444,7 @@ struct ActivityGrid: View {
                 workoutCount: daySessions.count,
                 routineMarkers: markers,
                 participantCount: participantCount,
+                personalRecordCount: personalRecordCount,
                 isToday: calendar.isDateInToday(day))
             }
             .buttonStyle(.plain)
@@ -448,6 +454,9 @@ struct ActivityGrid: View {
             .accessibilityValue(
               markers.map(\.name).joined(separator: ", ")
                 + (participantCount > 1 ? "; Multiple people" : "")
+                + (personalRecordCount > 0
+                  ? "; \(personalRecordCount) personal record\(personalRecordCount == 1 ? "" : "s")"
+                  : "")
             )
             .accessibilityHint("Shows workout details for this day")
           } else {
@@ -514,6 +523,7 @@ private struct ActivityDayCell: View {
   let workoutCount: Int
   let routineMarkers: [ActivityRoutineMarker]
   let participantCount: Int
+  let personalRecordCount: Int
   let isToday: Bool
 
   private var accentColor: Color {
@@ -569,6 +579,26 @@ private struct ActivityDayCell: View {
           .padding(3)
           .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
           .accessibilityHidden(true)
+      }
+
+      if personalRecordCount > 0 {
+        HStack(spacing: 3) {
+          Image(systemName: "trophy.fill")
+            .font(.system(size: 7, weight: .bold))
+            .foregroundStyle(Theme.prYellow)
+            .frame(width: 14, height: 14)
+            .background(.background.opacity(0.92), in: Circle())
+          if personalRecordCount > 0 {
+            Text("+\(personalRecordCount)")
+              .font(.system(size: 7, weight: .bold))
+              .foregroundStyle(.black)
+              .padding(.horizontal, 2)
+              .background(Theme.prYellow, in: Capsule())
+          }
+        }
+        .padding(3)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
+        .accessibilityHidden(true)
       }
     }
     .aspectRatio(1.25, contentMode: .fit)
@@ -652,6 +682,8 @@ private struct DayWorkoutSummaryView: View {
   @Environment(\.dismiss) private var dismiss
   @Environment(\.modelContext) private var context
   @Query(sort: \PersonProfile.sortOrder) private var people: [PersonProfile]
+  @Query(filter: #Predicate<WorkoutSession> { $0.deletedAt == nil })
+  private var workoutHistory: [WorkoutSession]
   let day: Date
   let sessions: [WorkoutSession]
   let routines: [Routine]
@@ -779,6 +811,8 @@ private struct DayWorkoutSummaryView: View {
 
   private func completedWorkoutBody(for session: WorkoutSession) -> some View {
     let exercises = completedExercises(in: session)
+    let achievements = PersonalRecords.achievements(in: workoutHistory)
+    let sessionAchievements = achievements.filter { $0.sessionID == session.id }
 
     return VStack(alignment: .leading, spacing: 14) {
       VStack(alignment: .leading, spacing: 6) {
@@ -791,6 +825,13 @@ private struct DayWorkoutSummaryView: View {
           systemImage: "checkmark.circle")
         if let duration = session.workoutDuration {
           Label("Length \(duration.workoutDurationText)", systemImage: "hourglass")
+        }
+        if !sessionAchievements.isEmpty {
+          Label(
+            "\(sessionAchievements.count) personal record\(sessionAchievements.count == 1 ? "" : "s")",
+            systemImage: "trophy.fill"
+          )
+          .foregroundStyle(Theme.prYellow)
         }
       }
       .font(.subheadline)
@@ -816,6 +857,11 @@ private struct DayWorkoutSummaryView: View {
                 .font(.subheadline.weight(.semibold))
 
               ForEach(completedSets, id: \.element.id) { index, set in
+                let isPersonalRecord = sessionAchievements.contains {
+                  $0.setID == set.id
+                    && $0.personName.caseInsensitiveCompare(participant.participantName)
+                      == .orderedSame
+                }
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                   Text("Set \(index + 1)")
                     .foregroundStyle(.secondary)
@@ -823,15 +869,25 @@ private struct DayWorkoutSummaryView: View {
                   Text(setSummary(set, participant: participant, unit: exercise.unit))
                     .multilineTextAlignment(.trailing)
                     .monospacedDigit()
-                  Image(systemName: "checkmark")
-                    .font(.caption2.bold())
-                    .foregroundStyle(.white)
-                    .frame(width: 26, height: 24)
-                    .background(
-                      participantColor,
-                      in: RoundedRectangle(cornerRadius: 7)
-                    )
-                    .accessibilityLabel("Completed")
+                  ZStack(alignment: .topTrailing) {
+                    Image(systemName: "checkmark")
+                      .font(.caption2.bold())
+                      .foregroundStyle(.white)
+                      .frame(width: 26, height: 24)
+                      .background(
+                        participantColor,
+                        in: RoundedRectangle(cornerRadius: 7)
+                      )
+                      .accessibilityLabel("Completed")
+                    if isPersonalRecord {
+                      Image(systemName: "trophy.fill")
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundStyle(Theme.prYellow)
+                        .background(Color(.systemBackground), in: Circle())
+                        .offset(x: 5, y: -5)
+                        .accessibilityLabel("Personal record")
+                    }
+                  }
                 }
                 .font(.caption)
               }

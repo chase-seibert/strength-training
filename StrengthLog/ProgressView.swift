@@ -14,7 +14,7 @@ struct ProgressView: View {
   private var sessions: [WorkoutSession]
   @State private var pendingDeletion: WorkoutSession?
   @State private var showingDeleteConfirmation = false
-  @State private var selectedRange: ProgressRange = .fourWeeks
+  @State private var selectedRange: ProgressRange = .twelveWeeks
 
   private var filteredSessions: [WorkoutSession] {
     sessions.filter { session in
@@ -40,19 +40,32 @@ struct ProgressView: View {
               Text("No workouts match these filters.")
                 .foregroundStyle(.secondary)
             } else {
-              Chart(volumePoints) { point in
-                LineMark(
-                  x: .value("Date", point.startedAt, unit: .day),
-                  y: .value("Volume", point.volume),
-                  series: .value("Person", point.personName)
-                )
-                .foregroundStyle(by: .value("Person", point.personName))
-                .interpolationMethod(.catmullRom)
-                PointMark(
-                  x: .value("Date", point.startedAt, unit: .day),
-                  y: .value("Volume", point.volume)
-                )
-                .foregroundStyle(by: .value("Person", point.personName))
+              Chart {
+                ForEach(volumePoints) { point in
+                  LineMark(
+                    x: .value("Week", point.weekStart, unit: .weekOfYear),
+                    y: .value("Volume", point.volume),
+                    series: .value("Person", point.personName)
+                  )
+                  .foregroundStyle(by: .value("Person", point.personName))
+                  .interpolationMethod(.catmullRom)
+                  PointMark(
+                    x: .value("Week", point.weekStart, unit: .weekOfYear),
+                    y: .value("Volume", point.volume)
+                  )
+                  .foregroundStyle(by: .value("Person", point.personName))
+                }
+                ForEach(personalRecordPoints) { point in
+                  PointMark(
+                    x: .value("Week", point.weekStart, unit: .weekOfYear),
+                    y: .value("Volume", 0)
+                  )
+                  .foregroundStyle(.clear)
+                  .symbolSize(1)
+                  .annotation(position: .top, spacing: 0) {
+                    PersonalRecordBadge(count: point.count)
+                  }
+                }
               }
               .chartForegroundStyleScale(
                 domain: progressPeople,
@@ -61,6 +74,8 @@ struct ProgressView: View {
               .chartLegend(position: .bottom, alignment: .leading)
               .frame(height: 220)
               .chartYAxisLabel("lb × reps")
+              .chartYScale(domain: 0...max(volumePoints.map(\.volume).max() ?? 1, 1))
+
             }
           }
 
@@ -80,6 +95,10 @@ struct ProgressView: View {
                         .font(.caption).foregroundStyle(.secondary)
                     }
                     Spacer()
+                    let prCount = PersonalRecords.count(for: session, in: sessions)
+                    if prCount > 0 {
+                      PersonalRecordBadge(count: prCount)
+                    }
                     Text("\(session.completedSetCount)/\(session.totalSetCount) sets")
                       .font(.caption).foregroundStyle(.secondary)
                   }
@@ -153,14 +172,47 @@ struct ProgressView: View {
   }
 
   private var volumePoints: [PersonVolumePoint] {
-    chronological.flatMap { session in
-      session.participantNames.compactMap { name in
-        let volume = volume(for: session, participantName: name)
-        guard volume > 0 else { return nil }
-        return PersonVolumePoint(
-          sessionID: session.id, personName: name, startedAt: session.startedAt, volume: volume)
+    let calendar = Calendar.current
+    var buckets: [String: PersonVolumePoint] = [:]
+    for session in chronological {
+      let weekStart =
+        calendar.dateInterval(of: .weekOfYear, for: session.startedAt)?.start
+        ?? calendar.startOfDay(for: session.startedAt)
+      for name in session.participantNames {
+        let sessionVolume = volume(for: session, participantName: name)
+        guard sessionVolume > 0 else { continue }
+        let key = "\(weekStart.timeIntervalSinceReferenceDate)|\(name.lowercased())"
+        if let existing = buckets[key] {
+          buckets[key] = PersonVolumePoint(
+            id: existing.id, personName: existing.personName, weekStart: existing.weekStart,
+            volume: existing.volume + sessionVolume)
+        } else {
+          buckets[key] = PersonVolumePoint(
+            id: key, personName: name, weekStart: weekStart, volume: sessionVolume)
+        }
       }
     }
+    return buckets.values.sorted {
+      if $0.weekStart != $1.weekStart { return $0.weekStart < $1.weekStart }
+      return $0.personName.localizedCaseInsensitiveCompare($1.personName) == .orderedAscending
+    }
+  }
+
+  private var personalRecordPoints: [WeeklyPersonalRecordPoint] {
+    let calendar = Calendar.current
+    let sessionsByID = Dictionary(uniqueKeysWithValues: filteredSessions.map { ($0.id, $0) })
+    var counts: [Date: Int] = [:]
+    for achievement in PersonalRecords.achievements(in: sessions) {
+      guard let session = sessionsByID[achievement.sessionID] else { continue }
+      let weekStart =
+        calendar.dateInterval(of: .weekOfYear, for: session.startedAt)?.start
+        ?? calendar.startOfDay(for: session.startedAt)
+      counts[weekStart, default: 0] += 1
+    }
+    return counts.map { weekStart, count in
+      WeeklyPersonalRecordPoint(
+        id: "\(weekStart.timeIntervalSinceReferenceDate)", weekStart: weekStart, count: count)
+    }.sorted { $0.weekStart < $1.weekStart }
   }
 
   private func volume(for session: WorkoutSession, participantName: String) -> Double {
@@ -210,44 +262,67 @@ struct ProgressView: View {
 }
 
 private enum ProgressRange: String, CaseIterable, Identifiable {
-  case fourWeeks = "4W"
   case twelveWeeks = "12W"
-  case all = "All"
+  case oneYear = "1Y"
 
   var id: Self { self }
 
   var title: String {
     switch self {
-    case .fourWeeks: "4 weeks"
     case .twelveWeeks: "12 weeks"
-    case .all: "All time"
+    case .oneYear: "1 year"
     }
   }
 
   var startDate: Date? {
-    let days: Int
     switch self {
-    case .fourWeeks: days = 28
-    case .twelveWeeks: days = 84
-    case .all: return nil
+    case .twelveWeeks: return Calendar.current.date(byAdding: .weekOfYear, value: -12, to: .now)
+    case .oneYear: return Calendar.current.date(byAdding: .year, value: -1, to: .now)
     }
-    return Calendar.current.date(byAdding: .day, value: -days, to: .now)
   }
 }
 
 private struct PersonVolumePoint: Identifiable {
-  let sessionID: UUID
+  let id: String
   let personName: String
-  let startedAt: Date
+  let weekStart: Date
   let volume: Double
+}
 
-  var id: String { "\(sessionID.uuidString)-\(personName)" }
+private struct WeeklyPersonalRecordPoint: Identifiable {
+  let id: String
+  let weekStart: Date
+  let count: Int
+}
+
+private struct PersonalRecordBadge: View {
+  let count: Int
+
+  var body: some View {
+    HStack(spacing: 3) {
+      Image(systemName: "trophy.fill")
+        .font(.caption2)
+        .foregroundStyle(Theme.prYellow)
+      if count > 0 {
+        Text("+\(count)")
+          .font(.system(size: 8, weight: .bold))
+          .foregroundStyle(.black)
+          .padding(.horizontal, 3)
+          .background(Theme.prYellow, in: Capsule())
+      }
+    }
+    .fixedSize(horizontal: true, vertical: true)
+    .accessibilityElement(children: .ignore)
+    .accessibilityLabel("\(count) personal record\(count == 1 ? "" : "s")")
+  }
 }
 
 struct SessionDetailView: View {
   @Environment(\.dismiss) private var dismiss
   @Environment(\.modelContext) private var context
   @Query private var routines: [Routine]
+  @Query(filter: #Predicate<WorkoutSession> { $0.deletedAt == nil })
+  private var workoutHistory: [WorkoutSession]
   @Bindable var session: WorkoutSession
   @State private var showingDeleteConfirmation = false
 
@@ -260,6 +335,15 @@ struct SessionDetailView: View {
           "Length", value: session.workoutDuration?.workoutDurationText ?? "—")
         LabeledContent(
           "Completed", value: "\(session.completedSetCount) of \(session.totalSetCount) sets")
+        let personalRecordCount = PersonalRecords.count(for: session, in: workoutHistory)
+        if personalRecordCount > 0 {
+          Label(
+            "\(personalRecordCount) personal record\(personalRecordCount == 1 ? "" : "s")",
+            systemImage: "trophy.fill"
+          )
+          .foregroundStyle(Theme.prYellow)
+          .font(.subheadline.weight(.semibold))
+        }
         if let notes = session.notes, !notes.isEmpty {
           LabeledContent("Notes", value: notes)
         }
@@ -272,10 +356,30 @@ struct SessionDetailView: View {
           ForEach(exercise.participants.filter { session.isParticipantActive($0.participantName) })
           {
             participant in
+            let personalRecordSetIDs = Set(
+              PersonalRecords.achievements(in: workoutHistory)
+                .filter {
+                  $0.sessionID == session.id
+                    && $0.exerciseKey == PersonalRecords.key(for: exercise)
+                    && $0.personName.caseInsensitiveCompare(participant.participantName)
+                      == .orderedSame
+                }
+                .map(\.setID))
             VStack(alignment: .leading, spacing: 5) {
               Text(participant.participantName).font(.subheadline.bold())
-              Text(setSummary(participant, unit: exercise.unit))
-                .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+              ForEach(participant.sets.sorted(by: { $0.sortOrder < $1.sortOrder })) { set in
+                HStack(spacing: 5) {
+                  Text(setText(set, participant: participant, unit: exercise.unit))
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(.secondary)
+                  if personalRecordSetIDs.contains(set.id) {
+                    Image(systemName: "trophy.fill")
+                      .font(.caption2)
+                      .foregroundStyle(Theme.prYellow)
+                      .accessibilityLabel("Personal record")
+                  }
+                }
+              }
             }
           }
         }
@@ -329,19 +433,18 @@ struct SessionDetailView: View {
     routines.first(where: { $0.id == session.routineID })?.name ?? "Unknown Routine"
   }
 
-  private func setSummary(_ participant: ParticipantLog, unit: TrackingUnit) -> String {
-    participant.sets.sorted(by: { $0.sortOrder < $1.sortOrder }).map { set in
-      var parts: [String] = []
-      if let measurement = set.measurement
-        ?? (participant.measurement == 0 ? nil : participant.measurement)
-      {
-        parts.append("\(measurement.tidy) \(unit.label)")
-      }
-      if set.reps > 0 { parts.append("\(set.reps) reps") }
-      if let distance = set.distanceMiles { parts.append("\(distance.tidy) mi") }
-      if let duration = set.durationSeconds { parts.append("\(duration.tidy) sec") }
-      if let rpe = set.rpe { parts.append("RPE \(rpe.tidy)") }
-      return parts.joined(separator: " × ") + (set.isCompleted ? " ✓" : " ○")
-    }.joined(separator: "  ·  ")
+  private func setText(_ set: WorkoutSet, participant: ParticipantLog, unit: TrackingUnit) -> String
+  {
+    var parts: [String] = []
+    if let measurement = set.measurement
+      ?? (participant.measurement == 0 ? nil : participant.measurement)
+    {
+      parts.append("\(measurement.tidy) \(unit.label)")
+    }
+    if set.reps > 0 { parts.append("\(set.reps) reps") }
+    if let distance = set.distanceMiles { parts.append("\(distance.tidy) mi") }
+    if let duration = set.durationSeconds { parts.append("\(duration.tidy) sec") }
+    if let rpe = set.rpe { parts.append("RPE \(rpe.tidy)") }
+    return parts.joined(separator: " × ") + (set.isCompleted ? " ✓" : " ○")
   }
 }

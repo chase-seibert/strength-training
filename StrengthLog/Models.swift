@@ -20,6 +20,109 @@ enum WorkoutPreferences {
   }
 }
 
+/// Personal-record calculations shared by the workout, history, and progress views.
+///
+/// A record is the highest completed set value for a person and exercise. Load-based
+/// exercises use the set's recorded load; rep- and time-based exercises use their
+/// corresponding completed value. Exercise IDs are preferred over names so renaming an
+/// exercise never breaks its history.
+enum PersonalRecords {
+  struct Achievement: Hashable, Identifiable {
+    let id: String
+    let sessionID: UUID
+    let exerciseKey: String
+    let setID: UUID
+    let exerciseName: String
+    let personName: String
+    let value: Double
+  }
+
+  static func achievements(in sessions: [WorkoutSession]) -> [Achievement] {
+    var bestByKey: [String: Double] = [:]
+    var latestBySessionAndKey: [String: Achievement] = [:]
+    let orderedSessions =
+      sessions
+      .filter { $0.deletedAt == nil }
+      .sorted { lhs, rhs in
+        if lhs.startedAt != rhs.startedAt { return lhs.startedAt < rhs.startedAt }
+        return lhs.id.uuidString < rhs.id.uuidString
+      }
+
+    for session in orderedSessions {
+      for exercise in session.exercises {
+        let exerciseKey = key(for: exercise)
+        for participant in exercise.participants
+        where session.isParticipantActive(participant.participantName) {
+          let personKey = participant.participantName.lowercased()
+          let recordKey = "\(exerciseKey)|\(personKey)"
+          for set in participant.sets where set.isCompleted && !set.isSkipped {
+            guard let value = value(for: set, participant: participant, unit: exercise.unit),
+              value > 0
+            else {
+              continue
+            }
+            guard value > (bestByKey[recordKey] ?? 0) else { continue }
+            bestByKey[recordKey] = value
+            let achievement = Achievement(
+              id: "\(session.id.uuidString)-\(recordKey)",
+              sessionID: session.id,
+              exerciseKey: exerciseKey,
+              setID: set.id,
+              exerciseName: exercise.exerciseName,
+              personName: participant.participantName,
+              value: value)
+            // Keep one icon per person/exercise in a workout even if several sets
+            // progressively improve the record.
+            latestBySessionAndKey["\(session.id.uuidString)|\(recordKey)"] = achievement
+          }
+        }
+      }
+    }
+    return latestBySessionAndKey.values.sorted { lhs, rhs in
+      if lhs.sessionID != rhs.sessionID {
+        return lhs.sessionID.uuidString < rhs.sessionID.uuidString
+      }
+      return lhs.id < rhs.id
+    }
+  }
+
+  static func count(for session: WorkoutSession, in sessions: [WorkoutSession]) -> Int {
+    achievements(in: sessions).filter { $0.sessionID == session.id }.count
+  }
+
+  static func isRecord(
+    for exercise: ExerciseLog, in session: WorkoutSession, history: [WorkoutSession]
+  ) -> Bool {
+    let records = achievements(in: history)
+    let currentKeys = Set(
+      records.filter { $0.sessionID == session.id && $0.exerciseKey == key(for: exercise) }
+        .map { $0.personName.lowercased() })
+    return !currentKeys.isEmpty
+  }
+
+  static func key(for exercise: ExerciseLog) -> String {
+    if let exerciseID = exercise.exerciseID { return "id:\(exerciseID.uuidString)" }
+    return
+      "name:\(exercise.exerciseName.trimmingCharacters(in: .whitespacesAndNewlines).lowercased())"
+  }
+
+  static func value(for set: WorkoutSet, participant: ParticipantLog, unit: TrackingUnit) -> Double?
+  {
+    switch unit {
+    case .pounds, .kilograms:
+      return set.measurement ?? participant.measurement
+    case .repetitions, .steps:
+      return Double(set.reps)
+    case .seconds:
+      return set.durationSeconds ?? Double(set.reps)
+    case .minutes:
+      return (set.durationSeconds.map { $0 / 60 }) ?? Double(set.reps)
+    case .miles, .kilometers, .meters:
+      return set.distanceMiles ?? Double(set.reps)
+    }
+  }
+}
+
 enum TrackingUnit: String, CaseIterable, Codable, Identifiable {
   case pounds
   case kilograms
@@ -726,6 +829,7 @@ struct StarterRoutineTemplate: Identifiable {
 enum Theme {
   static let navy = Color(red: 0.05, green: 0.08, blue: 0.14)
   static let coral = Color(red: 1.0, green: 0.31, blue: 0.21)
+  static let prYellow = Color(red: 1.0, green: 0.78, blue: 0.0)
   static let mint = Color(red: 0.27, green: 0.82, blue: 0.66)
   static let sky = Color(red: 0.35, green: 0.66, blue: 0.98)
 }
