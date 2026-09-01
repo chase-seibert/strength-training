@@ -144,9 +144,13 @@ struct RootView: View {
     sort: \WorkoutSession.startedAt,
     order: .reverse)
   private var activeSessions: [WorkoutSession]
+  @Query(sort: \PersonProfile.sortOrder)
+  private var people: [PersonProfile]
+  @Query private var routines: [Routine]
   @State private var navigationPath: [ActiveWorkoutRoute] = []
   @State private var selectedTab = 0
   @State private var didRestoreActiveWorkout = false
+  @State private var celebrationSummary: WorkoutCelebrationSummary?
 
   var body: some View {
     TabView(selection: $selectedTab) {
@@ -190,6 +194,11 @@ struct RootView: View {
         .tag(4)
     }
     .tint(Theme.coral)
+    .fullScreenCover(item: $celebrationSummary) { summary in
+      WorkoutCelebrationView(
+        summary: summary,
+        onDone: { celebrationSummary = nil })
+    }
     .onAppear {
       guard !didRestoreActiveWorkout else { return }
       didRestoreActiveWorkout = true
@@ -213,6 +222,7 @@ struct RootView: View {
 
   private func completeAndDismiss(_ session: WorkoutSession) {
     close(session)
+    celebrationSummary = makeCelebrationSummary(for: session)
     dismissActiveWorkout()
   }
 
@@ -229,6 +239,21 @@ struct RootView: View {
     session.restTimerDurationSeconds = nil
     try? context.save()
     LiveActivityManager.shared.end()
+  }
+
+  private func makeCelebrationSummary(for session: WorkoutSession) -> WorkoutCelebrationSummary {
+    let descriptor = FetchDescriptor<WorkoutSession>(
+      predicate: #Predicate<WorkoutSession> { $0.deletedAt == nil })
+    let history = (try? context.fetch(descriptor)) ?? [session]
+    let colors = Dictionary(uniqueKeysWithValues: people.map { ($0.name, $0.colorHex) })
+    let routineName =
+      routines.first(where: { $0.id == session.routineID })?.name
+      ?? (session.routineName.isEmpty ? "Workout" : session.routineName)
+    return WorkoutCelebrationSummary.make(
+      session: session,
+      allSessions: history,
+      routineName: routineName,
+      colorHexByName: colors)
   }
 
   private func delete(_ session: WorkoutSession) {

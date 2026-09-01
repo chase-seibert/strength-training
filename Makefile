@@ -94,6 +94,7 @@ active-workout-regression-ui-test:
 	  -only-testing:StrengthLogUITests/WorkoutNavigationUITests/testExerciseArrowNavigationTracksCurrentExercise \
 	  -only-testing:StrengthLogUITests/WorkoutNavigationUITests/testLiveWorkoutHeaderShowsRestTimer \
 	  -only-testing:StrengthLogUITests/WorkoutNavigationUITests/testRapidRepEditPersistsWhenWorkoutCloses \
+	  -only-testing:StrengthLogUITests/WorkoutNavigationUITests/testCompletingWorkoutShowsCelebrationSummary \
 	  -only-testing:StrengthLogUITests/WorkoutNavigationUITests/testRecentlyCompletedWorkoutCanBeResumedFromWorkoutScreen \
 	  -only-testing:StrengthLogUITests/WorkoutNavigationUITests/testSinglePersonWorkoutUsesHorizontalFullWidthCard \
 	  -only-testing:StrengthLogUITests/WorkoutNavigationUITests/testStartCloseAndResumeActiveWorkout \

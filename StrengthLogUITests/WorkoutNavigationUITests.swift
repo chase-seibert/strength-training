@@ -172,6 +172,29 @@ final class WorkoutNavigationUITests: XCTestCase {
     XCTAssertEqual(reps.value as? String, "9")
   }
 
+  func testCompletingWorkoutShowsCelebrationSummary() {
+    app.terminate()
+    app.launchArguments = ["-basicWorkoutFixture", "-activeWorkoutFixture"]
+    app.launch()
+
+    for name in ["Alex", "Jordan", "Owen"] {
+      let set = app.buttons["participant-set-\(name)-1"]
+      XCTAssertTrue(set.waitForExistence(timeout: 5))
+      set.tap()
+    }
+    app.buttons["Complete Workout"].tap()
+
+    XCTAssertTrue(app.staticTexts["Workout complete"].waitForExistence(timeout: 5))
+    XCTAssertTrue(app.staticTexts["THIS WORKOUT"].exists)
+    for name in ["Alex", "Jordan", "Owen"] {
+      XCTAssertTrue(app.staticTexts[name.capitalized].waitForExistence(timeout: 5))
+    }
+    app.scrollViews.firstMatch.swipeUp()
+    XCTAssertTrue(app.staticTexts["RECENT MOMENTUM · 4 WEEKS"].waitForExistence(timeout: 5))
+    app.buttons["workout-celebration-done"].tap()
+    XCTAssertTrue(app.buttons["start-routine-Basic Workout"].waitForExistence(timeout: 5))
+  }
+
   func testActiveWorkoutScrollPerformance() {
     launchActiveWorkoutPerformanceFixture()
 
