@@ -3,6 +3,7 @@ import SwiftUI
 
 struct HomeView: View {
   @Environment(\.modelContext) private var context
+  let isCoveredByActiveWorkout: Bool
   let onOpenWorkout: (WorkoutSession) -> Void
   let onReturnHome: () -> Void
   @Query(filter: #Predicate<Routine> { $0.deletedAt == nil }, sort: \Routine.createdAt)
@@ -21,31 +22,39 @@ struct HomeView: View {
   @Query(filter: #Predicate<PersonProfile> { !$0.isArchived }, sort: \PersonProfile.sortOrder)
   private var people: [PersonProfile]
   init(
+    isCoveredByActiveWorkout: Bool = false,
     onOpenWorkout: @escaping (WorkoutSession) -> Void = { _ in },
     onReturnHome: @escaping () -> Void = {}
   ) {
+    self.isCoveredByActiveWorkout = isCoveredByActiveWorkout
     self.onOpenWorkout = onOpenWorkout
     self.onReturnHome = onReturnHome
   }
 
   var body: some View {
-    TimelineView(.periodic(from: .now, by: 60)) { timeline in
-      ScrollView {
-        VStack(alignment: .leading, spacing: 24) {
-          let recentSessions = recentlyCompletedSessions(at: timeline.date)
-          if !recentSessions.isEmpty {
-            recentResumeSection(sessions: recentSessions)
-          }
-          if let activeSession = activeSessions.first {
-            TimelineView(.animation(minimumInterval: 1, paused: false)) { activeTimeline in
-              activeWorkoutCard(activeSession, now: activeTimeline.date)
+    Group {
+      if isCoveredByActiveWorkout {
+        Color.clear
+      } else {
+        TimelineView(.periodic(from: .now, by: 60)) { timeline in
+          ScrollView {
+            VStack(alignment: .leading, spacing: 24) {
+              let recentSessions = recentlyCompletedSessions(at: timeline.date)
+              if !recentSessions.isEmpty {
+                recentResumeSection(sessions: recentSessions)
+              }
+              if let activeSession = activeSessions.first {
+                TimelineView(.animation(minimumInterval: 1, paused: false)) { activeTimeline in
+                  activeWorkoutCard(activeSession, now: activeTimeline.date)
+                }
+              }
+              routineSection
+              activityCard
+              if !deletedSessions.isEmpty { deletedWorkoutsLink }
             }
+            .padding()
           }
-          routineSection
-          activityCard
-          if !deletedSessions.isEmpty { deletedWorkoutsLink }
         }
-        .padding()
       }
     }
     .background(Color(.systemGroupedBackground))
@@ -314,6 +323,7 @@ struct ActivityGrid: View {
   let routines: [Routine]
   let onReturnHome: () -> Void
   @State private var periodOffset = 0
+  @State private var personalRecordCountsBySessionID: [UUID: Int] = [:]
   private let calendar = Calendar.current
   private let columns = Array(repeating: GridItem(.flexible(), spacing: 5), count: 7)
   private let weekdayNames = [
@@ -354,6 +364,20 @@ struct ActivityGrid: View {
 
   private var sessionsByDay: [Date: [WorkoutSession]] {
     Dictionary(grouping: sessions) { calendar.startOfDay(for: $0.startedAt) }
+  }
+
+  /// Personal-record calculation walks every exercise, participant, and set in workout
+  /// history. Keep it out of the grid's cell builder: SwiftUI can reevaluate those cells
+  /// while Home is covered by the active-workout navigation destination.
+  private var personalRecordHistoryRevision: [ActivityHistoryRevision] {
+    sessions.map {
+      ActivityHistoryRevision(
+        sessionID: $0.id,
+        startedAt: $0.startedAt,
+        endedAt: $0.endedAt,
+        isActive: $0.isActive,
+        deletedAt: $0.deletedAt)
+    }
   }
 
   private var visibleWorkoutCount: Int {
@@ -420,11 +444,9 @@ struct ActivityGrid: View {
             let daySessions = sessionsByDay[day, default: []]
             let markers = routineMarkers(for: daySessions)
             let participantCount = participantCount(for: daySessions)
-            let personalRecordCount = PersonalRecords.achievements(in: sessions)
-              .filter { achievement in
-                daySessions.contains { $0.id == achievement.sessionID }
-              }
-              .count
+            let personalRecordCount = daySessions.reduce(into: 0) { count, session in
+              count += personalRecordCountsBySessionID[session.id, default: 0]
+            }
             NavigationLink {
               if daySessions.count > 1 {
                 DayWorkoutPickerView(
@@ -467,6 +489,11 @@ struct ActivityGrid: View {
       }
       .id(periodOffset)
     }
+    .task(id: personalRecordHistoryRevision) {
+      personalRecordCountsBySessionID = Dictionary(
+        grouping: PersonalRecords.achievements(in: sessions), by: \.sessionID
+      ).mapValues(\.count)
+    }
   }
 
   private func routineMarkers(for daySessions: [WorkoutSession]) -> [ActivityRoutineMarker] {
@@ -501,6 +528,14 @@ struct ActivityGrid: View {
     }
     return String(words.first?.prefix(2) ?? "W").uppercased()
   }
+}
+
+private struct ActivityHistoryRevision: Hashable {
+  let sessionID: UUID
+  let startedAt: Date
+  let endedAt: Date?
+  let isActive: Bool
+  let deletedAt: Date?
 }
 
 private struct ActivityRoutineMarker: Identifiable {

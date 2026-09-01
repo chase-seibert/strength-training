@@ -115,9 +115,25 @@ struct SettingsView: View {
 #if DEBUG
   struct DeveloperMenuView: View {
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
+    @AppStorage(DeveloperPreferences.activeWorkoutFrameMonitorEnabledKey)
+    private var activeWorkoutFrameMonitorEnabled = false
 
     var body: some View {
       List {
+        Section {
+          Toggle(
+            "Active Workout Frame Monitor",
+            isOn: $activeWorkoutFrameMonitorEnabled
+          )
+          .accessibilityIdentifier("active-workout-frame-monitor-toggle")
+        } header: {
+          Text("Diagnostics")
+        } footer: {
+          Text(
+            "Shows FPS, hitch count, and worst-frame duration on the active workout and writes one sample per second to the debug console. Leave this off outside a profiling session."
+          )
+        }
+
         Section {
           Button("Replay First-Time Experience", systemImage: "arrow.counterclockwise") {
             hasCompletedOnboarding = false

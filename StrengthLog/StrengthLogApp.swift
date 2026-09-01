@@ -152,6 +152,7 @@ struct RootView: View {
     TabView(selection: $selectedTab) {
       NavigationStack(path: $navigationPath) {
         HomeView(
+          isCoveredByActiveWorkout: !navigationPath.isEmpty,
           onOpenWorkout: presentActiveWorkout,
           onReturnHome: {
             selectedTab = 0

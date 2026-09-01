@@ -319,12 +319,23 @@ struct ExerciseArtwork: View {
   }
 }
 
+private final class ExerciseImageCache: @unchecked Sendable {
+  static let shared = ExerciseImageCache()
+
+  let images: NSCache<NSURL, UIImage> = {
+    let cache = NSCache<NSURL, UIImage>()
+    cache.totalCostLimit = 64 * 1_024 * 1_024
+    return cache
+  }()
+}
+
 struct ExerciseRemoteImage: View {
   let url: URL?
+  @State private var image: UIImage?
 
   var body: some View {
     Group {
-      if let url, url.isFileURL, let image = UIImage(contentsOfFile: url.path) {
+      if let image {
         Image(uiImage: image)
           .resizable()
           .scaledToFill()
@@ -333,6 +344,26 @@ struct ExerciseRemoteImage: View {
       }
     }
     .clipped()
+    .task(id: url) {
+      image = nil
+      guard let url, url.isFileURL else { return }
+      let key = url as NSURL
+      if let cached = ExerciseImageCache.shared.images.object(forKey: key) {
+        image = cached
+        return
+      }
+
+      let loadedImage = await Task.detached(priority: .userInitiated) { () -> UIImage? in
+        autoreleasepool {
+          guard let source = UIImage(contentsOfFile: url.path) else { return nil }
+          return source.preparingForDisplay() ?? source
+        }
+      }.value
+      guard !Task.isCancelled, let loadedImage else { return }
+      let cost = loadedImage.cgImage.map { $0.bytesPerRow * $0.height } ?? 0
+      ExerciseImageCache.shared.images.setObject(loadedImage, forKey: key, cost: cost)
+      image = loadedImage
+    }
   }
 
   private var exerciseImagePlaceholder: some View {

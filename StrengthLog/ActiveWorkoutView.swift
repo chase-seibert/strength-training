@@ -3,15 +3,188 @@ import Charts
 import SwiftData
 import SwiftUI
 
-private struct ExerciseCardOffsetPreferenceKey: PreferenceKey {
-  static var defaultValue: [UUID: CGFloat] = [:]
+#if DEBUG
+  import QuartzCore
 
-  static func reduce(value: inout [UUID: CGFloat], nextValue: () -> [UUID: CGFloat]) {
-    value.merge(nextValue(), uniquingKeysWith: { _, new in new })
+  @MainActor
+  private final class ActiveWorkoutFrameMonitor: ObservableObject {
+    struct Sample {
+      var framesPerSecond = 0
+      var hitchCount = 0
+      var worstFrameMilliseconds = 0.0
+    }
+
+    // Publish the one-second window atomically so the diagnostic itself causes only one
+    // SwiftUI update instead of three back-to-back graph transactions.
+    @Published private(set) var sample = Sample()
+
+    private var displayLink: CADisplayLink?
+    private var lastTimestamp: CFTimeInterval?
+    private var windowStart: CFTimeInterval?
+    private var frameCount = 0
+    private var windowHitchCount = 0
+    private var windowWorstFrameMilliseconds = 0.0
+
+    func start() {
+      guard displayLink == nil else { return }
+      let displayLink = CADisplayLink(target: self, selector: #selector(frameDidRender(_:)))
+      if #available(iOS 15.0, *) {
+        displayLink.preferredFrameRateRange = CAFrameRateRange(
+          minimum: 60,
+          maximum: 120,
+          preferred: 120)
+      }
+      displayLink.add(to: .main, forMode: .common)
+      self.displayLink = displayLink
+    }
+
+    func stop() {
+      displayLink?.invalidate()
+      displayLink = nil
+      lastTimestamp = nil
+      windowStart = nil
+    }
+
+    @objc private func frameDidRender(_ displayLink: CADisplayLink) {
+      defer { lastTimestamp = displayLink.timestamp }
+      guard let lastTimestamp else {
+        windowStart = displayLink.timestamp
+        return
+      }
+
+      let frameDuration = displayLink.timestamp - lastTimestamp
+      let expectedDuration = max(displayLink.targetTimestamp - displayLink.timestamp, 1.0 / 120.0)
+      let frameMilliseconds = frameDuration * 1_000
+      frameCount += 1
+      windowWorstFrameMilliseconds = max(windowWorstFrameMilliseconds, frameMilliseconds)
+      if frameDuration > max(expectedDuration * 1.5, 1.0 / 45.0) {
+        windowHitchCount += 1
+      }
+
+      guard let windowStart, displayLink.timestamp - windowStart >= 1 else { return }
+      let elapsed = displayLink.timestamp - windowStart
+      let sample = Sample(
+        framesPerSecond: Int((Double(frameCount) / elapsed).rounded()),
+        hitchCount: windowHitchCount,
+        worstFrameMilliseconds: windowWorstFrameMilliseconds)
+      self.sample = sample
+      print(
+        "ACTIVE_WORKOUT_FRAME_SAMPLE fps=\(sample.framesPerSecond) hitches=\(sample.hitchCount) worst_ms=\(String(format: "%.1f", sample.worstFrameMilliseconds))"
+      )
+      self.windowStart = displayLink.timestamp
+      frameCount = 0
+      windowHitchCount = 0
+      windowWorstFrameMilliseconds = 0
+    }
+  }
+
+  private struct ActiveWorkoutFrameOverlay: View {
+    @StateObject private var monitor = ActiveWorkoutFrameMonitor()
+
+    var body: some View {
+      Text(
+        "\(monitor.sample.framesPerSecond) fps · \(monitor.sample.hitchCount) hitch · \(monitor.sample.worstFrameMilliseconds, specifier: "%.0f") ms"
+      )
+      .font(.caption2.monospacedDigit().weight(.semibold))
+      .foregroundStyle(.white)
+      .padding(.horizontal, 7)
+      .padding(.vertical, 4)
+      .background(.black.opacity(0.72), in: Capsule())
+      .allowsHitTesting(false)
+      .accessibilityHidden(true)
+      .onAppear { monitor.start() }
+      .onDisappear { monitor.stop() }
+    }
+  }
+#endif
+
+private let activeWorkoutParticipantColumnWidth: CGFloat = 108
+
+private struct ExerciseVisibilityTracker: ViewModifier {
+  let exerciseID: UUID
+  let isProgrammaticScrollPending: Bool
+  @Binding var currentExerciseID: UUID?
+
+  @ViewBuilder
+  func body(content: Content) -> some View {
+    if #available(iOS 18.0, *) {
+      content.onScrollVisibilityChange(threshold: 0.75) { isVisible in
+        guard isVisible, !isProgrammaticScrollPending else { return }
+        guard currentExerciseID != exerciseID else { return }
+        currentExerciseID = exerciseID
+      }
+    } else {
+      content
+    }
   }
 }
 
-private let activeWorkoutParticipantColumnWidth: CGFloat = 108
+private struct WorkoutSaveActionKey: EnvironmentKey {
+  static let defaultValue: () -> Void = {}
+}
+
+extension EnvironmentValues {
+  fileprivate var scheduleWorkoutSave: () -> Void {
+    get { self[WorkoutSaveActionKey.self] }
+    set { self[WorkoutSaveActionKey.self] = newValue }
+  }
+}
+
+private struct ActiveWorkoutDurationLabel: View {
+  let startedAt: Date
+
+  var body: some View {
+    let duration = max(0, Date.now.timeIntervalSince(startedAt))
+    Text("Workout length \(duration.workoutDurationText)")
+      .monospacedDigit()
+      .font(.subheadline.weight(.semibold))
+      .foregroundStyle(.secondary)
+  }
+}
+
+private struct ActiveWorkoutToolbarTitle: View {
+  let exerciseName: String
+  let restTimerStartedAt: Date?
+  let restTimerDurationSeconds: Int?
+  let onSkipRest: () -> Void
+  let onRestTimerExpired: () -> Void
+
+  var body: some View {
+    Group {
+      if let restEndDate, restEndDate > .now {
+        HStack(spacing: 8) {
+          Text(timerInterval: Date.now...restEndDate, countsDown: true)
+            .monospacedDigit()
+          Button("Skip", action: onSkipRest)
+            .font(.caption.weight(.semibold))
+            .buttonStyle(.bordered)
+            .tint(Theme.coral)
+        }
+        .foregroundStyle(Theme.coral)
+        .font(.headline.weight(.semibold))
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("live-workout-header")
+        .task(id: restEndDate) {
+          let delay = max(0, restEndDate.timeIntervalSinceNow)
+          try? await Task.sleep(for: .seconds(delay))
+          guard !Task.isCancelled else { return }
+          onRestTimerExpired()
+        }
+      } else {
+        Text(exerciseName)
+          .foregroundStyle(.primary)
+          .lineLimit(1)
+          .font(.headline)
+          .accessibilityLabel(exerciseName)
+      }
+    }
+  }
+
+  private var restEndDate: Date? {
+    guard let restTimerStartedAt, let restTimerDurationSeconds else { return nil }
+    return restTimerStartedAt.addingTimeInterval(TimeInterval(restTimerDurationSeconds))
+  }
+}
 
 private struct DashTruncatedName: View {
   let name: String
@@ -43,9 +216,6 @@ struct ActiveWorkoutView: View {
   @Query(filter: #Predicate<PersonProfile> { !$0.isArchived }, sort: \PersonProfile.sortOrder)
   private var people: [PersonProfile]
   @Query private var routines: [Routine]
-  @Query private var catalog: [Exercise]
-  @Query(filter: #Predicate<WorkoutSession> { $0.deletedAt == nil })
-  private var workoutHistory: [WorkoutSession]
   @Bindable var session: WorkoutSession
   let onDone: () -> Void
   let onDelete: () -> Void
@@ -56,16 +226,21 @@ struct ActiveWorkoutView: View {
   @State private var didRestoreScrollPosition = false
   @State private var currentExerciseID: UUID?
   @State private var requestedExerciseID: UUID?
+  @State private var catalogByID: [UUID: Exercise] = [:]
+  @State private var catalogByName: [String: Exercise] = [:]
+  @State private var priorPersonalRecordValues: [String: Double] = [:]
+  @State private var personalRecordExerciseKeys: Set<String> = []
+  @State private var hasPendingSave = false
+  @State private var didLoadSupportingData = false
+  @State private var previousAutosaveEnabled: Bool?
   @AppStorage(WorkoutPreferences.restTimerNotificationsEnabledKey)
   private var restTimerNotificationsEnabled = false
+  #if DEBUG
+    @AppStorage(DeveloperPreferences.activeWorkoutFrameMonitorEnabledKey)
+    private var activeWorkoutFrameMonitorEnabled = false
+  #endif
 
   var body: some View {
-    let personalRecordExerciseKeys = Set(
-      PersonalRecords.achievements(in: workoutHistory)
-        .filter { $0.sessionID == session.id }
-        .map(\.exerciseKey)
-    )
-
     ScrollViewReader { proxy in
       List {
         ForEach(Array(orderedExercises.enumerated()), id: \.element.id) { index, exercise in
@@ -98,14 +273,7 @@ struct ActiveWorkoutView: View {
         .listRowBackground(Color.clear)
 
         VStack(spacing: 12) {
-          TimelineView(.animation(minimumInterval: 1, paused: false)) { timeline in
-            if let duration = session.workoutDuration(at: timeline.date) {
-              Text("Workout length \(duration.workoutDurationText)")
-                .font(.subheadline.monospacedDigit().weight(.semibold))
-                .foregroundStyle(.secondary)
-                .accessibilityLabel("Workout length \(duration.workoutDurationText)")
-            }
-          }
+          ActiveWorkoutDurationLabel(startedAt: session.startedAt)
           Button(action: onDone) {
             Text("Complete Workout")
               .font(.headline)
@@ -139,7 +307,6 @@ struct ActiveWorkoutView: View {
         .listRowBackground(Color.clear)
       }
       .listStyle(.plain)
-      .coordinateSpace(name: "active-workout-scroll")
       .scrollContentBackground(.hidden)
       .scrollDismissesKeyboard(.interactively)
       .environment(\.editMode, $editMode)
@@ -149,7 +316,7 @@ struct ActiveWorkoutView: View {
         participantPills
           .padding(.horizontal, participantPickerOuterPadding)
           .padding(.vertical, 8)
-          .background(.regularMaterial)
+          .background(Color(.systemBackground))
           .overlay(alignment: .bottom) { Divider() }
       }
       .onAppear {
@@ -162,12 +329,6 @@ struct ActiveWorkoutView: View {
             proxy.scrollTo(target, anchor: .top)
           }
         }
-      }
-      .onPreferenceChange(ExerciseCardOffsetPreferenceKey.self) { offsets in
-        guard requestedExerciseID == nil else { return }
-        let nearestExerciseID = exerciseNearestStickyHeader(in: offsets)
-        guard nearestExerciseID != currentExerciseID else { return }
-        currentExerciseID = nearestExerciseID
       }
       .onChange(of: requestedExerciseID) { _, target in
         guard let target else { return }
@@ -182,40 +343,17 @@ struct ActiveWorkoutView: View {
         }
       }
     }
+    .navigationTitle(currentExerciseName)
     .navigationBarTitleDisplayMode(.inline)
     .navigationBarBackButtonHidden(true)
     .toolbar {
       ToolbarItem(placement: .principal) {
-        TimelineView(.animation(minimumInterval: 1, paused: false)) { timeline in
-          let remaining = restRemaining(at: timeline.date)
-          Group {
-            if let remaining {
-              HStack(spacing: 8) {
-                Text("Rest \(Int(ceil(remaining)))s")
-                  .monospacedDigit()
-                Button("Skip", action: clearRestTimer)
-                  .font(.caption.weight(.semibold))
-                  .buttonStyle(.bordered)
-                  .tint(Theme.coral)
-              }
-              .foregroundStyle(Theme.coral)
-              .font(.headline.weight(.semibold))
-              .accessibilityElement(children: .combine)
-              .accessibilityIdentifier("live-workout-header")
-              .accessibilityLabel(
-                "Rest timer, \(Int(ceil(remaining))) seconds remaining. Skip")
-            } else {
-              Text(currentExerciseName)
-                .foregroundStyle(.primary)
-                .lineLimit(1)
-                .font(.headline)
-                .accessibilityLabel(currentExerciseName)
-            }
-          }
-          .onChange(of: remaining) { oldValue, newValue in
-            handleRestTimerExpiry(oldValue: oldValue, newValue: newValue)
-          }
-        }
+        ActiveWorkoutToolbarTitle(
+          exerciseName: currentExerciseName,
+          restTimerStartedAt: session.restTimerStartedAt,
+          restTimerDurationSeconds: session.restTimerDurationSeconds,
+          onSkipRest: clearRestTimer,
+          onRestTimerExpired: handleRestTimerExpiry)
       }
       ToolbarItem(placement: .topBarLeading) {
         Button(action: onClose) {
@@ -240,16 +378,46 @@ struct ActiveWorkoutView: View {
     }
     .toolbar(.hidden, for: .tabBar)
     .accessibilityIdentifier("active-workout-screen")
+    #if DEBUG
+      .overlay(alignment: .bottomTrailing) {
+        if activeWorkoutFrameMonitorEnabled {
+          ActiveWorkoutFrameOverlay()
+          .padding(.trailing, 8)
+          .padding(.bottom, 8)
+        }
+      }
+    #endif
     .sheet(isPresented: $showingExercisePicker) {
       AddExerciseToWorkoutSheet(session: session)
     }
-    .onAppear(perform: syncLiveActivity)
+    .environment(\.scheduleWorkoutSave, scheduleSave)
+    .onAppear {
+      if previousAutosaveEnabled == nil {
+        previousAutosaveEnabled = context.autosaveEnabled
+        context.autosaveEnabled = false
+      }
+      loadSupportingDataIfNeeded()
+      syncLiveActivity()
+    }
+    .onDisappear {
+      flushPendingSave()
+      if let previousAutosaveEnabled {
+        context.autosaveEnabled = previousAutosaveEnabled
+        self.previousAutosaveEnabled = nil
+      }
+    }
+    .onChange(of: session.exercises.map(\.id)) { _, _ in
+      loadRelevantCatalogExercises()
+      updateCurrentPersonalRecords()
+    }
     .onChange(of: session.restTimerStartedAt) { _, _ in
       syncLiveActivity()
     }
     .onChange(of: scenePhase) { _, phase in
       if phase == .active {
         syncLiveActivity()
+      } else {
+        flushPendingSave()
       }
     }
     .onChange(of: restTimerNotificationsEnabled) { _, _ in
@@ -261,12 +429,7 @@ struct ActiveWorkoutView: View {
     routines.first(where: { $0.id == session.routineID })
   }
 
-  private func restRemaining(at now: Date) -> TimeInterval? {
-    session.restTimerRemaining(at: max(now, .now))
-  }
-
-  private func handleRestTimerExpiry(oldValue: TimeInterval?, newValue: TimeInterval?) {
-    guard oldValue != nil, newValue == nil else { return }
+  private func handleRestTimerExpiry() {
     guard
       let startedAt = session.restTimerStartedAt,
       let duration = session.restTimerDurationSeconds,
@@ -283,8 +446,17 @@ struct ActiveWorkoutView: View {
     }
     session.restTimerStartedAt = .now
     session.restTimerDurationSeconds = duration
-    try? context.save()
+    saveNow()
     syncLiveActivity()
+  }
+
+  private func handleSetCompleted() {
+    updateCurrentPersonalRecords()
+    if let duration = activeRoutine?.restDurationSeconds, duration > 0 {
+      startRestTimer()
+    } else {
+      flushPendingSave()
+    }
   }
 
   private func syncLiveActivity() {
@@ -369,18 +541,8 @@ struct ActiveWorkoutView: View {
   private func clearRestTimer() {
     session.restTimerStartedAt = nil
     session.restTimerDurationSeconds = nil
-    try? context.save()
+    saveNow()
     LiveActivityManager.shared.end()
-  }
-
-  private var catalogByName: [String: Exercise] {
-    catalog.reduce(into: [:]) { result, exercise in
-      result[exercise.name] = result[exercise.name] ?? exercise
-    }
-  }
-
-  private var catalogByID: [UUID: Exercise] {
-    Dictionary(uniqueKeysWithValues: catalog.map { ($0.id, $0) })
   }
 
   private var orderedExercises: [ExerciseLog] {
@@ -464,22 +626,6 @@ struct ActiveWorkoutView: View {
       + orderedPeople.filter { !session.isParticipantActive($0.name) }
   }
 
-  private func exerciseNearestStickyHeader(in offsets: [UUID: CGFloat]) -> UUID? {
-    let distances = orderedExercises.compactMap { exercise -> (id: UUID, distance: CGFloat)? in
-      guard let offset = offsets[exercise.id] else { return nil }
-      return (exercise.id, abs(offset - 120))
-    }
-    guard let closestDistance = distances.map(\.distance).min() else {
-      return orderedExercises.first?.id
-    }
-    let closestIDs = Set(
-      distances.filter { abs($0.distance - closestDistance) < 1 }.map(\.id))
-    if let currentExerciseID, closestIDs.contains(currentExerciseID) {
-      return currentExerciseID
-    }
-    return orderedExercises.first(where: { closestIDs.contains($0.id) })?.id
-  }
-
   private func exerciseCard(
     _ exercise: ExerciseLog,
     index: Int,
@@ -495,20 +641,18 @@ struct ActiveWorkoutView: View {
       total: orderedExercises.count,
       usesSinglePersonHorizontalLayout: visiblePeople.count == 1,
       onAdvance: { jumpExercise(after: exercise, by: 1) },
-      onSetCompleted: startRestTimer,
+      onSetCompleted: handleSetCompleted,
       showsPersonalRecord: personalRecordExerciseKeys.contains(PersonalRecords.key(for: exercise))
     )
     .frame(maxWidth: .infinity, alignment: .top)
     .id(exercise.id)
-    .background {
-      GeometryReader { geometry in
-        Color.clear.preference(
-          key: ExerciseCardOffsetPreferenceKey.self,
-          value: [
-            exercise.id: geometry.frame(in: .named("active-workout-scroll")).minY
-          ])
-      }
-    }
+    .modifier(
+      ExerciseVisibilityTracker(
+        exerciseID: exercise.id,
+        isProgrammaticScrollPending: requestedExerciseID != nil,
+        currentExerciseID: $currentExerciseID
+      )
+    )
   }
 
   @ViewBuilder
@@ -623,7 +767,7 @@ struct ActiveWorkoutView: View {
               WorkoutSet(sortOrder: $0, reps: WorkoutPreferences.defaultReps)
             }))
       }
-      try? context.save()
+      saveNow()
     }
   }
 
@@ -631,7 +775,7 @@ struct ActiveWorkoutView: View {
     session.participantNames.removeAll {
       $0.caseInsensitiveCompare(name) == .orderedSame
     }
-    try? context.save()
+    saveNow()
   }
 
   private func workoutAction(
@@ -666,7 +810,85 @@ struct ActiveWorkoutView: View {
     for (index, exercise) in ordered.enumerated() {
       exercise.sortOrder = index
     }
-    try? context.save()
+    saveNow()
+  }
+
+  private func loadSupportingDataIfNeeded() {
+    guard !didLoadSupportingData else { return }
+    didLoadSupportingData = true
+    loadRelevantCatalogExercises()
+    loadPersonalRecordBaseline()
+  }
+
+  private func loadRelevantCatalogExercises() {
+    let relevantIDs = Set(session.exercises.compactMap(\.exerciseID))
+    let relevantNames = Set(session.exercises.map(\.exerciseName))
+    guard let exercises = try? context.fetch(FetchDescriptor<Exercise>()) else { return }
+    let relevantExercises = exercises.filter {
+      relevantIDs.contains($0.id) || relevantNames.contains($0.name)
+    }
+    catalogByID = Dictionary(uniqueKeysWithValues: relevantExercises.map { ($0.id, $0) })
+    catalogByName = relevantExercises.reduce(into: [:]) { result, exercise in
+      result[exercise.name] = result[exercise.name] ?? exercise
+    }
+  }
+
+  private func loadPersonalRecordBaseline() {
+    let descriptor = FetchDescriptor<WorkoutSession>(
+      predicate: #Predicate { $0.deletedAt == nil })
+    guard let history = try? context.fetch(descriptor) else { return }
+    let previousAchievements = PersonalRecords.achievements(
+      in: history.filter { $0.id != session.id })
+    priorPersonalRecordValues = previousAchievements.reduce(into: [:]) { result, achievement in
+      let key = personalRecordKey(
+        exerciseKey: achievement.exerciseKey, personName: achievement.personName)
+      result[key] = max(result[key] ?? 0, achievement.value)
+    }
+    updateCurrentPersonalRecords()
+  }
+
+  private func updateCurrentPersonalRecords() {
+    var currentRecordKeys: Set<String> = []
+    for exercise in session.exercises {
+      let exerciseKey = PersonalRecords.key(for: exercise)
+      for participant in exercise.participants
+      where session.isParticipantActive(participant.participantName) {
+        let recordKey = personalRecordKey(
+          exerciseKey: exerciseKey, personName: participant.participantName)
+        let previousBest = priorPersonalRecordValues[recordKey] ?? 0
+        let hasRecord = participant.sets.contains { set in
+          guard set.isCompleted, !set.isSkipped,
+            let value = PersonalRecords.value(
+              for: set, participant: participant, unit: exercise.unit)
+          else { return false }
+          return value > previousBest
+        }
+        if hasRecord { currentRecordKeys.insert(exerciseKey) }
+      }
+    }
+    personalRecordExerciseKeys = currentRecordKeys
+  }
+
+  private func personalRecordKey(exerciseKey: String, personName: String) -> String {
+    "\(exerciseKey)|\(personName.lowercased())"
+  }
+
+  private func scheduleSave() {
+    if !hasPendingSave { hasPendingSave = true }
+  }
+
+  private func flushPendingSave() {
+    guard hasPendingSave else { return }
+    saveNow()
+  }
+
+  private func saveNow() {
+    do {
+      try context.save()
+      hasPendingSave = false
+    } catch {
+      hasPendingSave = true
+    }
   }
 }
 
@@ -722,6 +944,7 @@ struct AddExerciseToWorkoutSheet: View {
 
 struct ActiveExerciseCard: View {
   @Environment(\.modelContext) private var context
+  @Environment(\.scheduleWorkoutSave) private var scheduleWorkoutSave
   @Bindable var exercise: ExerciseLog
   let catalogExercise: Exercise?
   let visiblePeople: [String]
@@ -1065,7 +1288,7 @@ struct ActiveExerciseCard: View {
       }
     }
     guard didComplete else { return }
-    try? context.save()
+    scheduleWorkoutSave()
     onSetCompleted()
   }
 
@@ -1082,7 +1305,7 @@ struct ActiveExerciseCard: View {
         participant.sets.append(set)
       }
     }
-    try? context.save()
+    scheduleWorkoutSave()
   }
 
   private func removeLastSetForEveryone() {
@@ -1099,7 +1322,7 @@ struct ActiveExerciseCard: View {
       }
       equalizeSetCounts()
     }
-    try? context.save()
+    scheduleWorkoutSave()
   }
 
   private func equalizeSetCounts() {
@@ -1115,7 +1338,7 @@ struct ActiveExerciseCard: View {
         changed = true
       }
     }
-    if changed { try? context.save() }
+    if changed { scheduleWorkoutSave() }
   }
 
   private func baseReps(for participant: ParticipantLog) -> Int {
@@ -1138,7 +1361,7 @@ struct ActiveExerciseCard: View {
   private func resetLastSet(for participant: ParticipantLog) {
     guard let last = participant.orderedSets.last(where: { !$0.isSkipped }) else { return }
     last.reps = baseReps(for: participant)
-    try? context.save()
+    scheduleWorkoutSave()
   }
 
   private func skipLastSets(_ count: Int, for participant: ParticipantLog) {
@@ -1151,14 +1374,14 @@ struct ActiveExerciseCard: View {
       set.isLeftCompleted = false
       set.isRightCompleted = false
     }
-    try? context.save()
+    scheduleWorkoutSave()
   }
 
   private func restoreSkippedSets(for participant: ParticipantLog) {
     for set in participant.orderedSets where set.isSkipped {
       set.isSkipped = false
     }
-    try? context.save()
+    scheduleWorkoutSave()
   }
 
   private func setStatus(for participant: ParticipantLog) -> String? {
@@ -1462,6 +1685,7 @@ struct ParticipantSetCompletionGrid: View {
 
 struct SetCompletionButton: View {
   @Environment(\.modelContext) private var context
+  @Environment(\.scheduleWorkoutSave) private var scheduleWorkoutSave
   @Bindable var set: WorkoutSet
   @Bindable var participant: ParticipantLog
   let exerciseName: String
@@ -1518,7 +1742,7 @@ struct SetCompletionButton: View {
     withAnimation(.snappy) {
       participant.toggleCompletion(of: set).forEach(context.delete)
     }
-    try? context.save()
+    scheduleWorkoutSave()
     if !wasCompleted && set.isCompleted {
       onSetCompleted()
     }
@@ -1526,7 +1750,7 @@ struct SetCompletionButton: View {
 }
 
 struct CompactRepsControl: View {
-  @Environment(\.modelContext) private var context
+  @Environment(\.scheduleWorkoutSave) private var scheduleWorkoutSave
   @Bindable var participant: ParticipantLog
   let baseReps: Int
   let colorHex: String
@@ -1564,6 +1788,7 @@ struct CompactRepsControl: View {
     .onAppear { text = "\(baseReps)" }
     .onChange(of: text) { _, newValue in
       guard let reps = Int(newValue), reps > 0 else { return }
+      guard reps != baseReps else { return }
       applyBaseReps(reps, updateText: false)
     }
     .onChange(of: baseReps) { _, reps in
@@ -1607,13 +1832,13 @@ struct CompactRepsControl: View {
       set.reps = reps
     }
     if updateText { text = "\(reps)" }
-    try? context.save()
+    scheduleWorkoutSave()
   }
 }
 
 struct LastSetEditorSheet: View {
   @Environment(\.dismiss) private var dismiss
-  @Environment(\.modelContext) private var context
+  @Environment(\.scheduleWorkoutSave) private var scheduleWorkoutSave
   let exerciseName: String
   let baseReps: Int
   @Bindable var set: WorkoutSet
@@ -1694,12 +1919,12 @@ struct LastSetEditorSheet: View {
   private func setReps(_ value: Int, updateText: Bool = true) {
     set.reps = max(1, value)
     if updateText { text = "\(set.reps)" }
-    try? context.save()
+    scheduleWorkoutSave()
   }
 }
 
 struct MeasurementStepper: View {
-  @Environment(\.modelContext) private var context
+  @Environment(\.scheduleWorkoutSave) private var scheduleWorkoutSave
   @Bindable var participant: ParticipantLog
   let unit: TrackingUnit
   let colorHex: String
@@ -1742,7 +1967,7 @@ struct MeasurementStepper: View {
       guard let value = Double(newValue), value >= 0 else { return }
       participant.measurement = value
       for set in participant.sets { set.measurement = nil }
-      try? context.save()
+      scheduleWorkoutSave()
     }
     .onChange(of: isFocused) { _, focused in
       if !focused, text.isEmpty { text = participant.measurement.tidy }
@@ -1771,7 +1996,7 @@ struct MeasurementStepper: View {
     participant.measurement = max(0, participant.measurement + change)
     text = participant.measurement.tidy
     for set in participant.sets { set.measurement = nil }
-    try? context.save()
+    scheduleWorkoutSave()
   }
 }
 

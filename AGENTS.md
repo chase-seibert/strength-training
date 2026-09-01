@@ -28,7 +28,7 @@ Prefer Makefile targets over ad hoc commands. Add recurring commands as Makefile
 - [Product requirements](docs/product-requirements.md)
 - [Architecture](docs/architecture.md)
 - [Design](docs/design.md)
+- [On-device performance profiling](docs/on-device-performance-profiling.md)
 - [Exercise catalog research](docs/exercise-catalog-research.md)
 - [Setup and installation](docs/setup-install.md)
 - [Initial brainstorm](docs/initial-brainstorm.md)
-

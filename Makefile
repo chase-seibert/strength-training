@@ -12,7 +12,7 @@ GENERIC_SIM_DESTINATION := generic/platform=iOS Simulator
 DEVICE_ID ?= 00008150-000E41422E40401C
 DEVELOPMENT_TEAM ?= 96NAC4VTEN
 
-.PHONY: setup build run format lint test catalog-check exercise-images-check bundle-exercise-images hevy-import-check sim-build sim-launch workout-navigation-ui-test phone-build phone-install phone-launch phone-deploy clean
+.PHONY: setup build run format lint test catalog-check exercise-images-check bundle-exercise-images hevy-import-check sim-build sim-launch workout-navigation-ui-test active-workout-regression-ui-test active-workout-performance-ui-test phone-build phone-install phone-launch phone-deploy clean
 
 setup: catalog-check exercise-images-check
 
@@ -80,6 +80,37 @@ workout-navigation-ui-test:
 	  CODE_SIGNING_ALLOWED=NO \
 	  -parallel-testing-enabled NO \
 	  -only-testing:StrengthLogUITests \
+	  test
+
+active-workout-regression-ui-test:
+	xcodebuild \
+	  -project $(PROJECT) \
+	  -scheme $(SCHEME) \
+	  -configuration $(CONFIGURATION) \
+	  -destination '$(SIM_DESTINATION)' \
+	  -derivedDataPath build-ui-tests \
+	  CODE_SIGNING_ALLOWED=NO \
+	  -parallel-testing-enabled NO \
+	  -only-testing:StrengthLogUITests/WorkoutNavigationUITests/testExerciseArrowNavigationTracksCurrentExercise \
+	  -only-testing:StrengthLogUITests/WorkoutNavigationUITests/testLiveWorkoutHeaderShowsRestTimer \
+	  -only-testing:StrengthLogUITests/WorkoutNavigationUITests/testRapidRepEditPersistsWhenWorkoutCloses \
+	  -only-testing:StrengthLogUITests/WorkoutNavigationUITests/testRecentlyCompletedWorkoutCanBeResumedFromWorkoutScreen \
+	  -only-testing:StrengthLogUITests/WorkoutNavigationUITests/testSinglePersonWorkoutUsesHorizontalFullWidthCard \
+	  -only-testing:StrengthLogUITests/WorkoutNavigationUITests/testStartCloseAndResumeActiveWorkout \
+	  -only-testing:StrengthLogUITests/WorkoutNavigationUITests/testTwoPersonColumnsAndScrolledPillsShareHorizontalCenters \
+	  test
+
+active-workout-performance-ui-test:
+	xcodebuild \
+	  -project $(PROJECT) \
+	  -scheme $(SCHEME) \
+	  -configuration $(CONFIGURATION) \
+	  -destination '$(SIM_DESTINATION)' \
+	  -derivedDataPath build-ui-tests \
+	  CODE_SIGNING_ALLOWED=NO \
+	  -parallel-testing-enabled NO \
+	  -only-testing:StrengthLogUITests/WorkoutNavigationUITests/testActiveWorkoutScrollPerformance \
+	  -only-testing:StrengthLogUITests/WorkoutNavigationUITests/testActiveWorkoutButtonPerformance \
 	  test
 
 phone-build:

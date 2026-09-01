@@ -35,8 +35,18 @@ final class WorkoutNavigationUITests: XCTestCase {
 
     XCTAssertTrue(app.staticTexts["Default sets"].waitForExistence(timeout: 5))
     XCTAssertTrue(app.staticTexts["Default reps"].exists)
-    XCTAssertTrue(app.staticTexts["3"].exists)
-    XCTAssertTrue(app.staticTexts["8"].exists)
+    let defaultSets = app.steppers.matching(
+      NSPredicate(format: "label CONTAINS %@", "Default sets")
+    ).firstMatch
+    let defaultReps = app.steppers.matching(
+      NSPredicate(format: "label CONTAINS %@", "Default reps")
+    ).firstMatch
+    XCTAssertTrue(defaultSets.exists)
+    XCTAssertTrue(defaultReps.exists)
+    XCTAssertTrue(
+      defaultSets.label.contains("3") || String(describing: defaultSets.value).contains("3"))
+    XCTAssertTrue(
+      defaultReps.label.contains("8") || String(describing: defaultReps.value).contains("8"))
     XCTAssertTrue(app.switches["Rest timer notifications"].exists)
   }
 
@@ -141,6 +151,76 @@ final class WorkoutNavigationUITests: XCTestCase {
 
     XCTAssertTrue(closeButton.waitForExistence(timeout: 5))
     XCTAssertTrue(app.navigationBars["Bench Press"].exists)
+  }
+
+  func testRapidRepEditPersistsWhenWorkoutCloses() {
+    app.terminate()
+    app.launchArguments = ["-basicWorkoutFixture", "-activeWorkoutFixture"]
+    app.launch()
+
+    let reps = app.textFields["Base reps for Alex"]
+    XCTAssertTrue(reps.waitForExistence(timeout: 5))
+    app.buttons["base-reps-plus-Alex"].tap()
+    XCTAssertEqual(reps.value as? String, "9")
+
+    app.buttons["close-active-workout"].tap()
+    let resume = app.buttons["resume-active-workout"]
+    XCTAssertTrue(resume.waitForExistence(timeout: 5))
+    resume.tap()
+
+    XCTAssertTrue(reps.waitForExistence(timeout: 5))
+    XCTAssertEqual(reps.value as? String, "9")
+  }
+
+  func testActiveWorkoutScrollPerformance() {
+    launchActiveWorkoutPerformanceFixture()
+
+    let options = XCTMeasureOptions()
+    options.iterationCount = 5
+    measure(
+      metrics: [
+        XCTClockMetric(),
+        XCTCPUMetric(),
+        XCTMemoryMetric(),
+        XCTOSSignpostMetric.scrollDecelerationMetric,
+      ],
+      options: options
+    ) {
+      app.swipeUp(velocity: .fast)
+      app.swipeDown(velocity: .fast)
+    }
+  }
+
+  func testActiveWorkoutSustainedFlickTrace() {
+    launchActiveWorkoutPerformanceFixture()
+
+    // Leave a deterministic attachment window for an external Instruments trace.
+    Thread.sleep(forTimeInterval: 5)
+    for _ in 0..<4 {
+      app.swipeUp(velocity: .fast)
+      app.swipeDown(velocity: .fast)
+    }
+    Thread.sleep(forTimeInterval: 2)
+  }
+
+  func testActiveWorkoutButtonPerformance() {
+    launchActiveWorkoutPerformanceFixture()
+    let plus = app.buttons["base-reps-plus-Alex"].firstMatch
+    let minus = app.buttons["base-reps-minus-Alex"].firstMatch
+    XCTAssertTrue(plus.waitForExistence(timeout: 5))
+    XCTAssertTrue(minus.exists)
+    let plusCoordinate = plus.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+    let minusCoordinate = minus.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+
+    let options = XCTMeasureOptions()
+    options.iterationCount = 5
+    measure(
+      metrics: [XCTClockMetric(), XCTCPUMetric(), XCTMemoryMetric()],
+      options: options
+    ) {
+      plusCoordinate.tap()
+      minusCoordinate.tap()
+    }
   }
 
   func testRecentlyCompletedWorkoutCanBeResumedFromWorkoutScreen() {
@@ -500,7 +580,8 @@ final class WorkoutNavigationUITests: XCTestCase {
     ).firstMatch
     XCTAssertTrue(multiWorkoutDay.waitForExistence(timeout: 5))
     XCTAssertEqual(
-      multiWorkoutDay.value as? String, "Lower Body, Basic Workout; Multiple people")
+      multiWorkoutDay.value as? String,
+      "Lower Body, Basic Workout; Multiple people; 5 personal records")
     multiWorkoutDay.tap()
 
     XCTAssertTrue(app.navigationBars["2 Workouts"].waitForExistence(timeout: 10))
@@ -671,6 +752,18 @@ final class WorkoutNavigationUITests: XCTestCase {
     XCTAssertTrue(firstOnNextRow.exists)
     XCTAssertLessThan(abs(first.frame.midY - lastOnFirstRow.frame.midY), 2)
     XCTAssertGreaterThan(firstOnNextRow.frame.minY, first.frame.maxY)
+  }
+
+  private func launchActiveWorkoutPerformanceFixture() {
+    app.terminate()
+    app.launchArguments =
+      [
+        "-basicWorkoutFixture",
+        "-activeWorkoutFixture",
+        "-activeWorkoutPerformanceFixture",
+      ]
+    app.launch()
+    XCTAssertTrue(app.otherElements["active-workout-screen"].waitForExistence(timeout: 30))
   }
 
   private func assertParticipantControlAlignment(

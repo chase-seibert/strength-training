@@ -20,6 +20,12 @@ enum WorkoutPreferences {
   }
 }
 
+#if DEBUG
+  enum DeveloperPreferences {
+    static let activeWorkoutFrameMonitorEnabledKey = "activeWorkoutFrameMonitorEnabled"
+  }
+#endif
+
 /// Personal-record calculations shared by the workout, history, and progress views.
 ///
 /// A record is the highest completed set value for a person and exercise. Load-based

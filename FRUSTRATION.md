@@ -15,3 +15,9 @@ The compact workout UI test reached and dismissed its new last-set sheet, but th
 ## 2026-08-28 — New SwiftData property crashes on an existing phone store
 
 Adding the nonoptional `WorkoutSet.isSkipped` property without a versioned SwiftData migration caused the installed phone build to fail during `ModelContainer` initialization. The simulator fixture used an in-memory store and did not expose the incompatibility. Existing device data must be migrated; deleting the app or clearing its data is only a last-resort workaround because it can remove workout history.
+# Simulator UI performance fixtures
+
+- A fixture with 180 historical workouts × 24 exercises × 3 people × 5 sets never
+  let XCTest's `app.launch()` become idle in a Debug simulator build. Keep interactive
+  performance fixtures closer to 50 workouts and 12 active exercises, and model the
+  production catalog separately with lightweight catalog-only records.

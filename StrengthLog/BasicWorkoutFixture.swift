@@ -41,6 +41,44 @@
         instructions: "Brace, sit between the hips, then stand tall.",
         imagePath: "Barbell_Full_Squat/0.webp",
         additionalImagePaths: ["Barbell_Full_Squat/1.webp"])
+      let performanceImagePaths = [
+        "Internal_Rotation_with_Band/0.webp",
+        "Spinal_Stretch/0.webp",
+        "Extended_Range_One-Arm_Kettlebell_Floor_Press/0.webp",
+        "Band_Good_Morning_Pull_Through/0.webp",
+        "Incline_Bench_Pull/0.webp",
+        "Single-Arm_Linear_Jammer/0.webp",
+        "Posterior_Tibialis_Stretch/0.webp",
+        "Seated_Two-Arm_Palms-Up_Low-Pulley_Wrist_Curl/0.webp",
+        "Split_Squat_with_Dumbbells/0.webp",
+        "Oblique_Crunches/0.webp",
+        "Barbell_Full_Squat/0.webp",
+      ]
+      let performanceExercises: [Exercise] =
+        ProcessInfo.processInfo.arguments.contains("-activeWorkoutPerformanceFixture")
+        ? (1...11).map { index in
+          Exercise(
+            sourceID: "fixture-performance-\(index)",
+            name: "Performance Exercise \(index)",
+            category: "strength",
+            equipment: index.isMultiple(of: 2) ? "dumbbell" : "barbell",
+            primaryMuscle: index.isMultiple(of: 2) ? "back" : "legs",
+            unit: .pounds,
+            instructions: "Performance fixture exercise \(index).",
+            imagePath: performanceImagePaths[index - 1])
+        } : []
+      let performanceCatalogFillers: [Exercise] =
+        ProcessInfo.processInfo.arguments.contains("-activeWorkoutPerformanceFixture")
+        ? (1...600).map { index in
+          Exercise(
+            sourceID: "fixture-catalog-\(index)",
+            name: "Catalog Exercise \(index)",
+            category: "strength",
+            equipment: "other",
+            primaryMuscle: "other",
+            unit: .pounds,
+            instructions: "Catalog-size performance fixture.")
+        } : []
       let basicRoutineExercise = RoutineExercise(
         exerciseName: benchPress.name,
         unit: .pounds,
@@ -64,7 +102,20 @@
         name: "Basic Workout",
         symbol: "dumbbell.fill",
         colorHex: "FF5A45",
-        exercises: [basicRoutineExercise])
+        exercises: [basicRoutineExercise]
+          + performanceExercises.enumerated().map { index, exercise in
+            RoutineExercise(
+              exerciseName: exercise.name,
+              unit: exercise.unit,
+              sortOrder: index + 1,
+              exerciseID: exercise.id,
+              prescriptions: [alex, jordan, owen].map { person in
+                Prescription(
+                  participantName: person.name,
+                  measurement: Double(45 + index),
+                  sets: (0..<5).map { SetTemplate(sortOrder: $0, reps: 8) })
+              })
+          })
       if ProcessInfo.processInfo.arguments.contains("-restTimerFixture") {
         basicRoutine.restDurationSeconds = 60
       }
@@ -138,6 +189,16 @@
           makeRecentCompletedWorkout(
             routine: basicRoutine, person: alex, exercise: benchPress))
       }
+      if ProcessInfo.processInfo.arguments.contains("-activeWorkoutPerformanceFixture") {
+        workoutHistory.append(
+          contentsOf: (0..<48).map { workoutIndex in
+            makePerformanceWorkout(
+              routine: basicRoutine,
+              people: [alex, jordan, owen],
+              exercises: [benchPress] + performanceExercises,
+              workoutIndex: workoutIndex)
+          })
+      }
 
       context.insert(alex)
       context.insert(jordan)
@@ -145,6 +206,8 @@
       context.insert(benchPress)
       context.insert(squat)
       context.insert(customExercise)
+      performanceExercises.forEach(context.insert)
+      performanceCatalogFillers.forEach(context.insert)
       context.insert(basicRoutine)
       context.insert(lowerRoutine)
       workoutHistory.forEach(context.insert)
@@ -163,7 +226,7 @@
           routine: basicRoutine,
           people: activePeople,
           sessions: workoutHistory,
-          catalog: [benchPress, customExercise, squat],
+          catalog: [benchPress, customExercise, squat] + performanceExercises,
           in: context)
         if ProcessInfo.processInfo.arguments.contains("-activeWorkoutCustomizedLastSetFixture"),
           let participant = activeWorkout?.exercises.first?.participants.first(where: {
@@ -230,6 +293,42 @@
           try? context.save()
         }
       }
+    }
+
+    private static func makePerformanceWorkout(
+      routine: Routine,
+      people: [PersonProfile],
+      exercises: [Exercise],
+      workoutIndex: Int
+    ) -> WorkoutSession {
+      let startedAt = Date.now.addingTimeInterval(TimeInterval(-(workoutIndex + 2) * 86_400))
+      let logs = exercises.enumerated().map { exerciseIndex, exercise in
+        ExerciseLog(
+          exerciseID: exercise.id,
+          exerciseName: exercise.name,
+          unit: exercise.unit,
+          sortOrder: exerciseIndex,
+          participants: people.map { person in
+            ParticipantLog(
+              participantName: person.name,
+              measurement: Double(45 + exerciseIndex + (workoutIndex % 20)),
+              sets: (0..<5).map { setIndex in
+                WorkoutSet(
+                  sortOrder: setIndex,
+                  reps: 8 + (setIndex % 2),
+                  isCompleted: true,
+                  measurement: Double(45 + exerciseIndex + (workoutIndex % 20)),
+                  completedAt: startedAt.addingTimeInterval(TimeInterval(setIndex * 60)))
+              })
+          })
+      }
+      return WorkoutSession(
+        routineID: routine.id,
+        participantNames: people.map(\.name),
+        exercises: logs,
+        startedAt: startedAt,
+        endedAt: startedAt.addingTimeInterval(50 * 60),
+        isActive: false)
     }
 
     private static func makeWorkout(
