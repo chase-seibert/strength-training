@@ -172,6 +172,75 @@ final class WorkoutNavigationUITests: XCTestCase {
     XCTAssertEqual(reps.value as? String, "9")
   }
 
+  func testPlankDefaultsAndMasterUnitEditingDuringWorkout() {
+    app.terminate()
+    app.launchArguments = [
+      "-basicWorkoutFixture", "-plankWorkoutFixture", "-validatePersistenceFixture",
+    ]
+    app.launch()
+
+    let seconds = app.textFields["Base sec for Alex"]
+    XCTAssertTrue(seconds.waitForExistence(timeout: 5))
+    XCTAssertEqual(seconds.value as? String, "60")
+    XCTAssertFalse(app.textFields["Base reps for Alex"].exists)
+    app.buttons["exercise-details-Plank"].tap()
+    changeExerciseUnit(to: "Reps only")
+    app.navigationBars.buttons.element(boundBy: 0).tap()
+
+    let reps = app.textFields["Base reps for Alex"]
+    XCTAssertTrue(reps.waitForExistence(timeout: 5))
+    XCTAssertEqual(reps.value as? String, "60")
+    app.buttons["exercise-details-Plank"].tap()
+    changeExerciseUnit(to: "Time in seconds")
+    app.navigationBars.buttons.element(boundBy: 0).tap()
+    XCTAssertTrue(seconds.waitForExistence(timeout: 5))
+    XCTAssertEqual(seconds.value as? String, "60")
+    app.buttons["base-reps-plus-Alex"].tap()
+    XCTAssertEqual(seconds.value as? String, "61")
+    app.buttons["last-set-menu-Alex"].tap()
+    app.buttons["Customize Last Set…"].tap()
+    let lastSetSeconds = app.textFields["Last set sec for Plank"]
+    XCTAssertTrue(lastSetSeconds.waitForExistence(timeout: 3))
+    XCTAssertEqual(lastSetSeconds.value as? String, "61")
+    app.buttons["Done"].tap()
+    app.buttons["close-active-workout"].tap()
+    app.buttons["resume-active-workout"].tap()
+    XCTAssertTrue(seconds.waitForExistence(timeout: 5))
+    XCTAssertEqual(seconds.value as? String, "61")
+    let screenshot = XCTAttachment(screenshot: app.screenshot())
+    screenshot.name = "plank-seconds-after-master-unit-edit"
+    screenshot.lifetime = .keepAlways
+    add(screenshot)
+  }
+
+  func testLibraryUnitEditUpdatesResumedWorkout() {
+    app.terminate()
+    app.launchArguments = ["-basicWorkoutFixture", "-activeWorkoutFixture"]
+    app.launch()
+    app.buttons["close-active-workout"].tap()
+    app.tabBars.buttons["Exercises"].tap()
+    app.buttons["exercise-Bench Press"].tap()
+    changeExerciseUnit(to: "Time in seconds")
+    app.tabBars.buttons["Workout"].tap()
+    app.buttons["resume-active-workout"].tap()
+
+    let seconds = app.textFields["Base sec for Alex"]
+    XCTAssertTrue(seconds.waitForExistence(timeout: 5))
+    XCTAssertEqual(seconds.value as? String, "8")
+    XCTAssertFalse(app.textFields["Pounds for Alex"].exists)
+    XCTAssertFalse(app.textFields["Base reps for Alex"].exists)
+  }
+
+  private func changeExerciseUnit(to title: String) {
+    let edit = app.buttons["Edit"]
+    XCTAssertTrue(edit.waitForExistence(timeout: 3))
+    edit.tap()
+    app.buttons["exercise-unit-picker"].tap()
+    app.buttons[title].tap()
+    app.buttons["Save"].tap()
+    XCTAssertTrue(edit.waitForExistence(timeout: 3))
+  }
+
   func testCompletingWorkoutShowsCelebrationSummary() {
     app.terminate()
     app.launchArguments = ["-basicWorkoutFixture", "-activeWorkoutFixture"]

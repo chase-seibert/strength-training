@@ -10,12 +10,17 @@
 - As a lifter, I want a compact exercise filter menu ordered All, Custom, then muscles alphabetically, so that custom and muscle filtering stays easy without consuming library space.
 - As a lifter, I want to add an exercise to a routine directly from its catalog detail, so that browsing naturally turns into routine building.
 - As a lifter, I want to add, remove, and reorder exercises while editing routines, so that their contents and workout order match my plan.
-- As a lifter, I want custom exercises and editable catalog-unit defaults, so that routines use one consistent measurement per exercise while I can correct an inaccurate default.
+- As a lifter, I want custom exercises and editable catalog-unit defaults, so that every routine and workout uses the master exercise’s unit, including an already-open workout after a correction.
 - As a lifter, I want to rename and duplicate any exercise while retaining its original name and canonical identity, so that personalized labels never disconnect routines or workout history from the source movement.
 - As a lifter, I want the exercise editor to explain tracking, muscle, equipment, type, and form-note choices in workout language, so that creating an exercise does not require understanding catalog internals.
 - As a lifter, I want measurement units for pounds, kilograms, reps, time, distance, and steps, so that strength and conditioning movements share one model.
 
 ## Workout execution
+
+- As a lifter, I want to tap an exercise name to open its details, edit its universal unit, and return to the same workout without losing entered values.
+- Plank defaults to seconds and a 60-second target; prior recorded targets remain intact. Timed sets use one duration control, including a duration-labeled last-set override.
+- Seconds-based exercises use catalog duration defaults, not the rep preference: generally 30 seconds, with instruction-specific shorter holds. Stomach Vacuum and One Handed Hang default to 20 seconds; Balance Board, Battling Ropes, and Mountain Climbers to 30; Isometric Chest Squeezes to 10; both neck-isometric entries to 5 per direction/side. These are editable per-set targets, not mandatory training prescriptions.
+- Superman, Toe Touchers, and Ankle Circles default to repetitions. Catalog corrections apply once to original records still using the old unit; other unit choices, custom/duplicated exercises, deleted records, and saved set values are preserved.
 
 - As a lifter, I want only one workout log open at a time, so that logging stays focused without introducing timer state.
 - As a lifter, I want to select today's participants, so that solo, pair, and family sessions stay uncluttered.

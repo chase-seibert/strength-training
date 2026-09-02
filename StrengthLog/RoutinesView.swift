@@ -840,15 +840,24 @@ enum WorkoutSessionStarter {
     let knownNames = orderedKnownNames(
       history: history, routine: routine, orderedPeople: orderedPeople)
     let logs = routine.exercises.sorted(by: { $0.sortOrder < $1.sortOrder }).map { item in
+      let master =
+        catalog.first(where: { $0.id == item.exerciseID })
+        ?? (item.exerciseID == nil
+          ? catalog.first(where: {
+            $0.name.caseInsensitiveCompare(item.exerciseName) == .orderedSame
+          })
+          : nil)
       let previousExercise = history.lazy.flatMap(\.exercises).first {
         matches($0, item)
       }
       let participantLogs = knownNames.map {
-        participantLog(for: $0, exercise: item, history: history)
+        participantLog(
+          for: $0, exercise: item, history: history,
+          defaultTarget: master?.defaultTarget ?? WorkoutPreferences.defaultReps)
       }
       equalizeSetCounts(participantLogs)
       return ExerciseLog(
-        exerciseID: item.exerciseID,
+        exerciseID: master?.id ?? item.exerciseID,
         exerciseName: item.exerciseName,
         unit: unit(for: item, catalog: catalog),
         sortOrder: item.sortOrder,
@@ -891,7 +900,7 @@ enum WorkoutSessionStarter {
   }
 
   private static func participantLog(
-    for name: String, exercise: RoutineExercise, history: [WorkoutSession]
+    for name: String, exercise: RoutineExercise, history: [WorkoutSession], defaultTarget: Int
   ) -> ParticipantLog {
     let previous = history.lazy
       .flatMap(\.exercises)
@@ -910,7 +919,7 @@ enum WorkoutSessionStarter {
         participantName: name, measurement: previous.measurement,
         sets: completedSets.isEmpty
           ? (0..<WorkoutPreferences.defaultSets).map {
-            WorkoutSet(sortOrder: $0, reps: WorkoutPreferences.defaultReps)
+            WorkoutSet(sortOrder: $0, reps: defaultTarget)
           }
           : completedSets.enumerated().map { index, set in
             WorkoutSet(
@@ -933,7 +942,7 @@ enum WorkoutSessionStarter {
     return ParticipantLog(
       participantName: name, measurement: 0,
       sets: (0..<WorkoutPreferences.defaultSets).map {
-        WorkoutSet(sortOrder: $0, reps: WorkoutPreferences.defaultReps)
+        WorkoutSet(sortOrder: $0, reps: defaultTarget)
       })
   }
 

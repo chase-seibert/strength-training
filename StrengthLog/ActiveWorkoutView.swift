@@ -144,6 +144,7 @@ private struct ActiveWorkoutDurationLabel: View {
 
 private struct ActiveWorkoutToolbarTitle: View {
   let exerciseName: String
+  let onOpenExercise: () -> Void
   let restTimerStartedAt: Date?
   let restTimerDurationSeconds: Int?
   let onSkipRest: () -> Void
@@ -171,11 +172,15 @@ private struct ActiveWorkoutToolbarTitle: View {
           onRestTimerExpired()
         }
       } else {
-        Text(exerciseName)
-          .foregroundStyle(.primary)
-          .lineLimit(1)
-          .font(.headline)
-          .accessibilityLabel(exerciseName)
+        Button(action: onOpenExercise) {
+          Text(exerciseName)
+            .foregroundStyle(.primary)
+            .lineLimit(1)
+            .font(.headline)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(exerciseName)
+        .accessibilityHint("Opens exercise details")
       }
     }
   }
@@ -221,6 +226,8 @@ struct ActiveWorkoutView: View {
   let onDelete: () -> Void
   let onClose: () -> Void
   @State private var showingExercisePicker = false
+  @State private var showingMasterExercise = false
+  @State private var detailExercise: Exercise?
   @State private var editMode: EditMode = .inactive
   @State private var showingDeleteConfirmation = false
   @State private var didRestoreScrollPosition = false
@@ -350,10 +357,15 @@ struct ActiveWorkoutView: View {
       ToolbarItem(placement: .principal) {
         ActiveWorkoutToolbarTitle(
           exerciseName: currentExerciseName,
+          onOpenExercise: {
+            detailExercise = currentExerciseLog?.masterExercise
+            showingMasterExercise = detailExercise != nil
+          },
           restTimerStartedAt: session.restTimerStartedAt,
           restTimerDurationSeconds: session.restTimerDurationSeconds,
           onSkipRest: clearRestTimer,
-          onRestTimerExpired: handleRestTimerExpiry)
+          onRestTimerExpired: handleRestTimerExpiry
+        )
       }
       ToolbarItem(placement: .topBarLeading) {
         Button(action: onClose) {
@@ -390,6 +402,9 @@ struct ActiveWorkoutView: View {
     .sheet(isPresented: $showingExercisePicker) {
       AddExerciseToWorkoutSheet(session: session)
     }
+    .navigationDestination(isPresented: $showingMasterExercise) {
+      if let detailExercise { ExerciseDetailView(exercise: detailExercise) }
+    }
     .environment(\.scheduleWorkoutSave, scheduleSave)
     .onAppear {
       if previousAutosaveEnabled == nil {
@@ -409,6 +424,10 @@ struct ActiveWorkoutView: View {
     .onChange(of: session.exercises.map(\.id)) { _, _ in
       loadRelevantCatalogExercises()
       updateCurrentPersonalRecords()
+    }
+    .onChange(of: session.exercises.map { $0.unit.rawValue }) { _, _ in
+      loadPersonalRecordBaseline()
+      syncLiveActivity()
     }
     .onChange(of: session.restTimerStartedAt) { _, _ in
       syncLiveActivity()
@@ -520,12 +539,12 @@ struct ActiveWorkoutView: View {
       participant?.orderedSets.first {
         !$0.isSkipped && $0.sortOrder + 1 == setNumber
       } ?? participant?.orderedSets.first(where: { !$0.isSkipped })
-    let reps = set?.reps ?? participant?.nextSetReps ?? WorkoutPreferences.defaultReps
+    let reps = set?.target(for: exercise.unit) ?? exercise.defaultTarget
     let measurement = set?.measurement ?? participant?.measurement ?? 0
     let effort =
-      measurement > 0
+      exercise.unit.usesMeasurement && measurement > 0
       ? "\(measurement.tidy) \(exercise.unit.label) × \(reps)"
-      : "\(reps) reps"
+      : "\(reps) \(exercise.unit.targetLabel)"
     return (
       exerciseName: exercise.exerciseName,
       setProgress: "Set \(setNumber) of \(totalSets)",
@@ -641,6 +660,10 @@ struct ActiveWorkoutView: View {
       total: orderedExercises.count,
       usesSinglePersonHorizontalLayout: visiblePeople.count == 1,
       onAdvance: { jumpExercise(after: exercise, by: 1) },
+      onOpenExercise: {
+        detailExercise = exercise.masterExercise
+        showingMasterExercise = detailExercise != nil
+      },
       onSetCompleted: handleSetCompleted,
       showsPersonalRecord: personalRecordExerciseKeys.contains(PersonalRecords.key(for: exercise))
     )
@@ -764,7 +787,7 @@ struct ActiveWorkoutView: View {
           ParticipantLog(
             participantName: name, measurement: 0,
             sets: (0..<setCount).map {
-              WorkoutSet(sortOrder: $0, reps: WorkoutPreferences.defaultReps)
+              WorkoutSet(sortOrder: $0, reps: exercise.defaultTarget)
             }))
       }
       saveNow()
@@ -953,6 +976,7 @@ struct ActiveExerciseCard: View {
   let total: Int
   let usesSinglePersonHorizontalLayout: Bool
   let onAdvance: () -> Void
+  let onOpenExercise: () -> Void
   let onSetCompleted: () -> Void
   let showsPersonalRecord: Bool
   @State private var showingImages = false
@@ -980,6 +1004,7 @@ struct ActiveExerciseCard: View {
   }
 
   private var repGuidance: String? {
+    guard exercise.unit.usesReps else { return nil }
     let name = exercise.exerciseName.lowercased()
     if ["alternating", "alternate"].contains(where: name.contains) {
       return "Reps are total — split them evenly between sides."
@@ -1010,10 +1035,17 @@ struct ActiveExerciseCard: View {
           .accessibilityIdentifier("exercise-images-\(exercise.exerciseName)")
         }
         VStack(alignment: .leading, spacing: 3) {
-          Text(exercise.exerciseName)
-            .font(.title3.bold())
-            .lineLimit(2)
-            .fixedSize(horizontal: false, vertical: true)
+          Button(action: onOpenExercise) {
+            Text(exercise.exerciseName)
+              .font(.title3.bold())
+              .lineLimit(2)
+              .fixedSize(horizontal: false, vertical: true)
+              .foregroundStyle(.primary)
+          }
+          .buttonStyle(.plain)
+          .disabled(catalogExercise == nil)
+          .accessibilityIdentifier("exercise-details-\(exercise.exerciseName)")
+          .accessibilityHint("Opens exercise details")
           Text("\(position) of \(total) · \(exercise.unit.title)")
             .font(.caption.weight(.semibold))
             .foregroundStyle(.secondary)
@@ -1054,6 +1086,7 @@ struct ActiveExerciseCard: View {
 
         SinglePersonSetCompletionGrid(
           participant: participant,
+          unit: exercise.unit,
           exerciseName: exercise.exerciseName,
           colorHex: colors[participant.participantName] ?? "FF5A45",
           setsPerRow: 8,
@@ -1065,9 +1098,10 @@ struct ActiveExerciseCard: View {
         )
         .frame(maxWidth: .infinity, alignment: .leading)
       } else {
-        participantLoadControls
-
-        Divider()
+        if exercise.unit.usesMeasurement {
+          participantLoadControls
+          Divider()
+        }
 
         HStack(alignment: .top, spacing: usesTwoPersonParticipantColumns ? 0 : 6) {
           if usesTwoPersonParticipantColumns {
@@ -1111,6 +1145,7 @@ struct ActiveExerciseCard: View {
       if let lastSet = participant.orderedSets.last(where: { !$0.isSkipped }) {
         LastSetEditorSheet(
           exerciseName: exercise.exerciseName,
+          unit: exercise.unit,
           baseReps: baseReps(for: participant),
           set: lastSet)
       }
@@ -1151,6 +1186,7 @@ struct ActiveExerciseCard: View {
   ) -> some View {
     ParticipantExerciseCell(
       participant: participant,
+      unit: exercise.unit,
       exerciseName: exercise.exerciseName,
       colorHex: colors[participant.participantName] ?? "FF5A45",
       onCustomizeLastSet: { lastSetEditorParticipant = participant },
@@ -1167,7 +1203,7 @@ struct ActiveExerciseCard: View {
 
   private func singlePersonMeasurementControls(for participant: ParticipantLog) -> some View {
     HStack(alignment: .top, spacing: 12) {
-      participantLoadControl(for: participant)
+      if exercise.unit.usesMeasurement { participantLoadControl(for: participant) }
       participantExerciseControl(
         for: participant,
         showsSetCompletions: false,
@@ -1298,7 +1334,9 @@ struct ActiveExerciseCard: View {
         let ordered = participant.orderedSets
         let base = baseReps(for: participant)
         let lastOverride = lastSetOverride(for: participant)
-        if lastOverride != nil, let last = ordered.last { last.reps = base }
+        if lastOverride != nil, let last = ordered.last {
+          last.setTarget(base, unit: exercise.unit)
+        }
         let set = WorkoutSet(
           sortOrder: participant.sets.count,
           reps: lastOverride ?? base)
@@ -1343,10 +1381,10 @@ struct ActiveExerciseCard: View {
 
   private func baseReps(for participant: ParticipantLog) -> Int {
     let activeSets = participant.orderedSets.filter { !$0.isSkipped }
-    return activeSets.dropLast().first?.reps
-      ?? activeSets.first?.reps
-      ?? participant.orderedSets.first?.reps
-      ?? WorkoutPreferences.defaultReps
+    return activeSets.dropLast().first?.target(for: exercise.unit)
+      ?? activeSets.first?.target(for: exercise.unit)
+      ?? participant.orderedSets.first?.target(for: exercise.unit)
+      ?? exercise.defaultTarget
   }
 
   private func lastSetOverride(for participant: ParticipantLog) -> Int? {
@@ -1355,12 +1393,12 @@ struct ActiveExerciseCard: View {
       return nil
     }
     let base = baseReps(for: participant)
-    return last.reps == base ? nil : last.reps
+    return last.target(for: exercise.unit) == base ? nil : last.target(for: exercise.unit)
   }
 
   private func resetLastSet(for participant: ParticipantLog) {
     guard let last = participant.orderedSets.last(where: { !$0.isSkipped }) else { return }
-    last.reps = baseReps(for: participant)
+    last.setTarget(baseReps(for: participant), unit: exercise.unit)
     scheduleWorkoutSave()
   }
 
@@ -1387,7 +1425,7 @@ struct ActiveExerciseCard: View {
   private func setStatus(for participant: ParticipantLog) -> String? {
     var status: [String] = []
     if let lastSetOverride = lastSetOverride(for: participant) {
-      status.append("Last set: \(lastSetOverride) reps")
+      status.append("Last set: \(lastSetOverride) \(exercise.unit.targetLabel)")
     }
     let skippedSetCount = participant.orderedSets.filter(\.isSkipped).count
     if skippedSetCount > 0 {
@@ -1403,6 +1441,7 @@ struct ActiveExerciseCard: View {
 struct ParticipantExerciseCell: View {
   @Environment(\.modelContext) private var context
   @Bindable var participant: ParticipantLog
+  var unit: TrackingUnit = .repetitions
   let exerciseName: String
   let colorHex: String
   let onCustomizeLastSet: () -> Void
@@ -1425,17 +1464,18 @@ struct ParticipantExerciseCell: View {
   }
 
   private var baseReps: Int {
-    activeSets.dropLast().first?.reps
-      ?? activeSets.first?.reps
-      ?? orderedSets.first?.reps
+    activeSets.dropLast().first?.target(for: unit)
+      ?? activeSets.first?.target(for: unit)
+      ?? orderedSets.first?.target(for: unit)
       ?? WorkoutPreferences.defaultReps
   }
 
   private var lastSetOverride: Int? {
-    guard activeSets.count > 1, let last = activeSets.last, last.reps != baseReps else {
+    guard activeSets.count > 1, let last = activeSets.last, last.target(for: unit) != baseReps
+    else {
       return nil
     }
-    return last.reps
+    return last.target(for: unit)
   }
 
   var body: some View {
@@ -1443,6 +1483,7 @@ struct ParticipantExerciseCell: View {
       VStack(spacing: 0) {
         CompactRepsControl(
           participant: participant,
+          unit: unit,
           baseReps: baseReps,
           colorHex: colorHex
         )
@@ -1453,6 +1494,7 @@ struct ParticipantExerciseCell: View {
             Spacer(minLength: 0)
             ParticipantSetOptionsMenu(
               participant: participant,
+              unit: unit,
               baseReps: baseReps,
               colorHex: colorHex,
               onCustomizeLastSet: onCustomizeLastSet,
@@ -1493,7 +1535,7 @@ struct ParticipantExerciseCell: View {
   private var setStatus: String? {
     var status: [String] = []
     if let lastSetOverride {
-      status.append("Last set: \(lastSetOverride) reps")
+      status.append("Last set: \(lastSetOverride) \(unit.targetLabel)")
     }
     if skippedSetCount > 0 {
       status.append(
@@ -1516,6 +1558,7 @@ struct ParticipantExerciseCell: View {
 
 struct ParticipantSetOptionsMenu: View {
   @Bindable var participant: ParticipantLog
+  var unit: TrackingUnit = .repetitions
   let baseReps: Int
   let colorHex: String
   let onCustomizeLastSet: () -> Void
@@ -1532,10 +1575,11 @@ struct ParticipantSetOptionsMenu: View {
   }
 
   private var lastSetOverride: Int? {
-    guard activeSets.count > 1, let last = activeSets.last, last.reps != baseReps else {
+    guard activeSets.count > 1, let last = activeSets.last, last.target(for: unit) != baseReps
+    else {
       return nil
     }
-    return last.reps
+    return last.target(for: unit)
   }
 
   var body: some View {
@@ -1578,7 +1622,8 @@ struct ParticipantSetOptionsMenu: View {
     .menuStyle(.borderlessButton)
     .disabled(activeSets.count < 2 && skippedSetCount == 0)
     .accessibilityLabel(
-      lastSetOverride == nil ? "Customize set options" : "Last set is \(lastSetOverride!) reps"
+      lastSetOverride == nil
+        ? "Customize set options" : "Last set is \(lastSetOverride!) \(unit.targetLabel)"
     )
     .accessibilityIdentifier("last-set-menu-\(participant.participantName)")
   }
@@ -1586,6 +1631,7 @@ struct ParticipantSetOptionsMenu: View {
 
 struct SinglePersonSetCompletionGrid: View {
   @Bindable var participant: ParticipantLog
+  var unit: TrackingUnit = .repetitions
   let exerciseName: String
   let colorHex: String
   let setsPerRow: Int
@@ -1600,9 +1646,9 @@ struct SinglePersonSetCompletionGrid: View {
   }
 
   private var baseReps: Int {
-    activeSets.dropLast().first?.reps
-      ?? activeSets.first?.reps
-      ?? participant.orderedSets.first?.reps
+    activeSets.dropLast().first?.target(for: unit)
+      ?? activeSets.first?.target(for: unit)
+      ?? participant.orderedSets.first?.target(for: unit)
       ?? WorkoutPreferences.defaultReps
   }
 
@@ -1630,6 +1676,7 @@ struct SinglePersonSetCompletionGrid: View {
             } else {
               ParticipantSetOptionsMenu(
                 participant: participant,
+                unit: unit,
                 baseReps: baseReps,
                 colorHex: colorHex,
                 onCustomizeLastSet: onCustomizeLastSet,
@@ -1752,6 +1799,7 @@ struct SetCompletionButton: View {
 struct CompactRepsControl: View {
   @Environment(\.scheduleWorkoutSave) private var scheduleWorkoutSave
   @Bindable var participant: ParticipantLog
+  var unit: TrackingUnit = .repetitions
   let baseReps: Int
   let colorHex: String
   @State private var text = ""
@@ -1767,7 +1815,7 @@ struct CompactRepsControl: View {
           keyboardType: .numberPad,
           textAlignment: .center,
           font: .monospacedDigitSystemFont(ofSize: 17, weight: .bold),
-          accessibilityLabel: "Base reps for \(participant.participantName)",
+          accessibilityLabel: "Base \(unit.targetLabel) for \(participant.participantName)",
           step: 1,
           minimumValue: 1
         )
@@ -1780,7 +1828,7 @@ struct CompactRepsControl: View {
         }
         stepButton("plus") { setBaseReps(baseReps + 1) }
       }
-      Text(baseReps == 1 ? "Rep" : "Reps")
+      Text(unit.targetLabel == "reps" ? (baseReps == 1 ? "Rep" : "Reps") : unit.label)
         .font(.system(size: 8, weight: .bold))
         .foregroundStyle(.secondary)
     }
@@ -1826,10 +1874,11 @@ struct CompactRepsControl: View {
     let sets = participant.orderedSets
     let activeSets = sets.filter { !$0.isSkipped }
     let lastActiveSetID = activeSets.count > 1 ? activeSets.last?.id : nil
-    let preservesLastOverride = lastActiveSetID != nil && activeSets.last?.reps != baseReps
+    let preservesLastOverride =
+      lastActiveSetID != nil && activeSets.last?.target(for: unit) != baseReps
     for (_, set) in sets.enumerated()
     where !preservesLastOverride || set.id != lastActiveSetID {
-      set.reps = reps
+      set.setTarget(reps, unit: unit)
     }
     if updateText { text = "\(reps)" }
     scheduleWorkoutSave()
@@ -1840,6 +1889,7 @@ struct LastSetEditorSheet: View {
   @Environment(\.dismiss) private var dismiss
   @Environment(\.scheduleWorkoutSave) private var scheduleWorkoutSave
   let exerciseName: String
+  var unit: TrackingUnit = .repetitions
   let baseReps: Int
   @Bindable var set: WorkoutSet
   @State private var text = ""
@@ -1849,10 +1899,10 @@ struct LastSetEditorSheet: View {
     NavigationStack {
       VStack(alignment: .leading, spacing: 18) {
         VStack(alignment: .leading, spacing: 5) {
-          Text("Last set reps")
+          Text("Last set \(unit.targetLabel)")
             .font(.headline)
           Text(
-            "This overrides the base value of \(baseReps) reps for the final set only. It will be remembered next time."
+            "This overrides the base value of \(baseReps) \(unit.targetLabel) for the final set only. It will be remembered next time."
           )
           .font(.subheadline)
           .foregroundStyle(.secondary)
@@ -1860,7 +1910,7 @@ struct LastSetEditorSheet: View {
 
         HStack(spacing: 6) {
           Button {
-            setReps(set.reps - 1)
+            setReps(set.target(for: unit) - 1)
           } label: {
             Image(systemName: "minus")
               .frame(width: 44, height: 48)
@@ -1873,7 +1923,7 @@ struct LastSetEditorSheet: View {
             keyboardType: .numberPad,
             textAlignment: .center,
             font: .monospacedDigitSystemFont(ofSize: 24, weight: .bold),
-            accessibilityLabel: "Last set reps for \(exerciseName)",
+            accessibilityLabel: "Last set \(unit.targetLabel) for \(exerciseName)",
             step: 1,
             minimumValue: 1
           )
@@ -1883,7 +1933,7 @@ struct LastSetEditorSheet: View {
           }
 
           Button {
-            setReps(set.reps + 1)
+            setReps(set.target(for: unit) + 1)
           } label: {
             Image(systemName: "plus")
               .frame(width: 44, height: 48)
@@ -1901,24 +1951,24 @@ struct LastSetEditorSheet: View {
           Button("Done") { dismiss() }
         }
       }
-      .onAppear { text = "\(set.reps)" }
+      .onAppear { text = "\(set.target(for: unit))" }
       .onChange(of: text) { _, newValue in
         guard let reps = Int(newValue), reps > 0 else { return }
         setReps(reps, updateText: false)
       }
-      .onChange(of: set.reps) { _, reps in
+      .onChange(of: set.target(for: unit)) { _, reps in
         if !isFocused { text = "\(reps)" }
       }
       .onChange(of: isFocused) { _, focused in
-        if !focused, text.isEmpty { text = "\(set.reps)" }
+        if !focused, text.isEmpty { text = "\(set.target(for: unit))" }
       }
     }
     .presentationDetents([.medium])
   }
 
   private func setReps(_ value: Int, updateText: Bool = true) {
-    set.reps = max(1, value)
-    if updateText { text = "\(set.reps)" }
+    set.setTarget(max(1, value), unit: unit)
+    if updateText { text = "\(set.target(for: unit))" }
     scheduleWorkoutSave()
   }
 }
@@ -2042,7 +2092,7 @@ struct ExerciseGroupHistoryView: View {
         let completed = participant.sets.filter(\.isCompleted)
         guard !completed.isEmpty else { return nil }
         let measurement = completed.map { $0.measurement ?? participant.measurement }.max() ?? 0
-        let reps = completed.map(\.reps).max() ?? 0
+        let reps = completed.map { $0.target(for: unit) }.max() ?? 0
         let exerciseKey = PersonalRecords.key(for: exercise)
         let isPR = achievements.contains {
           $0.sessionID == session.id
@@ -2091,11 +2141,13 @@ struct ExerciseGroupHistoryView: View {
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(Theme.coral)
               }
+              if unit.usesMeasurement {
+                historyChart(
+                  title: unit.title,
+                  value: { $0.measurement })
+              }
               historyChart(
-                title: unit.title,
-                value: { $0.measurement })
-              historyChart(
-                title: "Best reps",
+                title: unit.targetLabel == "reps" ? "Best reps" : unit.title,
                 value: { Double($0.reps) })
             }
             .padding()

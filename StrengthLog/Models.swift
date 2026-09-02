@@ -157,7 +157,10 @@ enum TrackingUnit: String, CaseIterable, Codable, Identifiable {
   }
 
   var title: String { rawValue.capitalized }
+  var isWeight: Bool { self == .pounds || self == .kilograms }
+  var usesMeasurement: Bool { isWeight || [.miles, .kilometers, .meters].contains(self) }
   var usesReps: Bool { self == .pounds || self == .kilograms || self == .repetitions }
+  var targetLabel: String { usesReps || usesMeasurement ? "reps" : label }
 }
 
 @Model
@@ -265,6 +268,14 @@ final class Exercise {
   var unit: TrackingUnit {
     get { TrackingUnit(rawValue: unitRaw) ?? .pounds }
     set { unitRaw = newValue.rawValue }
+  }
+
+  var defaultTarget: Int {
+    if unit == .seconds {
+      return SeedData.defaultDurationSeconds(
+        sourceID: sourceID, originalName: canonicalOriginalName)
+    }
+    return WorkoutPreferences.defaultReps
   }
 
   /// The immutable identity shared by an original exercise and every duplicate made from it.
@@ -539,7 +550,7 @@ final class WorkoutSession {
         participantName: name,
         measurement: 0,
         sets: (0..<WorkoutPreferences.defaultSets).map {
-          WorkoutSet(sortOrder: $0, reps: WorkoutPreferences.defaultReps)
+          WorkoutSet(sortOrder: $0, reps: exercise.defaultTarget)
         })
     }
     exercises.append(
@@ -564,6 +575,7 @@ final class ExerciseLog {
   var unitRaw: String
   var sortOrder: Int
   var isBilateral: Bool = false
+  @Transient private var cachedMasterExercise: Exercise? = nil
   @Relationship(deleteRule: .cascade) var participants: [ParticipantLog]
 
   init(
@@ -582,7 +594,33 @@ final class ExerciseLog {
     self.participants = participants
   }
 
-  var unit: TrackingUnit { TrackingUnit(rawValue: unitRaw) ?? .pounds }
+  /// Cache the model, never its unit, so edits to the master are observed immediately.
+  /// No persistent schema change: unitRaw remains only as an orphan/legacy fallback.
+  var masterExercise: Exercise? {
+    if let cachedMasterExercise, cachedMasterExercise.id == exerciseID {
+      return cachedMasterExercise
+    }
+    guard let modelContext else { return nil }
+    var descriptor: FetchDescriptor<Exercise>
+    if let exerciseID {
+      descriptor = FetchDescriptor(predicate: #Predicate { $0.id == exerciseID })
+    } else {
+      let name = exerciseName
+      descriptor = FetchDescriptor(predicate: #Predicate { $0.name == name })
+    }
+    descriptor.fetchLimit = 2
+    guard let matches = try? modelContext.fetch(descriptor), matches.count == 1 else {
+      return nil
+    }
+    cachedMasterExercise = matches[0]
+    return matches[0]
+  }
+
+  var unit: TrackingUnit {
+    masterExercise?.unit ?? TrackingUnit(rawValue: unitRaw) ?? .pounds
+  }
+
+  var defaultTarget: Int { masterExercise?.defaultTarget ?? WorkoutPreferences.defaultReps }
 }
 
 @Model
@@ -716,6 +754,49 @@ final class WorkoutSet {
     }
   }
 
+  /// Imported durations retain their canonical seconds; native targets use the legacy reps field.
+  func target(for unit: TrackingUnit) -> Int {
+    if let durationSeconds, unit == .seconds || unit == .minutes {
+      return Int((durationSeconds / (unit == .minutes ? 60 : 1)).rounded())
+    }
+    return reps
+  }
+
+  func setTarget(_ value: Int, unit: TrackingUnit) {
+    reps = value
+    if unit == .seconds || unit == .minutes {
+      durationSeconds = Double(value) * (unit == .minutes ? 60 : 1)
+    }
+  }
+
+  func summary(participant: ParticipantLog, unit: TrackingUnit) -> String {
+    var parts: [String] = []
+    if unit.isWeight {
+      let load = measurement ?? participant.measurement
+      if load > 0 { parts.append("\(load.tidy) \(unit.label)") }
+      parts.append("\(reps) reps")
+    } else if unit == .seconds || unit == .minutes {
+      let value = durationSeconds.map { $0 / (unit == .minutes ? 60 : 1) } ?? Double(reps)
+      parts.append("\(value.tidy) \(unit.label)")
+    } else if let distanceMiles, [.miles, .kilometers, .meters].contains(unit) {
+      let factor = unit == .kilometers ? 1.609344 : (unit == .meters ? 1609.344 : 1)
+      parts.append("\((distanceMiles * factor).tidy) \(unit.label)")
+    } else if unit.usesMeasurement {
+      let value = measurement ?? participant.measurement
+      parts.append("\(value.tidy) \(unit.label)")
+    } else {
+      parts.append("\(reps) \(unit.label)")
+    }
+    if let distanceMiles, ![.miles, .kilometers, .meters].contains(unit) {
+      parts.append("\(distanceMiles.tidy) mi")
+    }
+    if let durationSeconds, unit != .seconds && unit != .minutes {
+      parts.append("\(durationSeconds.tidy) sec")
+    }
+    if let rpe { parts.append("RPE \(rpe.tidy)") }
+    return parts.joined(separator: " × ")
+  }
+
   func setReps(_ value: Int, for side: WorkoutSide) {
     switch side {
     case .left: leftReps = value
@@ -811,7 +892,7 @@ struct StarterRoutineTemplate: Identifiable {
       colorHex: "45D1A8",
       summary: "Brace, crunch, and raise",
       exercises: [
-        ExercisePlan(name: "Plank", unit: .repetitions, setCount: 3, target: 30),
+        ExercisePlan(name: "Plank", unit: .seconds, setCount: 3, target: 60),
         ExercisePlan(name: "Cable Crunch", unit: .pounds, setCount: 3, target: 12),
         ExercisePlan(name: "Hanging Leg Raise", unit: .repetitions, setCount: 3, target: 10),
       ]),

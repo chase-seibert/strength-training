@@ -28,19 +28,23 @@ The catalog does not provide the requested tracking measurement. StrengthLog see
 - stretching → seconds;
 - cardio → minutes, except walking/running → miles and stair/step exercises → steps.
 
-Current generated distribution:
+Reviewed overrides (2026-09-02): Plank, Balance Board, Battling Ropes, Mountain Climbers, Isometric Chest Squeezes, and both Isometric Neck Exercise entries use seconds. Superman, Toe Touchers, and Ankle Circles use repetitions. Other ambiguous or load-plus-duration candidates are unchanged.
+
+Every seconds-based entry has an explicit `defaultDurationSeconds`: 30 as the general fallback, shorter values where the reviewed instructions specify them, Plank 60, Stomach Vacuum and One Handed Hang 20, Isometric Chest Squeezes 10, and both neck-isometric entries 5. Targets are per hold/side/direction, not the sum of both sides. Defaults only seed fresh sets; recorded values are retained.
+
+Current distribution:
 
 | Unit | Exercises |
 | --- | ---: |
-| Pounds | 600 |
-| Repetitions | 136 |
-| Seconds | 123 |
+| Pounds | 598 |
+| Repetitions | 134 |
+| Seconds | 127 |
 | Minutes | 8 |
 | Miles | 4 |
 | Steps | 2 |
 | **Total** | **873** |
 
-These are deliberate defaults rather than claims about the only valid way to track an exercise. The current distribution is 600 pounds, 136 repetitions, 123 seconds, 8 minutes, 4 miles, and 2 steps. Confidence is high for weighted strength and stretching categories, moderate for bodyweight/plyometric classifications, and lower for a small number of mixed cardio or unusual movements. The master exercise unit can be corrected in exercise detail; routines never override it.
+These are deliberate defaults rather than claims about the only valid way to track an exercise. Category-based inference can misclassify dynamic mobility as timed stretching and equipment-based holds as pounds; further changes require per-entry review. The master exercise unit can be corrected in exercise detail; routines never override it.
 
 ## Media findings
 

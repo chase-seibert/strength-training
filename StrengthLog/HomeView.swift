@@ -151,7 +151,8 @@ struct HomeView: View {
 
   private var activityCard: some View {
     VStack(alignment: .leading, spacing: 12) {
-      ActivityGrid(sessions: sessions, routines: allRoutines, onReturnHome: onReturnHome)
+      ActivityGrid(
+        sessions: sessions, routines: allRoutines, catalog: catalog, onReturnHome: onReturnHome)
     }
     .padding()
     .background(.background, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
@@ -321,6 +322,7 @@ struct DeletedWorkoutsView: View {
 struct ActivityGrid: View {
   let sessions: [WorkoutSession]
   let routines: [Routine]
+  let catalog: [Exercise]
   let onReturnHome: () -> Void
   @State private var periodOffset = 0
   @State private var personalRecordCountsBySessionID: [UUID: Int] = [:]
@@ -489,7 +491,12 @@ struct ActivityGrid: View {
       }
       .id(periodOffset)
     }
-    .task(id: personalRecordHistoryRevision) {
+    .task(
+      id: ActivityGridRevision(
+        history: personalRecordHistoryRevision,
+        units: catalog.map { "\($0.id):\($0.unitRaw)" }
+      )
+    ) {
       personalRecordCountsBySessionID = Dictionary(
         grouping: PersonalRecords.achievements(in: sessions), by: \.sessionID
       ).mapValues(\.count)
@@ -528,6 +535,11 @@ struct ActivityGrid: View {
     }
     return String(words.first?.prefix(2) ?? "W").uppercased()
   }
+}
+
+private struct ActivityGridRevision: Hashable {
+  let history: [ActivityHistoryRevision]
+  let units: [String]
 }
 
 private struct ActivityHistoryRevision: Hashable {
@@ -1033,16 +1045,6 @@ private struct DayWorkoutSummaryView: View {
   private func setSummary(
     _ set: WorkoutSet, participant: ParticipantLog, unit: TrackingUnit
   ) -> String {
-    var parts: [String] = []
-    if let measurement = set.measurement
-      ?? (participant.measurement == 0 ? nil : participant.measurement)
-    {
-      parts.append("\(measurement.tidy) \(unit.label)")
-    }
-    if set.reps > 0 { parts.append("\(set.reps) reps") }
-    if let distance = set.distanceMiles { parts.append("\(distance.tidy) mi") }
-    if let duration = set.durationSeconds { parts.append("\(duration.tidy) sec") }
-    if let rpe = set.rpe { parts.append("RPE \(rpe.tidy)") }
-    return parts.isEmpty ? "No metrics" : parts.joined(separator: " × ")
+    set.summary(participant: participant, unit: unit)
   }
 }

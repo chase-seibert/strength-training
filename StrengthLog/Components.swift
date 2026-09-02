@@ -61,6 +61,12 @@ struct SelectAllTextField: UIViewRepresentable {
   }
 
   func updateUIView(_ textField: UITextField, context: Context) {
+    context.coordinator.update(self)
+    textField.accessibilityLabel = accessibilityLabel
+    textField.keyboardType = keyboardType
+    if let toolbar = textField.inputAccessoryView as? KeyboardAccessoryToolbar {
+      toolbar.update(step: step, minimumValue: minimumValue)
+    }
     if textField.text != text {
       textField.text = text
     }
@@ -94,6 +100,10 @@ struct SelectAllTextField: UIViewRepresentable {
       if let keyboardObserver {
         NotificationCenter.default.removeObserver(keyboardObserver)
       }
+    }
+
+    func update(_ parent: SelectAllTextField) {
+      self.parent = parent
     }
 
     @objc func textDidChange(_ textField: UITextField) {
@@ -133,8 +143,8 @@ struct SelectAllTextField: UIViewRepresentable {
 
 private final class KeyboardAccessoryToolbar: UIToolbar {
   private weak var textField: UITextField?
-  private let step: Double
-  private let minimumValue: Double
+  private var step: Double
+  private var minimumValue: Double
 
   init(textField: UITextField, step: Double, minimumValue: Double) {
     self.textField = textField
@@ -176,6 +186,11 @@ private final class KeyboardAccessoryToolbar: UIToolbar {
 
   required init?(coder: NSCoder) {
     fatalError("init(coder:) has not been implemented")
+  }
+
+  func update(step: Double, minimumValue: Double) {
+    self.step = step
+    self.minimumValue = minimumValue
   }
 
   @objc private func hideKeyboard() {

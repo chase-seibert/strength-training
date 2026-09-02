@@ -12,7 +12,7 @@ GENERIC_SIM_DESTINATION := generic/platform=iOS Simulator
 DEVICE_ID ?= 00008150-000E41422E40401C
 DEVELOPMENT_TEAM ?= 96NAC4VTEN
 
-.PHONY: setup build run format lint test catalog-check exercise-images-check bundle-exercise-images hevy-import-check sim-build sim-launch workout-navigation-ui-test active-workout-regression-ui-test active-workout-performance-ui-test phone-build phone-install phone-launch phone-deploy clean
+.PHONY: exercise-unit-ui-test setup build run format lint test catalog-check exercise-images-check bundle-exercise-images hevy-import-check sim-build sim-launch workout-navigation-ui-test active-workout-regression-ui-test active-workout-performance-ui-test phone-build phone-install phone-launch phone-deploy clean
 
 setup: catalog-check exercise-images-check
 
@@ -30,7 +30,7 @@ lint: catalog-check exercise-images-check hevy-import-check
 test: catalog-check exercise-images-check sim-build
 
 catalog-check:
-	@jq -e 'length == 873 and ([.[].imagePaths | length] | add) == 1746 and all(.[]; has("name") and has("unit") and has("instructions") and (.imagePaths | length == 2))' StrengthLog/Resources/exercise-catalog.json >/dev/null
+	@jq -e 'length == 873 and ([.[].imagePaths | length] | add) == 1746 and all(.[]; has("name") and has("unit") and has("instructions") and (.imagePaths | length == 2) and (if .unit == "seconds" then (.defaultDurationSeconds | type == "number" and . > 0 and . == floor) else (has("defaultDurationSeconds") | not) end))' StrengthLog/Resources/exercise-catalog.json >/dev/null
 	@echo "Catalog OK: 873 exercises, 1,746 image references"
 
 exercise-images-check:
@@ -80,6 +80,20 @@ workout-navigation-ui-test:
 	  CODE_SIGNING_ALLOWED=NO \
 	  -parallel-testing-enabled NO \
 	  -only-testing:StrengthLogUITests \
+	  test
+
+exercise-unit-ui-test:
+	xcodebuild \
+	  -project $(PROJECT) \
+	  -scheme $(SCHEME) \
+	  -configuration $(CONFIGURATION) \
+	  -destination '$(SIM_DESTINATION)' \
+	  -derivedDataPath build-ui-tests \
+	  CODE_SIGNING_ALLOWED=NO \
+	  -parallel-testing-enabled NO \
+	  -only-testing:StrengthLogUITests/WorkoutNavigationUITests/testPlankDefaultsAndMasterUnitEditingDuringWorkout \
+	  -only-testing:StrengthLogUITests/WorkoutNavigationUITests/testLibraryUnitEditUpdatesResumedWorkout \
+	  -only-testing:StrengthLogUITests/WorkoutNavigationUITests/testRapidRepEditPersistsWhenWorkoutCloses \
 	  test
 
 active-workout-regression-ui-test:

@@ -21,6 +21,7 @@ Prefer Makefile targets over ad hoc commands. Add recurring commands as Makefile
 - `make phone-deploy`: build, install, and launch on Chase's iPhone 17 Pro.
 - `make lint`: validate project/catalog structure and Swift formatting.
 - `make test`: validate the catalog and compile the complete app.
+- `make exercise-unit-ui-test`: verify live unit editing, catalog duration defaults, one-off unit corrections, and on-disk persistence.
 - `make format`: apply Apple's Swift formatter.
 
 ## Documentation index

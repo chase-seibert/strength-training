@@ -181,8 +181,10 @@ struct ExerciseDetailView: View {
         VStack(alignment: .leading, spacing: 10) {
           LabeledContent("Log each set", value: loggingTitle(for: exercise.unit))
             .font(.headline)
-          Text("Edit the exercise to change what each set records.")
-            .font(.caption).foregroundStyle(.secondary)
+          Text(
+            "Editing this unit updates every routine and workout, including the one in progress."
+          )
+          .font(.caption).foregroundStyle(.secondary)
         }
         .padding()
         .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 18))
@@ -407,6 +409,7 @@ private struct ExerciseEditorSheet: View {
   @Query(filter: #Predicate<Exercise> { $0.deletedAt == nil }) private var exercises: [Exercise]
   private let exercise: Exercise?
   private let duplicateSource: Exercise?
+  @State private var saveError: String?
   @State private var name = ""
   @State private var category = "strength"
   @State private var equipment = "other"
@@ -507,6 +510,7 @@ private struct ExerciseEditorSheet: View {
           Picker("Log each set by", selection: $unit) {
             ForEach(TrackingUnit.allCases) { Text(loggingTitle(for: $0)).tag($0) }
           }
+          .accessibilityIdentifier("exercise-unit-picker")
         } header: {
           Text("Workout logging")
         } footer: {
@@ -548,6 +552,16 @@ private struct ExerciseEditorSheet: View {
           Text("Add reminders such as stance, setup, or range of motion.")
         }
       }
+      .alert(
+        "Couldn’t save exercise",
+        isPresented: Binding(
+          get: { saveError != nil }, set: { if !$0 { saveError = nil } }
+        )
+      ) {
+        Button("OK") { saveError = nil }
+      } message: {
+        Text(saveError ?? "")
+      }
       .navigationTitle(title)
       .navigationBarTitleDisplayMode(.inline)
       .toolbar {
@@ -588,39 +602,44 @@ private struct ExerciseEditorSheet: View {
   }
 
   private func save() {
-    if let exercise {
-      let previousName = exercise.name
-      if exercise.originalName.isEmpty { exercise.originalName = previousName }
-      if exercise.rootExerciseID == nil { exercise.rootExerciseID = exercise.id }
-      exercise.name = trimmedName
-      exercise.category = category
-      exercise.equipment = equipment
-      exercise.primaryMuscle = muscle
-      exercise.unit = unit
-      exercise.instructions = instructions.trimmingCharacters(in: .whitespacesAndNewlines)
-      updateReferences(to: exercise, previouslyNamed: previousName)
-    } else {
-      let source = duplicateSource
-      let newExercise = Exercise(
-        originalName: source?.canonicalOriginalName,
-        rootExerciseID: source?.canonicalID,
-        name: trimmedName,
-        category: category,
-        equipment: equipment,
-        primaryMuscle: muscle,
-        unit: unit,
-        instructions: instructions.trimmingCharacters(in: .whitespacesAndNewlines),
-        imagePath: source?.imagePath,
-        additionalImagePaths: Array(source?.imagePaths.dropFirst() ?? []),
-        isCustom: true)
-      context.insert(newExercise)
+    do {
+      if let exercise {
+        let previousName = exercise.name
+        if exercise.originalName.isEmpty { exercise.originalName = previousName }
+        if exercise.rootExerciseID == nil { exercise.rootExerciseID = exercise.id }
+        exercise.name = trimmedName
+        exercise.category = category
+        exercise.equipment = equipment
+        exercise.primaryMuscle = muscle
+        exercise.unit = unit
+        exercise.instructions = instructions.trimmingCharacters(in: .whitespacesAndNewlines)
+        try updateReferences(to: exercise, previouslyNamed: previousName)
+      } else {
+        let source = duplicateSource
+        let newExercise = Exercise(
+          originalName: source?.canonicalOriginalName,
+          rootExerciseID: source?.canonicalID,
+          name: trimmedName,
+          category: category,
+          equipment: equipment,
+          primaryMuscle: muscle,
+          unit: unit,
+          instructions: instructions.trimmingCharacters(in: .whitespacesAndNewlines),
+          imagePath: source?.imagePath,
+          additionalImagePaths: Array(source?.imagePaths.dropFirst() ?? []),
+          isCustom: true)
+        context.insert(newExercise)
+      }
+      try context.save()
+      dismiss()
+    } catch {
+      saveError = error.localizedDescription
     }
-    try? context.save()
-    dismiss()
   }
 
-  private func updateReferences(to exercise: Exercise, previouslyNamed previousName: String) {
-    let routineExercises = (try? context.fetch(FetchDescriptor<RoutineExercise>())) ?? []
+  private func updateReferences(to exercise: Exercise, previouslyNamed previousName: String) throws
+  {
+    let routineExercises = try context.fetch(FetchDescriptor<RoutineExercise>())
     for reference in routineExercises
     where reference.exerciseID == exercise.id
       || (reference.exerciseID == nil
@@ -631,7 +650,7 @@ private struct ExerciseEditorSheet: View {
       reference.unitRaw = exercise.unit.rawValue
     }
 
-    let logs = (try? context.fetch(FetchDescriptor<ExerciseLog>())) ?? []
+    let logs = try context.fetch(FetchDescriptor<ExerciseLog>())
     for log in logs
     where log.exerciseID == exercise.id
       || (log.exerciseID == nil

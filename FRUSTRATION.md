@@ -21,3 +21,7 @@ Adding the nonoptional `WorkoutSet.isSkipped` property without a versioned Swift
   let XCTest's `app.launch()` become idle in a Debug simulator build. Keep interactive
   performance fixtures closer to 50 workouts and 12 active exercises, and model the
   production catalog separately with lightweight catalog-only records.
+
+## 2026-09-02 — Reused UIKit text fields retain stale unit metadata
+
+A live exercise-unit edit updated SwiftUI labels but the existing `SelectAllTextField` retained its original accessibility label and keyboard step size, causing the mid-workout unit regression test to fail. `UIViewRepresentable.updateUIView` must refresh the current coordinator input, accessibility label, and accessory-toolbar settings, not only the text. Verify unit edits without recreating the workout screen; a close-and-resume test alone misses this.

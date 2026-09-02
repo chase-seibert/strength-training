@@ -5,6 +5,11 @@
   @MainActor
   enum BasicWorkoutFixture {
     static func install(in context: ModelContext) {
+      if ProcessInfo.processInfo.arguments.contains("-validatePersistenceFixture") {
+        do { try HevyImportSmokeTest.run() } catch {
+          fatalError("Persistence fixture failed: \(error)")
+        }
+      }
       let usesLongNames = ProcessInfo.processInfo.arguments.contains(
         "-activeWorkoutLongNamesFixture")
       let alex = PersonProfile(
@@ -212,6 +217,19 @@
       context.insert(lowerRoutine)
       workoutHistory.forEach(context.insert)
       try? context.save()
+
+      if ProcessInfo.processInfo.arguments.contains("-plankWorkoutFixture") {
+        let plank = Exercise(
+          sourceID: "Plank", name: "Plank", category: "strength", equipment: "body only",
+          primaryMuscle: "abdominals", unit: .seconds, instructions: "Hold the plank.")
+        context.insert(plank)
+        let routine = Routine(
+          name: "Plank Workout", exercises: [RoutineExercise.make(exercise: plank, sortOrder: 0)])
+        context.insert(routine)
+        _ = WorkoutSessionStarter.start(
+          routine: routine, people: [alex], sessions: [], catalog: [plank], in: context)
+        return
+      }
 
       if ProcessInfo.processInfo.arguments.contains("-activeWorkoutFixture") {
         let activePeople: [PersonProfile]

@@ -9,18 +9,38 @@ enum SeedData {
     let equipment: String
     let primaryMuscle: String
     let unit: String
+    let defaultDurationSeconds: Int?
     let instructions: String
     let imagePaths: [String]
   }
 
+  // Immutable catalog metadata stays outside the user's SwiftData schema.
+  private static let catalog: Result<[CatalogEntry], Error> = Result {
+    guard let url = Bundle.main.url(forResource: "exercise-catalog", withExtension: "json") else {
+      throw CocoaError(.fileNoSuchFile)
+    }
+    return try JSONDecoder().decode([CatalogEntry].self, from: Data(contentsOf: url))
+  }
+
+  private static let durationDefaults: [String: Int] = {
+    guard let entries = try? catalog.get() else { return [:] }
+    return entries.reduce(into: [:]) { defaults, entry in
+      guard let seconds = entry.defaultDurationSeconds, seconds > 0 else { return }
+      defaults[entry.id] = seconds
+      defaults[entry.name] = seconds
+    }
+  }()
+
+  static func defaultDurationSeconds(sourceID: String?, originalName: String) -> Int {
+    if let sourceID, let seconds = durationDefaults[sourceID] { return seconds }
+    // Duplicates retain their original name even after being renamed.
+    return durationDefaults[originalName] ?? 30
+  }
+
   @MainActor
-  static func seedIfNeeded(in context: ModelContext) async {
-    let exerciseCount = (try? context.fetchCount(FetchDescriptor<Exercise>())) ?? 0
-    guard
-      let url = Bundle.main.url(forResource: "exercise-catalog", withExtension: "json"),
-      let data = try? Data(contentsOf: url),
-      let entries = try? JSONDecoder().decode([CatalogEntry].self, from: data)
-    else { return }
+  static func seedIfNeeded(in context: ModelContext) async throws {
+    let exerciseCount = try context.fetchCount(FetchDescriptor<Exercise>())
+    let entries = try catalog.get()
 
     if exerciseCount == 0 {
       for item in entries {
@@ -38,7 +58,7 @@ enum SeedData {
           ))
       }
     } else {
-      let existing = (try? context.fetch(FetchDescriptor<Exercise>())) ?? []
+      let existing = try context.fetch(FetchDescriptor<Exercise>())
       let bySourceID = Dictionary(
         uniqueKeysWithValues: existing.compactMap { exercise in
           exercise.sourceID.map { ($0, exercise) }
@@ -54,7 +74,54 @@ enum SeedData {
       normalizeStableExerciseIdentity(existing, in: context)
     }
 
-    try? context.save()
+    try context.save()
+    try correctPlankDefault(in: context)
+    try correctReviewedCatalogUnits(in: context)
+  }
+
+  /// Apply only the reviewed old defaults, leaving custom exercises and other unit choices alone.
+  @MainActor
+  static func correctReviewedCatalogUnits(
+    in context: ModelContext, defaults: UserDefaults = .standard
+  ) throws {
+    let key = "didCorrectReviewedCatalogUnitsV1"
+    guard !defaults.bool(forKey: key) else { return }
+    let corrections: [(String, TrackingUnit, TrackingUnit)] = [
+      ("Balance_Board", .pounds, .seconds),
+      ("Battling_Ropes", .pounds, .seconds),
+      ("Mountain_Climbers", .repetitions, .seconds),
+      ("Isometric_Chest_Squeezes", .repetitions, .seconds),
+      ("Isometric_Neck_Exercise_-_Front_And_Back", .repetitions, .seconds),
+      ("Isometric_Neck_Exercise_-_Sides", .repetitions, .seconds),
+      ("Superman", .seconds, .repetitions),
+      ("Toe_Touchers", .seconds, .repetitions),
+      ("Ankle_Circles", .seconds, .repetitions),
+    ]
+    for (sourceID, previousUnit, correctedUnit) in corrections {
+      let descriptor = FetchDescriptor<Exercise>(
+        predicate: #Predicate { $0.sourceID == sourceID })
+      for exercise in try context.fetch(descriptor)
+      where !exercise.isCustom && exercise.deletedAt == nil && exercise.unit == previousUnit {
+        exercise.unit = correctedUnit
+      }
+    }
+    try context.save()
+    defaults.set(true, forKey: key)
+  }
+
+  /// Correct the old bundled default once, without repeatedly overriding user edits.
+  @MainActor
+  static func correctPlankDefault(
+    in context: ModelContext, defaults: UserDefaults = .standard
+  ) throws {
+    let key = "didCorrectPlankSecondsDefaultV1"
+    guard !defaults.bool(forKey: key) else { return }
+    let descriptor = FetchDescriptor<Exercise>(predicate: #Predicate { $0.sourceID == "Plank" })
+    for exercise in try context.fetch(descriptor) where exercise.unit == .repetitions {
+      exercise.unit = .seconds
+    }
+    try context.save()
+    defaults.set(true, forKey: key)
   }
 
   private static func normalizeStableExerciseIdentity(

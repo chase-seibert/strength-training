@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-02
+
+- Corrected Balance Board, Battling Ropes, Mountain Climbers, and the three chest/neck isometric entries to seconds; corrected Superman, Toe Touchers, and Ankle Circles to reps, with a one-off existing-store update.
+- Added catalog-backed duration targets independent of the rep preference: 30 seconds generally, reviewed shorter holds from the instructions, 20 seconds for Stomach Vacuum and One Handed Hang, and the existing 60-second Plank default. Saved workout values and later unit edits remain intact.
+- Made master exercise units universal across routines, active workouts, history, and progress, with exercise-name navigation for mid-workout edits.
+- Corrected Plank to seconds with a 60-second default, preserving saved values and applying the old catalog correction only once.
+- Added duration-aware workout controls, last-set overrides, history summaries, and focused UI/on-disk persistence regression coverage.
+
 ## 2026-08-26
 
 - Created the initial SwiftUI and SwiftData StrengthLog application.

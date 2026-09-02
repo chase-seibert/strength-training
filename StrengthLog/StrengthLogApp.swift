@@ -4,6 +4,7 @@ import SwiftUI
 @main
 struct StrengthLogApp: App {
   @State private var importCoordinator = HevyImportCoordinator()
+  @State private var storageError: String?
   private let container: ModelContainer
 
   init() {
@@ -46,14 +47,28 @@ struct StrengthLogApp: App {
       AppRootView()
         .environment(importCoordinator)
         .onOpenURL { importCoordinator.open($0) }
+        .alert(
+          "Couldn’t update exercise data",
+          isPresented: Binding(
+            get: { storageError != nil }, set: { if !$0 { storageError = nil } }
+          )
+        ) {
+          Button("OK") { storageError = nil }
+        } message: {
+          Text(storageError ?? "")
+        }
         .task {
-          #if DEBUG
-            if !ProcessInfo.processInfo.arguments.contains("-basicWorkoutFixture") {
-              await SeedData.seedIfNeeded(in: container.mainContext)
-            }
-          #else
-            await SeedData.seedIfNeeded(in: container.mainContext)
-          #endif
+          do {
+            #if DEBUG
+              if !ProcessInfo.processInfo.arguments.contains("-basicWorkoutFixture") {
+                try await SeedData.seedIfNeeded(in: container.mainContext)
+              }
+            #else
+              try await SeedData.seedIfNeeded(in: container.mainContext)
+            #endif
+          } catch {
+            storageError = error.localizedDescription
+          }
           #if DEBUG
             if ProcessInfo.processInfo.arguments.contains("-runHevyImportSmokeTest") {
               do {

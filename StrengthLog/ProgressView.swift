@@ -435,16 +435,6 @@ struct SessionDetailView: View {
 
   private func setText(_ set: WorkoutSet, participant: ParticipantLog, unit: TrackingUnit) -> String
   {
-    var parts: [String] = []
-    if let measurement = set.measurement
-      ?? (participant.measurement == 0 ? nil : participant.measurement)
-    {
-      parts.append("\(measurement.tidy) \(unit.label)")
-    }
-    if set.reps > 0 { parts.append("\(set.reps) reps") }
-    if let distance = set.distanceMiles { parts.append("\(distance.tidy) mi") }
-    if let duration = set.durationSeconds { parts.append("\(duration.tidy) sec") }
-    if let rpe = set.rpe { parts.append("RPE \(rpe.tidy)") }
-    return parts.joined(separator: " × ") + (set.isCompleted ? " ✓" : " ○")
+    set.summary(participant: participant, unit: unit) + (set.isCompleted ? " ✓" : " ○")
   }
 }
