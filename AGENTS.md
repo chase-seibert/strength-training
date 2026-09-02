@@ -22,6 +22,7 @@ Prefer Makefile targets over ad hoc commands. Add recurring commands as Makefile
 - `make lint`: validate project/catalog structure and Swift formatting.
 - `make test`: validate the catalog and compile the complete app.
 - `make exercise-unit-ui-test`: verify live unit editing, catalog duration defaults, one-off unit corrections, and on-disk persistence.
+- `make workout-navigation-ui-test UI_TEST_FILTER=StrengthLogUITests/WorkoutNavigationUITests/testWorkoutReorderScreenSavesAndCancels`: verify compact workout reordering, Save/Cancel, and persistence. Set `UI_DERIVED_DATA=build-reorder-tests` to use a fresh test build directory when discovery is stale; verify a nonzero executed test count.
 - `make format`: apply Apple's Swift formatter.
 
 ## Documentation index

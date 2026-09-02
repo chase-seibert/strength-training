@@ -228,7 +228,7 @@ struct ActiveWorkoutView: View {
   @State private var showingExercisePicker = false
   @State private var showingMasterExercise = false
   @State private var detailExercise: Exercise?
-  @State private var editMode: EditMode = .inactive
+  @State private var showingReorder = false
   @State private var showingDeleteConfirmation = false
   @State private var didRestoreScrollPosition = false
   @State private var currentExerciseID: UUID?
@@ -260,17 +260,14 @@ struct ActiveWorkoutView: View {
           .listRowSeparator(.hidden)
           .listRowBackground(Color.clear)
         }
-        .onMove(perform: moveExercises)
 
         HStack(spacing: 10) {
-          workoutAction(
-            editMode.isEditing ? "Finish Reorder" : "Reorder",
-            systemImage: editMode.isEditing ? "checkmark" : "arrow.up.arrow.down"
-          ) {
-            withAnimation(.snappy) {
-              editMode = editMode.isEditing ? .inactive : .active
-            }
+          workoutAction("Reorder", systemImage: "arrow.up.arrow.down") {
+            flushPendingSave()
+            showingReorder = true
           }
+          .disabled(orderedExercises.count < 2)
+          .accessibilityIdentifier("reorder-workout-exercises")
           workoutAction("Add Exercise", systemImage: "plus") {
             showingExercisePicker = true
           }
@@ -316,7 +313,6 @@ struct ActiveWorkoutView: View {
       .listStyle(.plain)
       .scrollContentBackground(.hidden)
       .scrollDismissesKeyboard(.interactively)
-      .environment(\.editMode, $editMode)
       .background(Color(.systemGroupedBackground))
       .background(DismissKeyboardOnTap())
       .safeAreaInset(edge: .top, spacing: 0) {
@@ -404,6 +400,9 @@ struct ActiveWorkoutView: View {
     }
     .navigationDestination(isPresented: $showingMasterExercise) {
       if let detailExercise { ExerciseDetailView(exercise: detailExercise) }
+    }
+    .navigationDestination(isPresented: $showingReorder) {
+      WorkoutExerciseReorderView(session: session)
     }
     .environment(\.scheduleWorkoutSave, scheduleSave)
     .onAppear {
@@ -827,15 +826,6 @@ struct ActiveWorkoutView: View {
     .buttonStyle(.plain)
   }
 
-  private func moveExercises(from source: IndexSet, to destination: Int) {
-    var ordered = session.exercises.sorted(by: { $0.sortOrder < $1.sortOrder })
-    ordered.move(fromOffsets: source, toOffset: destination)
-    for (index, exercise) in ordered.enumerated() {
-      exercise.sortOrder = index
-    }
-    saveNow()
-  }
-
   private func loadSupportingDataIfNeeded() {
     guard !didLoadSupportingData else { return }
     didLoadSupportingData = true
@@ -911,6 +901,94 @@ struct ActiveWorkoutView: View {
       hasPendingSave = false
     } catch {
       hasPendingSave = true
+    }
+  }
+}
+
+private struct WorkoutExerciseReorderView: View {
+  private struct Row: Identifiable {
+    let id: UUID
+    let name: String
+  }
+
+  @Environment(\.dismiss) private var dismiss
+  @Environment(\.modelContext) private var context
+  let session: WorkoutSession
+  @State private var rows: [Row]
+  @State private var saveError: String?
+
+  init(session: WorkoutSession) {
+    self.session = session
+    _rows = State(
+      initialValue: session.exercises.sorted { $0.sortOrder < $1.sortOrder }
+        .map { Row(id: $0.id, name: $0.exerciseName) })
+  }
+
+  var body: some View {
+    List {
+      Section {
+        ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
+          HStack(spacing: 12) {
+            Text("\(index + 1)")
+              .font(.subheadline.monospacedDigit().weight(.semibold))
+              .foregroundStyle(Theme.coral)
+              .frame(minWidth: 24)
+            Text(row.name)
+              .font(.body.weight(.medium))
+              .lineLimit(2)
+              .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+          }
+          .padding(.vertical, 4)
+          .accessibilityElement(children: .ignore)
+          .accessibilityLabel(row.name)
+          .accessibilityValue("Position \(index + 1) of \(rows.count)")
+          .accessibilityIdentifier("reorder-exercise-\(row.name)")
+        }
+        .onMove { source, destination in
+          rows.move(fromOffsets: source, toOffset: destination)
+        }
+      } header: {
+        Text("\(rows.count) exercises · Drag handles to reorder")
+          .textCase(nil)
+      } footer: {
+        Text("Changes apply only to this workout.")
+      }
+    }
+    .listStyle(.plain)
+    .environment(\.editMode, .constant(.active))
+    .navigationTitle("Reorder Exercises")
+    .navigationBarTitleDisplayMode(.inline)
+    .navigationBarBackButtonHidden(true)
+    .toolbar(.hidden, for: .tabBar)
+    .toolbar {
+      ToolbarItem(placement: .cancellationAction) {
+        Button("Cancel") { dismiss() }
+          .accessibilityIdentifier("cancel-workout-reorder")
+      }
+      ToolbarItem(placement: .confirmationAction) {
+        Button("Save", action: save)
+          .fontWeight(.semibold)
+          .accessibilityIdentifier("save-workout-reorder")
+      }
+    }
+    .alert(
+      "Couldn’t save exercise order",
+      isPresented: Binding(
+        get: { saveError != nil }, set: { if !$0 { saveError = nil } })
+    ) {
+      Button("OK") { saveError = nil }
+    } message: {
+      Text(saveError ?? "")
+    }
+  }
+
+  private func save() {
+    do {
+      try session.saveExerciseOrder(rows.map(\.id), in: context)
+      dismiss()
+    } catch {
+      saveError = error.localizedDescription
     }
   }
 }

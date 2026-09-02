@@ -668,6 +668,78 @@ final class WorkoutNavigationUITests: XCTestCase {
     XCTAssertTrue(app.navigationBars["Barbell Back Squat"].waitForExistence(timeout: 3))
   }
 
+  func testWorkoutReorderScreenSavesAndCancels() {
+    app.terminate()
+    app.launchArguments = [
+      "-basicWorkoutFixture", "-activeWorkoutFixture", "-activeWorkoutNavigationFixture",
+      "-validatePersistenceFixture",
+    ]
+    app.launch()
+
+    let completedSet = app.buttons["participant-set-Alex-1"].firstMatch
+    XCTAssertTrue(completedSet.waitForExistence(timeout: 5))
+    completedSet.tap()
+
+    func openReorder() {
+      let button = app.buttons["reorder-workout-exercises"]
+      for _ in 0..<10 {
+        if button.isHittable { break }
+        app.collectionViews.firstMatch.swipeUp()
+      }
+      XCTAssertTrue(button.isHittable)
+      button.tap()
+      XCTAssertTrue(app.navigationBars["Reorder Exercises"].waitForExistence(timeout: 3))
+    }
+
+    func row(_ name: String) -> XCUIElement {
+      app.descendants(matching: .any).matching(identifier: "reorder-exercise-\(name)").firstMatch
+    }
+
+    func moveCurlToTop() {
+      let source = app.cells.containing(.any, identifier: "reorder-exercise-Fixture Custom Curl")
+        .firstMatch
+      let target = app.cells.containing(.any, identifier: "reorder-exercise-Bench Press").firstMatch
+      source.coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.5))
+        .press(
+          forDuration: 0.8,
+          thenDragTo: target.coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.2)))
+      XCTAssertTrue(
+        NSPredicate(format: "value == 'Position 1 of 3'").evaluate(
+          with: row("Fixture Custom Curl")))
+    }
+
+    openReorder()
+    for name in ["Bench Press", "Barbell Back Squat", "Fixture Custom Curl"] {
+      XCTAssertTrue(row(name).isHittable)
+    }
+    XCTAssertFalse(app.textFields["Pounds for Alex"].exists)
+    XCTAssertFalse(app.scrollViews["sticky-participant-picker"].exists)
+    let screenshot = XCTAttachment(screenshot: app.screenshot())
+    screenshot.name = "compact-workout-reorder"
+    screenshot.lifetime = .keepAlways
+    add(screenshot)
+    moveCurlToTop()
+    app.buttons["cancel-workout-reorder"].tap()
+
+    openReorder()
+    XCTAssertEqual(row("Bench Press").value as? String, "Position 1 of 3")
+    moveCurlToTop()
+    app.buttons["save-workout-reorder"].tap()
+    app.buttons["close-active-workout"].tap()
+    app.buttons["resume-active-workout"].tap()
+    XCTAssertTrue(app.navigationBars["Fixture Custom Curl"].waitForExistence(timeout: 5))
+    let next = app.buttons["next-exercise-Fixture Custom Curl"]
+    XCTAssertTrue(waitForHittable(next))
+    next.tap()
+    XCTAssertTrue(app.navigationBars["Bench Press"].waitForExistence(timeout: 3))
+    let preservedSet = app.buttons.matching(
+      NSPredicate(
+        format: "identifier == %@ AND label == %@", "participant-set-Alex-1",
+        "Remove completed Bench Press set 1")
+    ).firstMatch
+    XCTAssertTrue(preservedSet.waitForExistence(timeout: 3))
+  }
+
   func testCalendarOpensEveryWorkoutForSelectedDay() {
     let multiWorkoutDay = app.buttons.matching(
       NSPredicate(format: "label CONTAINS %@", "2 workouts")

@@ -39,6 +39,7 @@
 - As a lifter, I want always-visible previous/next exercise controls and strong completed styling, so that navigation and progress remain clear even when scrolling through many controls.
 - As a lifter, I want sets completed and removed in order, so that a workout never contains gaps such as a completed third set without a completed second set.
 - As a lifter, I want to add and reorder exercises while a workout is open, so that I can adapt the session without leaving it.
+- Workout reordering opens a dedicated, compact name-only list with numbered rows and native drag handles. Typical workouts fit on one screen; longer lists and larger text sizes can scroll. Save applies the order to the current workout only, Cancel discards the draft, and both preserve logged sets.
 - As a lifter, I want an open workout to replace the app navigation, so that tabs do not compete with the task at hand.
 - As a lifter, I want every workout edit saved as I make it and the freedom to close at any point, so that logging never depends on a finish ceremony.
 - As a lifter, I want to reopen any workout log directly, so that interruptions and later corrections are effortless.

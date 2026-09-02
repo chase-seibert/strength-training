@@ -503,6 +503,30 @@ final class WorkoutSession {
       .flatMap(\.sets).compactMap(\.completedAt).max()
   }
 
+  /// Reordering never replaces exercise logs or their sets, and a failed save restores the order.
+  func saveExerciseOrder(_ exerciseIDs: [UUID], in context: ModelContext) throws {
+    let byID = Dictionary(uniqueKeysWithValues: exercises.map { ($0.id, $0) })
+    guard exerciseIDs.count == byID.count, Set(exerciseIDs) == Set(byID.keys) else {
+      throw ExerciseOrderError.exercisesChanged
+    }
+    let previousOrder = exercises.map { ($0, $0.sortOrder) }
+    for (index, id) in exerciseIDs.enumerated() { byID[id]?.sortOrder = index }
+    do {
+      try context.save()
+    } catch {
+      for (exercise, sortOrder) in previousOrder { exercise.sortOrder = sortOrder }
+      throw error
+    }
+  }
+
+  private enum ExerciseOrderError: LocalizedError {
+    case exercisesChanged
+
+    var errorDescription: String? {
+      "The exercises in this workout changed. Cancel and reopen Reorder to try again."
+    }
+  }
+
   var workoutDuration: TimeInterval? {
     let endpoint = lastSetCompletedAt ?? endedAt
     guard let endpoint else { return nil }

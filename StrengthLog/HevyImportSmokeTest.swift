@@ -262,6 +262,32 @@
       customTimer.sourceID = nil
       customTimer.originalName = "New custom timer"
       guard customTimer.defaultTarget == 30 else { throw SmokeError.catalogDefaults }
+
+      // Reorder the existing disk-backed history without replacing its logs or recorded sets.
+      let oldOrder = history.exercises.sorted { $0.sortOrder < $1.sortOrder }.map(\.id)
+      var rejectedIncompleteOrder = false
+      do {
+        try history.saveExerciseOrder(Array(oldOrder.dropLast()), in: reopened.mainContext)
+      } catch {
+        rejectedIncompleteOrder = true
+      }
+      guard rejectedIncompleteOrder,
+        history.exercises.sorted(by: { $0.sortOrder < $1.sortOrder }).map(\.id) == oldOrder
+      else { throw SmokeError.exerciseOrder }
+      let newOrder = Array(oldOrder.reversed())
+      try history.saveExerciseOrder(newOrder, in: reopened.mainContext)
+      let reorderedContainer = try ModelContainer(for: schema, configurations: [configuration])
+      let reorderedSessions = try reorderedContainer.mainContext.fetch(
+        FetchDescriptor<WorkoutSession>())
+      guard let reordered = reorderedSessions.first(where: { $0.id == historyID }),
+        reordered.exercises.sorted(by: { $0.sortOrder < $1.sortOrder }).map(\.id) == newOrder
+      else { throw SmokeError.exerciseOrder }
+      for (index, exerciseID) in exerciseIDs.enumerated() {
+        guard let log = reordered.exercises.first(where: { $0.exerciseID == exerciseID }),
+          let set = log.participants.first?.sets.first,
+          set.id == setIDs[index], set.reps == 17, set.measurement == 42, set.isCompleted
+        else { throw SmokeError.exerciseOrder }
+      }
     }
 
     private static func verifyMasterUnitPersistence(schema: Schema) throws {
@@ -346,6 +372,7 @@
     case routineCollision
     case unitPersistence
     case catalogDefaults
+    case exerciseOrder
 
     var errorDescription: String? {
       switch self {
@@ -359,6 +386,8 @@
         "Master exercise units or recorded values failed the on-disk persistence check."
       case .catalogDefaults:
         "Catalog targets, unit corrections, or saved values failed the persistence check."
+      case .exerciseOrder:
+        "Exercise reordering failed to preserve the saved order, exercise logs, or sets."
       }
     }
   }

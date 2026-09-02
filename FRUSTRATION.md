@@ -1,5 +1,13 @@
 # Frustration log
 
+## 2026-09-02 — Xcode can report success after running zero filtered tests
+
+An incremental UI-test rerun printed `TEST SUCCEEDED` but executed zero tests, even though the requested test existed in the source and bundle. Check the executed test count or `xcresulttool get test-results summary`, not only the exit status. Running the same Makefile target with a fresh `UI_DERIVED_DATA=build-reorder-tests` directory rebuilt discovery and executed the test successfully; no simulator data reset was needed.
+
+## 2026-09-02 — Workout test selectors can match another exercise card
+
+Participant set controls reuse identifiers such as `participant-set-Alex-1` across exercise cards. After reordering, `.firstMatch` can select a different exercise even when the navigation title is correct. Scope assertions by the exercise-specific accessibility label as well as the identifier, or by the containing card; do not treat the first matching control as the current exercise.
+
 ## 2026-08-26 — Xcode tools fail inside the restricted shell sandbox
 
 An ordinary simulator build reported missing CoreSimulator runtimes, and SwiftData macros failed with `swift-plugin-server produced malformed response`. The app code was not the cause: both `actool` and Swift macro plugins require access denied by the shell sandbox. Re-running `xcodebuild` with the approved Xcode project prefix outside that sandbox restored simulator services and produced a successful full build.

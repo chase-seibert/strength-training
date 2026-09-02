@@ -8,6 +8,7 @@ BUNDLE_ID := com.cseibert.StrengthLog
 SIM_DEVICE_NAME ?= iPhone 17 Pro
 SIM_DESTINATION ?= platform=iOS Simulator,name=$(SIM_DEVICE_NAME)
 UI_TEST_FILTER ?= StrengthLogUITests
+UI_DERIVED_DATA ?= build-ui-tests
 GENERIC_SIM_DESTINATION := generic/platform=iOS Simulator
 
 DEVICE_ID ?= 00008150-000E41422E40401C
@@ -77,7 +78,7 @@ workout-navigation-ui-test:
 	  -scheme $(SCHEME) \
 	  -configuration $(CONFIGURATION) \
 	  -destination '$(SIM_DESTINATION)' \
-	  -derivedDataPath build-ui-tests \
+	  -derivedDataPath $(UI_DERIVED_DATA) \
 	  CODE_SIGNING_ALLOWED=NO \
 	  -parallel-testing-enabled NO \
 	  -only-testing:$(UI_TEST_FILTER) \
@@ -89,7 +90,7 @@ exercise-unit-ui-test:
 	  -scheme $(SCHEME) \
 	  -configuration $(CONFIGURATION) \
 	  -destination '$(SIM_DESTINATION)' \
-	  -derivedDataPath build-ui-tests \
+	  -derivedDataPath $(UI_DERIVED_DATA) \
 	  CODE_SIGNING_ALLOWED=NO \
 	  -parallel-testing-enabled NO \
 	  -only-testing:StrengthLogUITests/WorkoutNavigationUITests/testPlankDefaultsAndMasterUnitEditingDuringWorkout \
@@ -103,7 +104,7 @@ active-workout-regression-ui-test:
 	  -scheme $(SCHEME) \
 	  -configuration $(CONFIGURATION) \
 	  -destination '$(SIM_DESTINATION)' \
-	  -derivedDataPath build-ui-tests \
+	  -derivedDataPath $(UI_DERIVED_DATA) \
 	  CODE_SIGNING_ALLOWED=NO \
 	  -parallel-testing-enabled NO \
 	  -only-testing:StrengthLogUITests/WorkoutNavigationUITests/testExerciseArrowNavigationTracksCurrentExercise \
@@ -122,7 +123,7 @@ active-workout-performance-ui-test:
 	  -scheme $(SCHEME) \
 	  -configuration $(CONFIGURATION) \
 	  -destination '$(SIM_DESTINATION)' \
-	  -derivedDataPath build-ui-tests \
+	  -derivedDataPath $(UI_DERIVED_DATA) \
 	  CODE_SIGNING_ALLOWED=NO \
 	  -parallel-testing-enabled NO \
 	  -only-testing:StrengthLogUITests/WorkoutNavigationUITests/testActiveWorkoutScrollPerformance \
