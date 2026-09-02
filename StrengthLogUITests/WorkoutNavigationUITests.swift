@@ -64,12 +64,33 @@ final class WorkoutNavigationUITests: XCTestCase {
 
   func testLiveWorkoutHeaderShowsRestTimer() {
     app.terminate()
-    app.launchArguments = ["-basicWorkoutFixture", "-activeWorkoutFixture", "-restTimerFixture"]
+    app.launchArguments = [
+      "-basicWorkoutFixture", "-activeWorkoutFixture", "-restTimerFixture",
+      "-activeWorkoutNavigationFixture",
+    ]
     app.launch()
 
-    app.buttons["participant-set-Alex-1"].tap()
+    app.buttons.matching(
+      NSPredicate(
+        format: "identifier == %@ AND label == %@", "participant-set-Alex-1",
+        "Complete Bench Press set 1")
+    ).firstMatch.tap()
     XCTAssertTrue(app.otherElements["live-workout-header"].waitForExistence(timeout: 3))
-    XCTAssertTrue(app.buttons["Skip"].waitForExistence(timeout: 3))
+    let nextExercise = app.buttons["next-exercise-Bench Press"]
+    XCTAssertTrue(waitForHittable(nextExercise))
+    nextExercise.tap()
+    XCTAssertTrue(app.buttons["previous-exercise"].waitForExistence(timeout: 3))
+    let skip = app.buttons["Skip"]
+    XCTAssertTrue(skip.waitForExistence(timeout: 3))
+    XCTAssertTrue(skip.isHittable)
+    XCTAssertGreaterThanOrEqual(skip.frame.width, 44)
+    let screenshot = XCTAttachment(screenshot: app.screenshot())
+    screenshot.name = "rest-timer-full-skip-label"
+    screenshot.lifetime = .keepAlways
+    add(screenshot)
+    skip.tap()
+    XCTAssertTrue(skip.waitForNonExistence(timeout: 3))
+    XCTAssertFalse(app.otherElements["live-workout-header"].exists)
   }
 
   func testExerciseFilterMenuOrdersCustomAfterAllAndExcludesCatalogExercises() {

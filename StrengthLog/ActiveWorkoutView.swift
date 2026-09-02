@@ -160,6 +160,9 @@ private struct ActiveWorkoutToolbarTitle: View {
             .font(.caption.weight(.semibold))
             .buttonStyle(.bordered)
             .tint(Theme.coral)
+            // The timer text expands; reserve the button's full intrinsic width first.
+            .fixedSize(horizontal: true, vertical: false)
+            .layoutPriority(1)
         }
         .foregroundStyle(Theme.coral)
         .font(.headline.weight(.semibold))

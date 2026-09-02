@@ -2,6 +2,7 @@
 
 ## 2026-09-02
 
+- Kept the active rest timer's Skip button at its full width so the expanding countdown cannot truncate its label.
 - Replaced full-card workout reordering with a dedicated compact exercise list, drag handles, and Save/Cancel; saved order changes preserve all logged sets and leave the routine unchanged.
 - Simplified the Workout-page resume summary to show only completed sets, without a misleading total that includes empty extra sets.
 - Corrected Balance Board, Battling Ropes, Mountain Climbers, and the three chest/neck isometric entries to seconds; corrected Superman, Toe Touchers, and Ankle Circles to reps, with a one-off existing-store update.
