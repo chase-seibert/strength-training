@@ -9,6 +9,7 @@ enum SeedData {
     let equipment: String
     let primaryMuscle: String
     let unit: String
+    let repCountingMode: RepCountingMode?
     let defaultDurationSeconds: Int?
     let instructions: String
     let imagePaths: [String]
@@ -52,6 +53,7 @@ enum SeedData {
             equipment: item.equipment,
             primaryMuscle: item.primaryMuscle,
             unit: TrackingUnit(rawValue: item.unit) ?? .pounds,
+            repCountingMode: item.repCountingMode ?? .standard,
             instructions: item.instructions,
             imagePath: item.imagePaths.first,
             additionalImagePaths: Array(item.imagePaths.dropFirst())
@@ -75,8 +77,27 @@ enum SeedData {
     }
 
     try context.save()
+    try initializeRepCountingModes(in: context)
     try correctPlankDefault(in: context)
     try correctReviewedCatalogUnits(in: context)
+  }
+
+  /// Initialize only legacy nil values. Explicit Standard is a user choice, not "unset".
+  @MainActor
+  static func initializeRepCountingModes(in context: ModelContext) throws {
+    let modes = Dictionary(
+      uniqueKeysWithValues: try catalog.get().map {
+        ($0.id, $0.repCountingMode ?? .standard)
+      })
+    let legacy = try context.fetch(
+      FetchDescriptor<Exercise>(
+        predicate: #Predicate { $0.repCountingModeRaw == nil }))
+    for exercise in legacy {
+      exercise.repCountingMode =
+        !exercise.isCustom
+        ? exercise.sourceID.flatMap { modes[$0] } ?? .standard : .standard
+    }
+    try context.save()
   }
 
   /// Apply only the reviewed old defaults, leaving custom exercises and other unit choices alone.

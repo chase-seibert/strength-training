@@ -32,6 +32,26 @@ Plank defaults to seconds and a 60-second target when no prior workout value exi
 
 The bundled catalog now includes `defaultDurationSeconds` for every seconds-based entry. It is decoded once and looked up by stable source ID, with original-name fallback for duplicates/legacy records. These immutable defaults do not add fields to the SwiftData schema. `Exercise.defaultTarget` uses this metadata only for seconds, falling back to 30 for custom timers; other units retain their existing behavior. Saved history and legacy prescriptions still take precedence over fresh defaults. Static holds generally start at 30 seconds, with reviewed 10/15/20-second exceptions from their instructions. The six reviewed balance/rope/climber/isometric corrections and three seconds-to-reps corrections use a separate one-off migration flag, set only after saving. Only noncustom, nondeleted source records still matching the known old unit are changed; later edits are not reapplied. The existing data cannot distinguish an intentional choice of the old default from an untouched default. Persistence tests cover all nine corrections, catalog targets, custom unit choices, preserved set values/IDs/order, and reopening the store.
 
+### Rep counting
+
+`Exercise.repCountingMode` is a typed `standard`/`perSide` value backed by the nullable
+`repCountingModeRaw` SwiftData attribute. Only legacy nil fields receive catalog
+initialization; explicit choices are never overwritten. There is no per-routine or
+per-workout copy. Like units, `ExerciseLog` resolves it from the master model, including
+mid-workout edits and history. Timed and distance exercises ignore this rep-only setting.
+
+Targets remain the number entered: 7 per side means 7 left + 7 right, with one set
+completion after both sides. Shared pounds-volume calculations multiply per-side reps
+by two; rep records and PR values are not rewritten or doubled. This changes the
+interpretation of existing logs, so users should review settings if they previously
+logged total rather than per-side reps. See [the reviewed defaults](rep-counting-defaults.md)
+for the 76 catalog choices and exclusions.
+
+`make rep-counting-ui-test` runs live master-edit and disk-persistence checks. A Debug-only
+`-repCountingMigrationFixture` flag opens a separate named store and compares saved IDs,
+relationships, sort order, counts, targets, weights, and completion flags against a
+pre-change binary's snapshot; it never opens or resets the user's normal database.
+
 ## Hevy CSV import
 
 StrengthLog registers `public.comma-separated-values` as a document type and routes both shared files and the Settings file picker through `HevyImportCoordinator`. `HevyCSVParser` is an RFC 4180-style, dependency-free parser that normalizes mixed CRLF/LF line endings and accepts the Hevy workout columns shown in the product flow, including local or ISO timestamps, pounds or kilograms, miles/kilometers/meters, duration, set type, and RPE. The first `title` column is treated as the routine name; rows are grouped into workouts by title and start time, then into ordered exercises and sets.

@@ -2,6 +2,8 @@
 
 ## 2026-09-02
 
+- Added master-exercise `standard`/`perSide` rep counting, editable during workouts, with 76 reviewed catalog defaults. Rep labels, history, and pounds-volume totals now reflect both sides without rewriting saved targets or adding separate L/R completion controls.
+- Added an isolated old-store migration fixture and live-edit/on-disk regression coverage for rep-counting metadata, user overrides, and unchanged saved workout values.
 - Kept the active rest timer's Skip button at its full width so the expanding countdown cannot truncate its label.
 - Replaced full-card workout reordering with a dedicated compact exercise list, drag handles, and Save/Cancel; saved order changes preserve all logged sets and leave the routine unchanged.
 - Simplified the Workout-page resume summary to show only completed sets, without a misleading total that includes empty extra sets.

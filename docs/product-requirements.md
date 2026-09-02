@@ -30,7 +30,7 @@
 - As a family, we want up to three people visible together in one exercise matrix, with one shared set count and per-person completion controls, so that group workouts do not require horizontal scrolling.
 - As a lifter, I want to edit measurement/reps and add or remove sets while training, so that the log matches what actually happened.
 - As a lifter, I want editable numeric inputs plus large decrement and increment controls for measurements and reps, so that both exact and small changes are fast.
-- As a lifter, I want single-sided and alternating exercises to explain whether reps are per-side or split between sides, without doubling the controls.
+- As a lifter, I want a master-exercise rep-counting choice of `standard` or `perSide`, editable during a workout and shared across the app. Per-side targets apply equally to both sides with one completion after both; standard targets are total reps. No separate L/R controls or routine overrides.
 - As a lifter, I want one exercise-level history chart comparing every active person's weight and reps in their profile color, so that progression decisions stay in context without repeated icons.
 - As a lifter, I want large Remove Set and Add Set controls at the bottom of each exercise card, so that the shared set count stays easy to adjust without leaving a sparse band between participant controls.
 - As a lifter, I want to skip the last one or two sets for an individual person from their set-options menu, so that fatigue or time constraints do not require changing everyone else's plan.

@@ -216,17 +216,7 @@ struct ProgressView: View {
   }
 
   private func volume(for session: WorkoutSession, participantName: String) -> Double {
-    session.exercises.filter { $0.unit == .pounds }.flatMap(\.participants).reduce(0) {
-      total, participant in
-      guard participant.participantName.caseInsensitiveCompare(participantName) == .orderedSame
-      else {
-        return total
-      }
-      return total
-        + participant.sets.filter(\.isCompleted).reduce(0) {
-          $0 + Double($1.reps) * ($1.measurement ?? participant.measurement)
-        }
-    }
+    session.exercises.reduce(0) { $0 + $1.completedPoundsVolume(for: participantName) }
   }
 
   private func colorHex(for name: String) -> String {
@@ -369,7 +359,7 @@ struct SessionDetailView: View {
               Text(participant.participantName).font(.subheadline.bold())
               ForEach(participant.sets.sorted(by: { $0.sortOrder < $1.sortOrder })) { set in
                 HStack(spacing: 5) {
-                  Text(setText(set, participant: participant, unit: exercise.unit))
+                  Text(setText(set, participant: participant, exercise: exercise))
                     .font(.caption.monospacedDigit())
                     .foregroundStyle(.secondary)
                   if personalRecordSetIDs.contains(set.id) {
@@ -433,8 +423,11 @@ struct SessionDetailView: View {
     routines.first(where: { $0.id == session.routineID })?.name ?? "Unknown Routine"
   }
 
-  private func setText(_ set: WorkoutSet, participant: ParticipantLog, unit: TrackingUnit) -> String
+  private func setText(_ set: WorkoutSet, participant: ParticipantLog, exercise: ExerciseLog)
+    -> String
   {
-    set.summary(participant: participant, unit: unit) + (set.isCompleted ? " ✓" : " ○")
+    set.summary(
+      participant: participant, unit: exercise.unit, repCountingMode: exercise.repCountingMode)
+      + (set.isCompleted ? " ✓" : " ○")
   }
 }

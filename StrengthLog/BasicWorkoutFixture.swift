@@ -36,6 +36,10 @@
         unit: .pounds,
         instructions: "Keep the elbow still while curling.",
         isCustom: true)
+      if ProcessInfo.processInfo.arguments.contains("-repCountingMigrationFixture") {
+        benchPress.sourceID = "Cable_Russian_Twists"
+        benchPress.name = "Cable Russian Twists"
+      }
       let squat = Exercise(
         sourceID: "fixture-back-squat",
         name: "Barbell Back Squat",
@@ -218,6 +222,20 @@
       workoutHistory.forEach(context.insert)
       try? context.save()
 
+      if ProcessInfo.processInfo.arguments.contains("-repCountingWorkoutFixture") {
+        let twists = Exercise(
+          sourceID: "Cable_Russian_Twists", name: "Cable Russian Twists", category: "strength",
+          equipment: "cable", primaryMuscle: "abdominals", unit: .pounds,
+          repCountingMode: .perSide, instructions: "Repeat on the opposite side.")
+        context.insert(twists)
+        let routine = Routine(
+          name: "Cable Workout", exercises: [RoutineExercise.make(exercise: twists, sortOrder: 0)])
+        context.insert(routine)
+        _ = WorkoutSessionStarter.start(
+          routine: routine, people: [alex, jordan], sessions: [], catalog: [twists], in: context)
+        return
+      }
+
       if ProcessInfo.processInfo.arguments.contains("-plankWorkoutFixture") {
         let plank = Exercise(
           sourceID: "Plank", name: "Plank", category: "strength", equipment: "body only",
@@ -310,6 +328,67 @@
           }
           try? context.save()
         }
+      }
+    }
+
+    /// Run once with the pre-change binary and again after installing the new binary.
+    /// The snapshot intentionally excludes newly added fields, but includes saved identities,
+    /// relationships, ordering, targets, weights, and completion state.
+    static func verifyMigrationSnapshot(in context: ModelContext, storeURL: URL) throws {
+      try context.save()
+      var rows: [String] = []
+      for x in try context.fetch(FetchDescriptor<Exercise>()) {
+        rows.append("exercise|\(x.id)|\(x.sourceID ?? "")|\(x.name)|\(x.unitRaw)")
+      }
+      for x in try context.fetch(FetchDescriptor<PersonProfile>()) {
+        rows.append("person|\(x.id)|\(x.name)|\(x.sortOrder)")
+      }
+      for x in try context.fetch(FetchDescriptor<Routine>()) {
+        rows.append(
+          "routine|\(x.id)|\(x.name)|\(x.exercises.map(\.id).sorted(by: { $0.uuidString < $1.uuidString }))"
+        )
+      }
+      for x in try context.fetch(FetchDescriptor<RoutineExercise>()) {
+        rows.append(
+          "reference|\(x.id)|\(String(describing: x.exerciseID))|\(x.sortOrder)|\(x.prescriptions.map(\.id).sorted(by: { $0.uuidString < $1.uuidString }))"
+        )
+      }
+      for x in try context.fetch(FetchDescriptor<Prescription>()) {
+        rows.append(
+          "prescription|\(x.id)|\(x.participantName)|\(x.measurement)|\(x.sets.map(\.id).sorted(by: { $0.uuidString < $1.uuidString }))"
+        )
+      }
+      for x in try context.fetch(FetchDescriptor<SetTemplate>()) {
+        rows.append("template|\(x.id)|\(x.sortOrder)|\(x.reps)")
+      }
+      for x in try context.fetch(FetchDescriptor<WorkoutSession>()) {
+        rows.append(
+          "session|\(x.id)|\(x.routineID)|\(x.isActive)|\(x.participantNames)|\(x.exercises.map(\.id).sorted(by: { $0.uuidString < $1.uuidString }))"
+        )
+      }
+      for x in try context.fetch(FetchDescriptor<ExerciseLog>()) {
+        rows.append(
+          "log|\(x.id)|\(String(describing: x.exerciseID))|\(x.sortOrder)|\(x.participants.map(\.id).sorted(by: { $0.uuidString < $1.uuidString }))"
+        )
+      }
+      for x in try context.fetch(FetchDescriptor<ParticipantLog>()) {
+        rows.append(
+          "participant|\(x.id)|\(x.participantName)|\(x.measurement)|\(x.sets.map(\.id).sorted(by: { $0.uuidString < $1.uuidString }))"
+        )
+      }
+      for x in try context.fetch(FetchDescriptor<WorkoutSet>()) {
+        rows.append(
+          "set|\(x.id)|\(x.sortOrder)|\(x.reps)|\(x.isCompleted)|\(x.isSkipped)|\(String(describing: x.measurement))|\(String(describing: x.durationSeconds))"
+        )
+      }
+      let snapshot = rows.sorted().joined(separator: "\n")
+      let url = storeURL.appendingPathExtension("snapshot.txt")
+      if FileManager.default.fileExists(atPath: url.path) {
+        guard try String(contentsOf: url, encoding: .utf8) == snapshot else {
+          throw CocoaError(.validationMissingMandatoryProperty)
+        }
+      } else {
+        try snapshot.write(to: url, atomically: true, encoding: .utf8)
       }
     }
 

@@ -107,6 +107,117 @@
       }
       try verifyMasterUnitPersistence(schema: schema)
       try verifyCatalogDefaultsAndCorrections(schema: schema)
+      try verifyRepCountingPersistence(schema: schema)
+    }
+
+    private static func verifyRepCountingPersistence(schema: Schema) throws {
+      let directory = FileManager.default.temporaryDirectory.appendingPathComponent(
+        UUID().uuidString)
+      try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+      defer { try? FileManager.default.removeItem(at: directory) }
+      let configuration = ModelConfiguration(
+        schema: schema, url: directory.appendingPathComponent("reps.store"), cloudKitDatabase: .none
+      )
+      let sessionID: UUID
+      let setID: UUID
+      let exerciseID: UUID
+      do {
+        let container = try ModelContainer(for: schema, configurations: [configuration])
+        let context = container.mainContext
+        func exercise(_ source: String, custom: Bool = false) -> Exercise {
+          let result = Exercise(
+            sourceID: source, name: source, category: "strength", equipment: "cable",
+            primaryMuscle: "abdominals", unit: .pounds, instructions: "", isCustom: custom)
+          result.repCountingModeRaw = nil  // Simulate the absence of this field in old records.
+          context.insert(result)
+          return result
+        }
+        let cable = exercise("Cable_Russian_Twists")
+        cable.name = "Renamed cable twists"
+        let userChoice = exercise("One-Arm_Dumbbell_Row")
+        userChoice.repCountingMode = .standard
+        let custom = exercise("Standing_Cable_Lift", custom: true)
+        let alternating = exercise("Single-Arm_Cable_Crossover")
+        let set = WorkoutSet(sortOrder: 0, reps: 7, isCompleted: true, measurement: 20)
+        let skipped = WorkoutSet(sortOrder: 1, reps: 100, isCompleted: true, isSkipped: true)
+        let participant = ParticipantLog(
+          participantName: "Tester", measurement: 10, sets: [set, skipped])
+        let log = ExerciseLog(
+          exerciseID: cable.id, exerciseName: cable.name, unit: .pounds,
+          sortOrder: 0, participants: [participant])
+        let session = WorkoutSession(
+          routineID: UUID(), participantNames: ["Tester"], exercises: [log])
+        context.insert(session)
+        try context.save()
+        sessionID = session.id
+        exerciseID = cable.id
+        setID = set.id
+        guard log.repCountingMode == .standard, log.completedPoundsVolume(for: "Tester") == 140
+        else {
+          throw SmokeError.repCounting
+        }
+        try SeedData.initializeRepCountingModes(in: context)
+        guard log.repCountingMode == .perSide, cable.repCountingModeRaw == "perSide",
+          userChoice.repCountingMode == .standard, custom.repCountingModeRaw == "standard",
+          alternating.repCountingMode == .standard,
+          log.completedPoundsVolume(for: "tester") == 280,
+          log.completedPoundsVolume(for: "Other person") == 0,
+          set.summary(
+            participant: participant, unit: log.unit, repCountingMode: log.repCountingMode)
+            == "20 lb × 7 reps/side"
+        else { throw SmokeError.repCounting }
+        let celebration = WorkoutCelebrationSummary.make(
+          session: session, allSessions: [session], routineName: "Test", colorHexByName: [:])
+        guard celebration.totalVolume == 280, celebration.people.first?.completedSetCount == 1
+        else {
+          throw SmokeError.repCounting
+        }
+        cable.repCountingMode = .standard
+        try SeedData.initializeRepCountingModes(in: context)
+        guard log.repCountingMode == .standard, set.reps == 7, set.isCompleted else {
+          throw SmokeError.repCounting
+        }
+        cable.repCountingMode = .perSide
+        cable.unit = .repetitions
+        guard log.targetLabel == "reps/side",
+          set.summary(
+            participant: participant, unit: log.unit, repCountingMode: log.repCountingMode)
+            == "7 reps/side",
+          PersonalRecords.value(for: set, participant: participant, unit: log.unit) == 7
+        else { throw SmokeError.repCounting }
+        let repRecord = WorkoutCelebrationSummary.make(
+          session: session, allSessions: [session], routineName: "Test", colorHexByName: [:])
+        guard repRecord.people.first?.personalRecords.first?.unitLabel == "reps/side" else {
+          throw SmokeError.repCounting
+        }
+        cable.unit = .seconds
+        guard log.targetLabel == "sec", log.completedPoundsVolume() == 0 else {
+          throw SmokeError.repCounting
+        }
+        cable.unit = .pounds
+        let duplicate = Exercise(
+          originalName: cable.canonicalOriginalName, rootExerciseID: cable.id,
+          name: "Copy", category: cable.category, equipment: cable.equipment,
+          primaryMuscle: cable.primaryMuscle, unit: cable.unit,
+          repCountingMode: cable.repCountingMode, instructions: "", isCustom: true)
+        context.insert(duplicate)
+        duplicate.repCountingMode = .standard
+        guard log.repCountingMode == .perSide else { throw SmokeError.repCounting }
+        let orphan = ExerciseLog(
+          exerciseName: "Unknown", unit: .pounds, sortOrder: 1, participants: [])
+        context.insert(orphan)
+        guard orphan.repCountingMode == .standard else { throw SmokeError.repCounting }
+        try context.save()
+      }
+      let reopened = try ModelContainer(for: schema, configurations: [configuration])
+      try SeedData.initializeRepCountingModes(in: reopened.mainContext)
+      let sessions = try reopened.mainContext.fetch(FetchDescriptor<WorkoutSession>())
+      guard let session = sessions.first(where: { $0.id == sessionID }),
+        let log = session.exercises.first, let set = log.participants.first?.orderedSets.first,
+        log.exerciseID == exerciseID, log.repCountingMode == .perSide,
+        log.completedPoundsVolume() == 280, set.id == setID, set.reps == 7, set.isCompleted,
+        log.participants.first?.sets.count == 2
+      else { throw SmokeError.repCounting }
     }
 
     private static func verifyCatalogDefaultsAndCorrections(schema: Schema) throws {
@@ -373,6 +484,7 @@
     case unitPersistence
     case catalogDefaults
     case exerciseOrder
+    case repCounting
 
     var errorDescription: String? {
       switch self {
@@ -388,6 +500,8 @@
         "Catalog targets, unit corrections, or saved values failed the persistence check."
       case .exerciseOrder:
         "Exercise reordering failed to preserve the saved order, exercise logs, or sets."
+      case .repCounting:
+        "Master rep-counting defaults, live resolution, volume, or disk persistence failed."
       }
     }
   }

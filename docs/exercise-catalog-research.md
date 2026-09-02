@@ -46,6 +46,14 @@ Current distribution:
 
 These are deliberate defaults rather than claims about the only valid way to track an exercise. Category-based inference can misclassify dynamic mobility as timed stretching and equipment-based holds as pounds; further changes require per-entry review. The master exercise unit can be corrected in exercise detail; routines never override it.
 
+## Rep counting
+
+The master exercise also has an editable `standard`/`perSide` counting mode. The
+[reviewed per-side defaults](rep-counting-defaults.md) cover 76 fixed-side exercises;
+797 entries remain standard. These are explicit catalog values, not a live name
+heuristic. Rep-based controls, history summaries, and volume calculations resolve
+the current master setting. Existing numeric targets are preserved.
+
 ## Media findings
 
 - Free Exercise DB's two-position photos are sufficient for recognition and a basic start/end pose reference. They are not video, do not demonstrate tempo, and vary in visual style/quality.

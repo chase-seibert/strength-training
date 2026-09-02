@@ -181,8 +181,17 @@ struct ExerciseDetailView: View {
         VStack(alignment: .leading, spacing: 10) {
           LabeledContent("Log each set", value: loggingTitle(for: exercise.unit))
             .font(.headline)
+          if exercise.unit.usesReps {
+            LabeledContent("Rep counting", value: exercise.repCountingMode.title)
+              .accessibilityElement(children: .ignore)
+              .accessibilityLabel("Rep counting")
+              .accessibilityValue(exercise.repCountingMode.title)
+              .accessibilityIdentifier("exercise-rep-counting")
+            Text(exercise.repCountingMode.explanation)
+              .font(.caption).foregroundStyle(.secondary)
+          }
           Text(
-            "Editing this unit updates every routine and workout, including the one in progress."
+            "Editing these settings updates every routine and workout, including the one in progress."
           )
           .font(.caption).foregroundStyle(.secondary)
         }
@@ -415,6 +424,7 @@ private struct ExerciseEditorSheet: View {
   @State private var equipment = "other"
   @State private var muscle = "other"
   @State private var unit: TrackingUnit = .pounds
+  @State private var repCountingMode: RepCountingMode = .standard
   @State private var instructions = ""
 
   private static let muscles = [
@@ -444,6 +454,7 @@ private struct ExerciseEditorSheet: View {
     _equipment = State(initialValue: exercise.equipment)
     _muscle = State(initialValue: exercise.primaryMuscle)
     _unit = State(initialValue: exercise.unit)
+    _repCountingMode = State(initialValue: exercise.repCountingMode)
     _instructions = State(initialValue: exercise.instructions)
   }
 
@@ -455,6 +466,7 @@ private struct ExerciseEditorSheet: View {
     _equipment = State(initialValue: source.equipment)
     _muscle = State(initialValue: source.primaryMuscle)
     _unit = State(initialValue: source.unit)
+    _repCountingMode = State(initialValue: source.repCountingMode)
     _instructions = State(initialValue: source.instructions)
   }
 
@@ -511,10 +523,21 @@ private struct ExerciseEditorSheet: View {
             ForEach(TrackingUnit.allCases) { Text(loggingTitle(for: $0)).tag($0) }
           }
           .accessibilityIdentifier("exercise-unit-picker")
+          if unit.usesReps {
+            Picker("Rep counting", selection: $repCountingMode) {
+              ForEach(RepCountingMode.allCases) { Text($0.title).tag($0) }
+            }
+            .accessibilityIdentifier("exercise-rep-counting-picker")
+          }
         } header: {
           Text("Workout logging")
         } footer: {
           Text(trackingExplanation)
+          if unit.usesReps {
+            Text(
+              repCountingMode.explanation
+                + " Applies to every routine and workout, including history.")
+          }
         }
 
         Section {
@@ -612,6 +635,7 @@ private struct ExerciseEditorSheet: View {
         exercise.equipment = equipment
         exercise.primaryMuscle = muscle
         exercise.unit = unit
+        exercise.repCountingMode = repCountingMode
         exercise.instructions = instructions.trimmingCharacters(in: .whitespacesAndNewlines)
         try updateReferences(to: exercise, previouslyNamed: previousName)
       } else {
@@ -624,6 +648,7 @@ private struct ExerciseEditorSheet: View {
           equipment: equipment,
           primaryMuscle: muscle,
           unit: unit,
+          repCountingMode: repCountingMode,
           instructions: instructions.trimmingCharacters(in: .whitespacesAndNewlines),
           imagePath: source?.imagePath,
           additionalImagePaths: Array(source?.imagePaths.dropFirst() ?? []),

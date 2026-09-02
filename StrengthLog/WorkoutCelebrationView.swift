@@ -70,7 +70,7 @@ struct WorkoutCelebrationSummary: Identifiable {
             value: achievement.value,
             unitLabel: session.exercises.first {
               PersonalRecords.key(for: $0) == achievement.exerciseKey
-            }?.unit.label ?? "lb")
+            }.map { $0.unit == .repetitions ? $0.targetLabel : $0.unit.label } ?? "lb")
         }
       let personSessions = recentSessions.filter {
         $0.isParticipantActive(name)
@@ -117,16 +117,7 @@ struct WorkoutCelebrationSummary: Identifiable {
   }
 
   private static func poundsVolume(in session: WorkoutSession, for name: String) -> Double {
-    session.exercises.filter { $0.unit == .pounds }.flatMap(\.participants).reduce(0) {
-      total, participant in
-      guard participant.participantName.caseInsensitiveCompare(name) == .orderedSame else {
-        return total
-      }
-      return total
-        + participant.sets.filter { $0.isCompleted && !$0.isSkipped }.reduce(0) {
-          $0 + Double($1.reps) * ($1.measurement ?? participant.measurement)
-        }
-    }
+    session.exercises.reduce(0) { $0 + $1.completedPoundsVolume(for: name) }
   }
 
   private static func completedSetCount(in session: WorkoutSession, for name: String) -> Int {

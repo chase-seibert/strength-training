@@ -117,6 +117,8 @@ final class WorkoutNavigationUITests: XCTestCase {
     XCTAssertTrue(originalRow.waitForExistence(timeout: 5))
     originalRow.tap()
 
+    changeRepCounting(to: "Per side")
+
     let editButton = app.buttons["Edit"]
     XCTAssertTrue(editButton.waitForExistence(timeout: 3))
     editButton.tap()
@@ -146,6 +148,10 @@ final class WorkoutNavigationUITests: XCTestCase {
     XCTAssertTrue(duplicateRow.waitForExistence(timeout: 3))
     duplicateRow.tap()
     XCTAssertTrue(app.staticTexts["Duplicate of Bench Press"].waitForExistence(timeout: 3))
+    XCTAssertEqual(
+      app.descendants(matching: .any).matching(identifier: "exercise-rep-counting").firstMatch.value
+        as? String,
+      "Per side")
 
     app.tabBars.buttons["Routines"].tap()
     let routine = app.staticTexts["Basic Workout"]
@@ -250,6 +256,65 @@ final class WorkoutNavigationUITests: XCTestCase {
     XCTAssertEqual(seconds.value as? String, "8")
     XCTAssertFalse(app.textFields["Pounds for Alex"].exists)
     XCTAssertFalse(app.textFields["Base reps for Alex"].exists)
+  }
+
+  func testRepCountingUpdatesRunningWorkout() {
+    app.terminate()
+    app.launchArguments = [
+      "-basicWorkoutFixture", "-repCountingWorkoutFixture", "-validatePersistenceFixture",
+    ]
+    app.launch()
+    let perSide = app.textFields["Base reps/side for Alex"]
+    XCTAssertTrue(perSide.waitForExistence(timeout: 5))
+    XCTAssertTrue(app.textFields["Base reps/side for Jordan"].exists)
+    XCTAssertEqual(perSide.value as? String, "8")
+    app.buttons["base-reps-minus-Alex"].tap()
+    XCTAssertEqual(perSide.value as? String, "7")  // Odd counts are valid on each side.
+    app.buttons["participant-set-Alex-1"].tap()
+    XCTAssertEqual(
+      app.buttons["participant-set-Alex-1"].label, "Remove completed Cable Russian Twists set 1")
+    app.buttons["last-set-menu-Alex"].tap()
+    app.buttons["Customize Last Set…"].tap()
+    XCTAssertTrue(
+      app.textFields["Last set reps/side for Cable Russian Twists"].waitForExistence(timeout: 3))
+    app.buttons["Done"].tap()
+
+    // Tapping the name edits the one master, without closing/recreating the workout.
+    app.buttons["exercise-details-Cable Russian Twists"].tap()
+    changeRepCounting(to: "Standard")
+    app.navigationBars.buttons.element(boundBy: 0).tap()
+    let standard = app.textFields["Base reps for Alex"]
+    XCTAssertTrue(standard.waitForExistence(timeout: 5))
+    XCTAssertEqual(standard.value as? String, "7")
+    XCTAssertTrue(app.textFields["Base reps for Jordan"].exists)
+    XCTAssertEqual(
+      app.buttons["participant-set-Alex-1"].label, "Remove completed Cable Russian Twists set 1")
+
+    // Editing from the library also updates the resumed workout.
+    app.buttons["close-active-workout"].tap()
+    app.tabBars.buttons["Exercises"].tap()
+    app.buttons["exercise-Cable Russian Twists"].tap()
+    changeRepCounting(to: "Per side")
+    app.tabBars.buttons["Workout"].tap()
+    app.buttons["resume-active-workout"].tap()
+    XCTAssertTrue(perSide.waitForExistence(timeout: 5))
+    XCTAssertEqual(perSide.value as? String, "7")
+    XCTAssertEqual(
+      app.buttons["participant-set-Alex-1"].label, "Remove completed Cable Russian Twists set 1")
+    let screenshot = XCTAttachment(screenshot: app.screenshot())
+    screenshot.name = "per-side-after-master-edit"
+    screenshot.lifetime = .keepAlways
+    add(screenshot)
+  }
+
+  private func changeRepCounting(to title: String) {
+    let edit = app.buttons["Edit"]
+    XCTAssertTrue(edit.waitForExistence(timeout: 3))
+    edit.tap()
+    app.buttons["exercise-rep-counting-picker"].tap()
+    app.buttons[title].tap()
+    app.buttons["Save"].tap()
+    XCTAssertTrue(edit.waitForExistence(timeout: 3))
   }
 
   private func changeExerciseUnit(to title: String) {

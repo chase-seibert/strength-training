@@ -27,8 +27,14 @@ struct StrengthLogApp: App {
     #else
       let usesBasicWorkoutFixture = false
     #endif
-    let configuration = ModelConfiguration(
+    var configuration = ModelConfiguration(
       schema: schema, isStoredInMemoryOnly: usesBasicWorkoutFixture)
+    #if DEBUG
+      if ProcessInfo.processInfo.arguments.contains("-repCountingMigrationFixture") {
+        // A separate disposable store, never the user's normal workout database.
+        configuration = ModelConfiguration("RepCountingMigrationFixture", schema: schema)
+      }
+    #endif
     do {
       container = try ModelContainer(for: schema, configurations: [configuration])
     } catch {
@@ -36,7 +42,23 @@ struct StrengthLogApp: App {
     }
 
     #if DEBUG
-      if usesBasicWorkoutFixture {
+      if ProcessInfo.processInfo.arguments.contains("-repCountingMigrationFixture") {
+        do {
+          if try container.mainContext.fetchCount(FetchDescriptor<Exercise>()) == 0 {
+            BasicWorkoutFixture.install(in: container.mainContext)
+          }
+          try BasicWorkoutFixture.verifyMigrationSnapshot(
+            in: container.mainContext, storeURL: configuration.url)
+          try SeedData.initializeRepCountingModes(in: container.mainContext)
+          try BasicWorkoutFixture.verifyMigrationSnapshot(
+            in: container.mainContext, storeURL: configuration.url)
+          try "Rep-counting migration verified".write(
+            to: configuration.url.appendingPathExtension("rep-counting-verified.txt"),
+            atomically: true, encoding: .utf8)
+        } catch {
+          fatalError("Migration fixture failed: \(error)")
+        }
+      } else if usesBasicWorkoutFixture {
         BasicWorkoutFixture.install(in: container.mainContext)
       }
     #endif

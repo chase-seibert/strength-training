@@ -213,6 +213,25 @@ extension PersonProfile {
   }
 }
 
+enum RepCountingMode: String, Codable, CaseIterable, Identifiable {
+  case standard
+  case perSide
+
+  var id: String { rawValue }
+  var title: String { self == .perSide ? "Per side" : "Standard" }
+  var explanation: String {
+    self == .perSide
+      ? "8 means 8 on each side. Complete the set after both sides."
+      : "8 means 8 reps total, including alternating movements."
+  }
+}
+
+extension TrackingUnit {
+  func targetLabel(repCountingMode: RepCountingMode) -> String {
+    usesReps && repCountingMode == .perSide ? "reps/side" : targetLabel
+  }
+}
+
 @Model
 final class Exercise {
   var id: UUID
@@ -226,6 +245,9 @@ final class Exercise {
   var equipment: String
   var primaryMuscle: String
   var unitRaw: String
+  // Nil identifies pre-feature records for a one-time catalog backfill. Optional so existing
+  // SwiftData stores can migrate without rewriting or dropping workout history.
+  var repCountingModeRaw: String?
   var instructions: String
   var imagePath: String?
   var additionalImagePathsRaw: String?
@@ -241,6 +263,7 @@ final class Exercise {
     equipment: String,
     primaryMuscle: String,
     unit: TrackingUnit,
+    repCountingMode: RepCountingMode = .standard,
     instructions: String,
     imagePath: String? = nil,
     additionalImagePaths: [String] = [],
@@ -257,6 +280,7 @@ final class Exercise {
     self.equipment = equipment
     self.primaryMuscle = primaryMuscle
     unitRaw = unit.rawValue
+    repCountingModeRaw = repCountingMode.rawValue
     self.instructions = instructions
     self.imagePath = imagePath
     additionalImagePathsRaw =
@@ -269,6 +293,13 @@ final class Exercise {
     get { TrackingUnit(rawValue: unitRaw) ?? .pounds }
     set { unitRaw = newValue.rawValue }
   }
+
+  var repCountingMode: RepCountingMode {
+    get { repCountingModeRaw.flatMap(RepCountingMode.init(rawValue:)) ?? .standard }
+    set { repCountingModeRaw = newValue.rawValue }
+  }
+
+  var targetLabel: String { unit.targetLabel(repCountingMode: repCountingMode) }
 
   var defaultTarget: Int {
     if unit == .seconds {
@@ -645,6 +676,26 @@ final class ExerciseLog {
   }
 
   var defaultTarget: Int { masterExercise?.defaultTarget ?? WorkoutPreferences.defaultReps }
+
+  // Master-owned, just like the unit: no routine or workout override/snapshot.
+  var repCountingMode: RepCountingMode { masterExercise?.repCountingMode ?? .standard }
+  var targetLabel: String { unit.targetLabel(repCountingMode: repCountingMode) }
+
+  func completedPoundsVolume(for participantName: String? = nil) -> Double {
+    guard unit == .pounds else { return 0 }
+    let multiplier = repCountingMode == .perSide ? 2.0 : 1.0
+    return participants.reduce(0) { total, participant in
+      if let participantName,
+        participant.participantName.caseInsensitiveCompare(participantName) != .orderedSame
+      {
+        return total
+      }
+      return total
+        + participant.sets.filter { $0.isCompleted && !$0.isSkipped }.reduce(0) {
+          $0 + Double($1.reps) * multiplier * ($1.measurement ?? participant.measurement)
+        }
+    }
+  }
 }
 
 @Model
@@ -793,12 +844,14 @@ final class WorkoutSet {
     }
   }
 
-  func summary(participant: ParticipantLog, unit: TrackingUnit) -> String {
+  func summary(
+    participant: ParticipantLog, unit: TrackingUnit, repCountingMode: RepCountingMode = .standard
+  ) -> String {
     var parts: [String] = []
     if unit.isWeight {
       let load = measurement ?? participant.measurement
       if load > 0 { parts.append("\(load.tidy) \(unit.label)") }
-      parts.append("\(reps) reps")
+      parts.append("\(reps) \(unit.targetLabel(repCountingMode: repCountingMode))")
     } else if unit == .seconds || unit == .minutes {
       let value = durationSeconds.map { $0 / (unit == .minutes ? 60 : 1) } ?? Double(reps)
       parts.append("\(value.tidy) \(unit.label)")
@@ -809,7 +862,8 @@ final class WorkoutSet {
       let value = measurement ?? participant.measurement
       parts.append("\(value.tidy) \(unit.label)")
     } else {
-      parts.append("\(reps) \(unit.label)")
+      let label = unit.usesReps ? unit.targetLabel(repCountingMode: repCountingMode) : unit.label
+      parts.append("\(reps) \(label)")
     }
     if let distanceMiles, ![.miles, .kilometers, .meters].contains(unit) {
       parts.append("\(distanceMiles.tidy) mi")

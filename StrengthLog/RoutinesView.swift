@@ -663,10 +663,14 @@ struct RoutineDetailView: View {
   }
 
   private func summary(_ item: RoutineExercise) -> String {
-    switch unit(for: item) {
-    case .pounds: "Log weight (lb) and reps"
-    case .kilograms: "Log weight (kg) and reps"
-    case .repetitions: "Log reps"
+    let master =
+      catalog.first(where: { $0.id == item.exerciseID })
+      ?? catalog.first(where: { $0.name.caseInsensitiveCompare(item.exerciseName) == .orderedSame })
+    let repsLabel = master?.targetLabel ?? "reps"
+    return switch unit(for: item) {
+    case .pounds: "Log weight (lb) and \(repsLabel)"
+    case .kilograms: "Log weight (kg) and \(repsLabel)"
+    case .repetitions: "Log \(repsLabel)"
     case .seconds: "Log time in seconds"
     case .minutes: "Log time in minutes"
     case .miles: "Log distance in miles"
@@ -748,16 +752,12 @@ struct RoutineDetailView: View {
   }
 
   private func poundsVolume(_ session: WorkoutSession) -> Double {
-    var total = 0.0
-    for exercise in session.exercises where exercise.unit == .pounds {
-      for person in exercise.participants where session.isParticipantActive(person.participantName)
-      {
-        for set in person.sets where set.isCompleted {
-          total += (set.measurement ?? person.measurement) * Double(set.reps)
+    session.exercises.reduce(0) { total, exercise in
+      total
+        + session.participantNames.reduce(0) {
+          $0 + exercise.completedPoundsVolume(for: $1)
         }
-      }
     }
-    return total
   }
 }
 

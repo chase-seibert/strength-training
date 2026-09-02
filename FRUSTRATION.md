@@ -1,5 +1,12 @@
 # Frustration log
 
+## 2026-09-02 — Concurrent apps can steal the shared simulator foreground
+
+A UI test's tap failed after XCTest reported waiting for `com.cseibert.CalorieTracker`
+to idle instead of StrengthLog. Another task was using the same iPhone simulator.
+Use a separately named simulator and pass its UUID via `SIM_DESTINATION` to the
+Makefile test target; do not reset, shut down, or terminate the other task's device.
+
 ## 2026-09-02 — Xcode can report success after running zero filtered tests
 
 An incremental UI-test rerun printed `TEST SUCCEEDED` but executed zero tests, even though the requested test existed in the source and bundle. Check the executed test count or `xcresulttool get test-results summary`, not only the exit status. Running the same Makefile target with a fresh `UI_DERIVED_DATA=build-reorder-tests` directory rebuilt discovery and executed the test successfully; no simulator data reset was needed.

@@ -512,7 +512,8 @@
     "imagePaths": [
       "Band_Hip_Adductions/0.jpg",
       "Band_Hip_Adductions/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "Band_Pull_Apart",
@@ -824,7 +825,8 @@
     "imagePaths": [
       "Barbell_Side_Split_Squat/0.jpg",
       "Barbell_Side_Split_Squat/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "Barbell_Squat",
@@ -1086,7 +1088,8 @@
     "imagePaths": [
       "Bent_Over_One-Arm_Long_Bar_Row/0.jpg",
       "Bent_Over_One-Arm_Long_Bar_Row/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "Bent_Over_Two-Arm_Long_Bar_Row",
@@ -1503,7 +1506,8 @@
     "imagePaths": [
       "Cable_Hip_Adduction/0.jpg",
       "Cable_Hip_Adduction/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "Cable_Incline_Pushdown",
@@ -1542,7 +1546,8 @@
     "imagePaths": [
       "Cable_Internal_Rotation/0.jpg",
       "Cable_Internal_Rotation/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "Cable_Iron_Cross",
@@ -1594,7 +1599,8 @@
     "imagePaths": [
       "Cable_One_Arm_Tricep_Extension/0.jpg",
       "Cable_One_Arm_Tricep_Extension/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "Cable_Preacher_Curl",
@@ -1672,7 +1678,8 @@
     "imagePaths": [
       "Cable_Russian_Twists/0.jpg",
       "Cable_Russian_Twists/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "Cable_Seated_Crunch",
@@ -3024,7 +3031,8 @@
     "imagePaths": [
       "Dumbbell_Lying_One-Arm_Rear_Lateral_Raise/0.jpg",
       "Dumbbell_Lying_One-Arm_Rear_Lateral_Raise/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "Dumbbell_Lying_Pronation",
@@ -3076,7 +3084,8 @@
     "imagePaths": [
       "Dumbbell_One-Arm_Shoulder_Press/0.jpg",
       "Dumbbell_One-Arm_Shoulder_Press/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "Dumbbell_One-Arm_Triceps_Extension",
@@ -3089,7 +3098,8 @@
     "imagePaths": [
       "Dumbbell_One-Arm_Triceps_Extension/0.jpg",
       "Dumbbell_One-Arm_Triceps_Extension/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "Dumbbell_One-Arm_Upright_Row",
@@ -3102,7 +3112,8 @@
     "imagePaths": [
       "Dumbbell_One-Arm_Upright_Row/0.jpg",
       "Dumbbell_One-Arm_Upright_Row/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "Dumbbell_Prone_Incline_Curl",
@@ -3180,7 +3191,8 @@
     "imagePaths": [
       "Dumbbell_Seated_One-Leg_Calf_Raise/0.jpg",
       "Dumbbell_Seated_One-Leg_Calf_Raise/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "Dumbbell_Shoulder_Press",
@@ -3444,7 +3456,8 @@
     "imagePaths": [
       "Extended_Range_One-Arm_Kettlebell_Floor_Press/0.jpg",
       "Extended_Range_One-Arm_Kettlebell_Floor_Press/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "External_Rotation",
@@ -3457,7 +3470,8 @@
     "imagePaths": [
       "External_Rotation/0.jpg",
       "External_Rotation/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "External_Rotation_with_Band",
@@ -3470,7 +3484,8 @@
     "imagePaths": [
       "External_Rotation_with_Band/0.jpg",
       "External_Rotation_with_Band/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "External_Rotation_with_Cable",
@@ -3483,7 +3498,8 @@
     "imagePaths": [
       "External_Rotation_with_Cable/0.jpg",
       "External_Rotation_with_Cable/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "Face_Pull",
@@ -4655,7 +4671,8 @@
     "imagePaths": [
       "Internal_Rotation_with_Band/0.jpg",
       "Internal_Rotation_with_Band/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "Inverted_Row",
@@ -4932,7 +4949,8 @@
     "imagePaths": [
       "Kettlebell_One-Legged_Deadlift/0.jpg",
       "Kettlebell_One-Legged_Deadlift/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "Kettlebell_Pass_Between_The_Legs",
@@ -4971,7 +4989,8 @@
     "imagePaths": [
       "Kettlebell_Pistol_Squat/0.jpg",
       "Kettlebell_Pistol_Squat/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "Kettlebell_Seated_Press",
@@ -5235,7 +5254,8 @@
     "imagePaths": [
       "Kneeling_Single-Arm_High_Pulley_Row/0.jpg",
       "Kneeling_Single-Arm_High_Pulley_Row/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "Kneeling_Squat",
@@ -5907,7 +5927,8 @@
     "imagePaths": [
       "Lying_One-Arm_Lateral_Raise/0.jpg",
       "Lying_One-Arm_Lateral_Raise/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "Lying_Prone_Quadriceps",
@@ -6342,7 +6363,8 @@
     "imagePaths": [
       "One-Arm_Dumbbell_Row/0.jpg",
       "One-Arm_Dumbbell_Row/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "One-Arm_Flat_Bench_Dumbbell_Flye",
@@ -6355,7 +6377,8 @@
     "imagePaths": [
       "One-Arm_Flat_Bench_Dumbbell_Flye/0.jpg",
       "One-Arm_Flat_Bench_Dumbbell_Flye/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "One-Arm_High-Pulley_Cable_Side_Bends",
@@ -6368,7 +6391,8 @@
     "imagePaths": [
       "One-Arm_High-Pulley_Cable_Side_Bends/0.jpg",
       "One-Arm_High-Pulley_Cable_Side_Bends/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "One-Arm_Incline_Lateral_Raise",
@@ -6381,7 +6405,8 @@
     "imagePaths": [
       "One-Arm_Incline_Lateral_Raise/0.jpg",
       "One-Arm_Incline_Lateral_Raise/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "One-Arm_Kettlebell_Clean",
@@ -6394,7 +6419,8 @@
     "imagePaths": [
       "One-Arm_Kettlebell_Clean/0.jpg",
       "One-Arm_Kettlebell_Clean/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "One-Arm_Kettlebell_Clean_and_Jerk",
@@ -6407,7 +6433,8 @@
     "imagePaths": [
       "One-Arm_Kettlebell_Clean_and_Jerk/0.jpg",
       "One-Arm_Kettlebell_Clean_and_Jerk/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "One-Arm_Kettlebell_Floor_Press",
@@ -6420,7 +6447,8 @@
     "imagePaths": [
       "One-Arm_Kettlebell_Floor_Press/0.jpg",
       "One-Arm_Kettlebell_Floor_Press/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "One-Arm_Kettlebell_Jerk",
@@ -6433,7 +6461,8 @@
     "imagePaths": [
       "One-Arm_Kettlebell_Jerk/0.jpg",
       "One-Arm_Kettlebell_Jerk/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "One-Arm_Kettlebell_Military_Press_To_The_Side",
@@ -6446,7 +6475,8 @@
     "imagePaths": [
       "One-Arm_Kettlebell_Military_Press_To_The_Side/0.jpg",
       "One-Arm_Kettlebell_Military_Press_To_The_Side/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "One-Arm_Kettlebell_Para_Press",
@@ -6459,7 +6489,8 @@
     "imagePaths": [
       "One-Arm_Kettlebell_Para_Press/0.jpg",
       "One-Arm_Kettlebell_Para_Press/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "One-Arm_Kettlebell_Push_Press",
@@ -6472,7 +6503,8 @@
     "imagePaths": [
       "One-Arm_Kettlebell_Push_Press/0.jpg",
       "One-Arm_Kettlebell_Push_Press/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "One-Arm_Kettlebell_Row",
@@ -6485,7 +6517,8 @@
     "imagePaths": [
       "One-Arm_Kettlebell_Row/0.jpg",
       "One-Arm_Kettlebell_Row/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "One-Arm_Kettlebell_Snatch",
@@ -6498,7 +6531,8 @@
     "imagePaths": [
       "One-Arm_Kettlebell_Snatch/0.jpg",
       "One-Arm_Kettlebell_Snatch/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "One-Arm_Kettlebell_Split_Jerk",
@@ -6511,7 +6545,8 @@
     "imagePaths": [
       "One-Arm_Kettlebell_Split_Jerk/0.jpg",
       "One-Arm_Kettlebell_Split_Jerk/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "One-Arm_Kettlebell_Split_Snatch",
@@ -6524,7 +6559,8 @@
     "imagePaths": [
       "One-Arm_Kettlebell_Split_Snatch/0.jpg",
       "One-Arm_Kettlebell_Split_Snatch/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "One-Arm_Kettlebell_Swings",
@@ -6550,7 +6586,8 @@
     "imagePaths": [
       "One-Arm_Long_Bar_Row/0.jpg",
       "One-Arm_Long_Bar_Row/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "One-Arm_Medicine_Ball_Slam",
@@ -6563,7 +6600,8 @@
     "imagePaths": [
       "One-Arm_Medicine_Ball_Slam/0.jpg",
       "One-Arm_Medicine_Ball_Slam/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "One-Arm_Open_Palm_Kettlebell_Clean",
@@ -6576,7 +6614,8 @@
     "imagePaths": [
       "One-Arm_Open_Palm_Kettlebell_Clean/0.jpg",
       "One-Arm_Open_Palm_Kettlebell_Clean/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "One-Arm_Overhead_Kettlebell_Squats",
@@ -6589,7 +6628,8 @@
     "imagePaths": [
       "One-Arm_Overhead_Kettlebell_Squats/0.jpg",
       "One-Arm_Overhead_Kettlebell_Squats/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "One-Arm_Side_Deadlift",
@@ -6602,7 +6642,8 @@
     "imagePaths": [
       "One-Arm_Side_Deadlift/0.jpg",
       "One-Arm_Side_Deadlift/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "One-Arm_Side_Laterals",
@@ -6615,7 +6656,8 @@
     "imagePaths": [
       "One-Arm_Side_Laterals/0.jpg",
       "One-Arm_Side_Laterals/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "One-Legged_Cable_Kickback",
@@ -6628,7 +6670,8 @@
     "imagePaths": [
       "One-Legged_Cable_Kickback/0.jpg",
       "One-Legged_Cable_Kickback/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "One_Arm_Against_Wall",
@@ -6655,7 +6698,8 @@
     "imagePaths": [
       "One_Arm_Chin-Up/0.jpg",
       "One_Arm_Chin-Up/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "One_Arm_Dumbbell_Bench_Press",
@@ -6668,7 +6712,8 @@
     "imagePaths": [
       "One_Arm_Dumbbell_Bench_Press/0.jpg",
       "One_Arm_Dumbbell_Bench_Press/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "One_Arm_Dumbbell_Preacher_Curl",
@@ -6681,7 +6726,8 @@
     "imagePaths": [
       "One_Arm_Dumbbell_Preacher_Curl/0.jpg",
       "One_Arm_Dumbbell_Preacher_Curl/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "One_Arm_Floor_Press",
@@ -6694,7 +6740,8 @@
     "imagePaths": [
       "One_Arm_Floor_Press/0.jpg",
       "One_Arm_Floor_Press/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "One_Arm_Lat_Pulldown",
@@ -6707,7 +6754,8 @@
     "imagePaths": [
       "One_Arm_Lat_Pulldown/0.jpg",
       "One_Arm_Lat_Pulldown/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "One_Arm_Pronated_Dumbbell_Triceps_Extension",
@@ -6720,7 +6768,8 @@
     "imagePaths": [
       "One_Arm_Pronated_Dumbbell_Triceps_Extension/0.jpg",
       "One_Arm_Pronated_Dumbbell_Triceps_Extension/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "One_Arm_Supinated_Dumbbell_Triceps_Extension",
@@ -6733,7 +6782,8 @@
     "imagePaths": [
       "One_Arm_Supinated_Dumbbell_Triceps_Extension/0.jpg",
       "One_Arm_Supinated_Dumbbell_Triceps_Extension/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "One_Half_Locust",
@@ -6788,7 +6838,8 @@
     "imagePaths": [
       "One_Leg_Barbell_Squat/0.jpg",
       "One_Leg_Barbell_Squat/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "Open_Palm_Kettlebell_Clean",
@@ -6908,7 +6959,8 @@
     "imagePaths": [
       "Pallof_Press/0.jpg",
       "Pallof_Press/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "Pallof_Press_With_Rotation",
@@ -6921,7 +6973,8 @@
     "imagePaths": [
       "Pallof_Press_With_Rotation/0.jpg",
       "Pallof_Press_With_Rotation/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "Palms-Down_Dumbbell_Wrist_Curl_Over_A_Bench",
@@ -8170,7 +8223,8 @@
     "imagePaths": [
       "Seated_Bent-Over_One-Arm_Dumbbell_Triceps_Extension/0.jpg",
       "Seated_Bent-Over_One-Arm_Dumbbell_Triceps_Extension/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "Seated_Bent-Over_Rear_Delt_Raise",
@@ -8489,7 +8543,8 @@
     "imagePaths": [
       "Seated_One-Arm_Dumbbell_Palms-Down_Wrist_Curl/0.jpg",
       "Seated_One-Arm_Dumbbell_Palms-Down_Wrist_Curl/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "Seated_One-Arm_Dumbbell_Palms-Up_Wrist_Curl",
@@ -8502,7 +8557,8 @@
     "imagePaths": [
       "Seated_One-Arm_Dumbbell_Palms-Up_Wrist_Curl/0.jpg",
       "Seated_One-Arm_Dumbbell_Palms-Up_Wrist_Curl/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "Seated_One-arm_Cable_Pulley_Rows",
@@ -8515,7 +8571,8 @@
     "imagePaths": [
       "Seated_One-arm_Cable_Pulley_Rows/0.jpg",
       "Seated_One-arm_Cable_Pulley_Rows/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "Seated_Overhead_Stretch",
@@ -8875,7 +8932,8 @@
     "imagePaths": [
       "Single-Arm_Linear_Jammer/0.jpg",
       "Single-Arm_Linear_Jammer/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "Single-Arm_Push-Up",
@@ -8888,7 +8946,8 @@
     "imagePaths": [
       "Single-Arm_Push-Up/0.jpg",
       "Single-Arm_Push-Up/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "Single-Cone_Sprint_Drill",
@@ -8914,7 +8973,8 @@
     "imagePaths": [
       "Single-Leg_High_Box_Squat/0.jpg",
       "Single-Leg_High_Box_Squat/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "Single-Leg_Hop_Progression",
@@ -8953,7 +9013,8 @@
     "imagePaths": [
       "Single-Leg_Leg_Extension/0.jpg",
       "Single-Leg_Leg_Extension/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "Single-Leg_Stride_Jump",
@@ -9005,7 +9066,8 @@
     "imagePaths": [
       "Single_Leg_Glute_Bridge/0.jpg",
       "Single_Leg_Glute_Bridge/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "Single_Leg_Push-off",
@@ -9305,7 +9367,8 @@
     "imagePaths": [
       "Smith_Machine_One-Arm_Upright_Row/0.jpg",
       "Smith_Machine_One-Arm_Upright_Row/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "Smith_Machine_Overhead_Shoulder_Press",
@@ -9331,7 +9394,8 @@
     "imagePaths": [
       "Smith_Machine_Pistol_Squat/0.jpg",
       "Smith_Machine_Pistol_Squat/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "Smith_Machine_Reverse_Calf_Raises",
@@ -9396,7 +9460,8 @@
     "imagePaths": [
       "Smith_Single-Leg_Split_Squat/0.jpg",
       "Smith_Single-Leg_Split_Squat/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "Snatch",
@@ -9631,7 +9696,8 @@
     "imagePaths": [
       "Split_Squat_with_Dumbbells/0.jpg",
       "Split_Squat_with_Dumbbells/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "Split_Squats",
@@ -9775,7 +9841,8 @@
     "imagePaths": [
       "Standing_Bent-Over_One-Arm_Dumbbell_Triceps_Extension/0.jpg",
       "Standing_Bent-Over_One-Arm_Dumbbell_Triceps_Extension/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "Standing_Bent-Over_Two-Arm_Dumbbell_Triceps_Extension",
@@ -9854,7 +9921,8 @@
     "imagePaths": [
       "Standing_Cable_Lift/0.jpg",
       "Standing_Cable_Lift/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "Standing_Cable_Wood_Chop",
@@ -9867,7 +9935,8 @@
     "imagePaths": [
       "Standing_Cable_Wood_Chop/0.jpg",
       "Standing_Cable_Wood_Chop/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "Standing_Calf_Raises",
@@ -10133,7 +10202,8 @@
     "imagePaths": [
       "Standing_Low-Pulley_One-Arm_Triceps_Extension/0.jpg",
       "Standing_Low-Pulley_One-Arm_Triceps_Extension/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "Standing_Military_Press",
@@ -10172,7 +10242,8 @@
     "imagePaths": [
       "Standing_One-Arm_Cable_Curl/0.jpg",
       "Standing_One-Arm_Cable_Curl/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "Standing_One-Arm_Dumbbell_Curl_Over_Incline_Bench",
@@ -10185,7 +10256,8 @@
     "imagePaths": [
       "Standing_One-Arm_Dumbbell_Curl_Over_Incline_Bench/0.jpg",
       "Standing_One-Arm_Dumbbell_Curl_Over_Incline_Bench/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "Standing_One-Arm_Dumbbell_Triceps_Extension",
@@ -10198,7 +10270,8 @@
     "imagePaths": [
       "Standing_One-Arm_Dumbbell_Triceps_Extension/0.jpg",
       "Standing_One-Arm_Dumbbell_Triceps_Extension/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "Standing_Overhead_Barbell_Triceps_Extension",
@@ -10224,7 +10297,8 @@
     "imagePaths": [
       "Standing_Palm-In_One-Arm_Dumbbell_Press/0.jpg",
       "Standing_Palm-In_One-Arm_Dumbbell_Press/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "Standing_Palms-In_Dumbbell_Press",
@@ -10644,7 +10718,8 @@
     "imagePaths": [
       "Suspended_Split_Squat/0.jpg",
       "Suspended_Split_Squat/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "Svend_Press",
@@ -11132,7 +11207,8 @@
     "imagePaths": [
       "Weighted_Ball_Side_Bend/0.jpg",
       "Weighted_Ball_Side_Bend/1.jpg"
-    ]
+    ],
+    "repCountingMode": "perSide"
   },
   {
     "id": "Weighted_Bench_Dip",

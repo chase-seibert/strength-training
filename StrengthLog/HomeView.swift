@@ -914,7 +914,7 @@ private struct DayWorkoutSummaryView: View {
                   Text("Set \(index + 1)")
                     .foregroundStyle(.secondary)
                   Spacer(minLength: 8)
-                  Text(setSummary(set, participant: participant, unit: exercise.unit))
+                  Text(setSummary(set, participant: participant, exercise: exercise))
                     .multilineTextAlignment(.trailing)
                     .monospacedDigit()
                   ZStack(alignment: .topTrailing) {
@@ -1044,8 +1044,9 @@ private struct DayWorkoutSummaryView: View {
   }
 
   private func setSummary(
-    _ set: WorkoutSet, participant: ParticipantLog, unit: TrackingUnit
+    _ set: WorkoutSet, participant: ParticipantLog, exercise: ExerciseLog
   ) -> String {
-    set.summary(participant: participant, unit: unit)
+    set.summary(
+      participant: participant, unit: exercise.unit, repCountingMode: exercise.repCountingMode)
   }
 }

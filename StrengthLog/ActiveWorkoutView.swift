@@ -427,7 +427,8 @@ struct ActiveWorkoutView: View {
       loadRelevantCatalogExercises()
       updateCurrentPersonalRecords()
     }
-    .onChange(of: session.exercises.map { $0.unit.rawValue }) { _, _ in
+    .onChange(of: session.exercises.map { $0.unit.rawValue + $0.repCountingMode.rawValue }) {
+      _, _ in
       loadPersonalRecordBaseline()
       syncLiveActivity()
     }
@@ -545,8 +546,8 @@ struct ActiveWorkoutView: View {
     let measurement = set?.measurement ?? participant?.measurement ?? 0
     let effort =
       exercise.unit.usesMeasurement && measurement > 0
-      ? "\(measurement.tidy) \(exercise.unit.label) × \(reps)"
-      : "\(reps) \(exercise.unit.targetLabel)"
+      ? "\(measurement.tidy) \(exercise.unit.label) × \(reps) \(exercise.targetLabel)"
+      : "\(reps) \(exercise.targetLabel)"
     return (
       exerciseName: exercise.exerciseName,
       setProgress: "Set \(setNumber) of \(totalSets)",
@@ -1085,19 +1086,8 @@ struct ActiveExerciseCard: View {
   }
 
   private var repGuidance: String? {
-    guard exercise.unit.usesReps else { return nil }
-    let name = exercise.exerciseName.lowercased()
-    if ["alternating", "alternate"].contains(where: name.contains) {
-      return "Reps are total — split them evenly between sides."
-    }
-    if [
-      "one-arm", "one arm", "single-arm", "single arm", "one-leg", "one leg", "single-leg",
-      "single leg",
-    ]
-    .contains(where: name.contains) {
-      return "Reps are per side — 8 means 8 on each side."
-    }
-    return nil
+    guard exercise.unit.usesReps, exercise.repCountingMode == .perSide else { return nil }
+    return exercise.repCountingMode.explanation
   }
 
   var body: some View {
@@ -1168,6 +1158,7 @@ struct ActiveExerciseCard: View {
         SinglePersonSetCompletionGrid(
           participant: participant,
           unit: exercise.unit,
+          repCountingMode: exercise.repCountingMode,
           exerciseName: exercise.exerciseName,
           colorHex: colors[participant.participantName] ?? "FF5A45",
           setsPerRow: 8,
@@ -1220,13 +1211,15 @@ struct ActiveExerciseCard: View {
         exerciseName: exercise.exerciseName,
         people: visiblePeople,
         colors: colors,
-        unit: exercise.unit)
+        unit: exercise.unit,
+        repCountingMode: exercise.repCountingMode)
     }
     .sheet(item: $lastSetEditorParticipant) { participant in
       if let lastSet = participant.orderedSets.last(where: { !$0.isSkipped }) {
         LastSetEditorSheet(
           exerciseName: exercise.exerciseName,
           unit: exercise.unit,
+          repCountingMode: exercise.repCountingMode,
           baseReps: baseReps(for: participant),
           set: lastSet)
       }
@@ -1268,6 +1261,7 @@ struct ActiveExerciseCard: View {
     ParticipantExerciseCell(
       participant: participant,
       unit: exercise.unit,
+      repCountingMode: exercise.repCountingMode,
       exerciseName: exercise.exerciseName,
       colorHex: colors[participant.participantName] ?? "FF5A45",
       onCustomizeLastSet: { lastSetEditorParticipant = participant },
@@ -1506,7 +1500,7 @@ struct ActiveExerciseCard: View {
   private func setStatus(for participant: ParticipantLog) -> String? {
     var status: [String] = []
     if let lastSetOverride = lastSetOverride(for: participant) {
-      status.append("Last set: \(lastSetOverride) \(exercise.unit.targetLabel)")
+      status.append("Last set: \(lastSetOverride) \(exercise.targetLabel)")
     }
     let skippedSetCount = participant.orderedSets.filter(\.isSkipped).count
     if skippedSetCount > 0 {
@@ -1523,6 +1517,7 @@ struct ParticipantExerciseCell: View {
   @Environment(\.modelContext) private var context
   @Bindable var participant: ParticipantLog
   var unit: TrackingUnit = .repetitions
+  var repCountingMode: RepCountingMode = .standard
   let exerciseName: String
   let colorHex: String
   let onCustomizeLastSet: () -> Void
@@ -1565,6 +1560,7 @@ struct ParticipantExerciseCell: View {
         CompactRepsControl(
           participant: participant,
           unit: unit,
+          repCountingMode: repCountingMode,
           baseReps: baseReps,
           colorHex: colorHex
         )
@@ -1576,6 +1572,7 @@ struct ParticipantExerciseCell: View {
             ParticipantSetOptionsMenu(
               participant: participant,
               unit: unit,
+              repCountingMode: repCountingMode,
               baseReps: baseReps,
               colorHex: colorHex,
               onCustomizeLastSet: onCustomizeLastSet,
@@ -1616,7 +1613,8 @@ struct ParticipantExerciseCell: View {
   private var setStatus: String? {
     var status: [String] = []
     if let lastSetOverride {
-      status.append("Last set: \(lastSetOverride) \(unit.targetLabel)")
+      status.append(
+        "Last set: \(lastSetOverride) \(unit.targetLabel(repCountingMode: repCountingMode))")
     }
     if skippedSetCount > 0 {
       status.append(
@@ -1640,6 +1638,7 @@ struct ParticipantExerciseCell: View {
 struct ParticipantSetOptionsMenu: View {
   @Bindable var participant: ParticipantLog
   var unit: TrackingUnit = .repetitions
+  var repCountingMode: RepCountingMode = .standard
   let baseReps: Int
   let colorHex: String
   let onCustomizeLastSet: () -> Void
@@ -1704,7 +1703,8 @@ struct ParticipantSetOptionsMenu: View {
     .disabled(activeSets.count < 2 && skippedSetCount == 0)
     .accessibilityLabel(
       lastSetOverride == nil
-        ? "Customize set options" : "Last set is \(lastSetOverride!) \(unit.targetLabel)"
+        ? "Customize set options"
+        : "Last set is \(lastSetOverride!) \(unit.targetLabel(repCountingMode: repCountingMode))"
     )
     .accessibilityIdentifier("last-set-menu-\(participant.participantName)")
   }
@@ -1713,6 +1713,7 @@ struct ParticipantSetOptionsMenu: View {
 struct SinglePersonSetCompletionGrid: View {
   @Bindable var participant: ParticipantLog
   var unit: TrackingUnit = .repetitions
+  var repCountingMode: RepCountingMode = .standard
   let exerciseName: String
   let colorHex: String
   let setsPerRow: Int
@@ -1758,6 +1759,7 @@ struct SinglePersonSetCompletionGrid: View {
               ParticipantSetOptionsMenu(
                 participant: participant,
                 unit: unit,
+                repCountingMode: repCountingMode,
                 baseReps: baseReps,
                 colorHex: colorHex,
                 onCustomizeLastSet: onCustomizeLastSet,
@@ -1881,6 +1883,7 @@ struct CompactRepsControl: View {
   @Environment(\.scheduleWorkoutSave) private var scheduleWorkoutSave
   @Bindable var participant: ParticipantLog
   var unit: TrackingUnit = .repetitions
+  var repCountingMode: RepCountingMode = .standard
   let baseReps: Int
   let colorHex: String
   @State private var text = ""
@@ -1896,7 +1899,8 @@ struct CompactRepsControl: View {
           keyboardType: .numberPad,
           textAlignment: .center,
           font: .monospacedDigitSystemFont(ofSize: 17, weight: .bold),
-          accessibilityLabel: "Base \(unit.targetLabel) for \(participant.participantName)",
+          accessibilityLabel:
+            "Base \(unit.targetLabel(repCountingMode: repCountingMode)) for \(participant.participantName)",
           step: 1,
           minimumValue: 1
         )
@@ -1909,9 +1913,13 @@ struct CompactRepsControl: View {
         }
         stepButton("plus") { setBaseReps(baseReps + 1) }
       }
-      Text(unit.targetLabel == "reps" ? (baseReps == 1 ? "Rep" : "Reps") : unit.label)
-        .font(.system(size: 8, weight: .bold))
-        .foregroundStyle(.secondary)
+      Text(
+        unit.usesReps
+          ? (repCountingMode == .perSide ? "Reps/side" : (baseReps == 1 ? "Rep" : "Reps"))
+          : unit.label
+      )
+      .font(.system(size: 8, weight: .bold))
+      .foregroundStyle(.secondary)
     }
     .foregroundStyle(Color(hex: colorHex))
     .onAppear { text = "\(baseReps)" }
@@ -1971,6 +1979,7 @@ struct LastSetEditorSheet: View {
   @Environment(\.scheduleWorkoutSave) private var scheduleWorkoutSave
   let exerciseName: String
   var unit: TrackingUnit = .repetitions
+  var repCountingMode: RepCountingMode = .standard
   let baseReps: Int
   @Bindable var set: WorkoutSet
   @State private var text = ""
@@ -1980,10 +1989,10 @@ struct LastSetEditorSheet: View {
     NavigationStack {
       VStack(alignment: .leading, spacing: 18) {
         VStack(alignment: .leading, spacing: 5) {
-          Text("Last set \(unit.targetLabel)")
+          Text("Last set \(unit.targetLabel(repCountingMode: repCountingMode))")
             .font(.headline)
           Text(
-            "This overrides the base value of \(baseReps) \(unit.targetLabel) for the final set only. It will be remembered next time."
+            "This overrides the base value of \(baseReps) \(unit.targetLabel(repCountingMode: repCountingMode)) for the final set only. It will be remembered next time."
           )
           .font(.subheadline)
           .foregroundStyle(.secondary)
@@ -2004,7 +2013,8 @@ struct LastSetEditorSheet: View {
             keyboardType: .numberPad,
             textAlignment: .center,
             font: .monospacedDigitSystemFont(ofSize: 24, weight: .bold),
-            accessibilityLabel: "Last set \(unit.targetLabel) for \(exerciseName)",
+            accessibilityLabel:
+              "Last set \(unit.targetLabel(repCountingMode: repCountingMode)) for \(exerciseName)",
             step: 1,
             minimumValue: 1
           )
@@ -2152,6 +2162,7 @@ struct ExerciseGroupHistoryView: View {
   let people: [String]
   let colors: [String: String]
   let unit: TrackingUnit
+  var repCountingMode: RepCountingMode = .standard
 
   private var points: [ExerciseHistoryPoint] {
     let achievements = PersonalRecords.achievements(in: sessions)
@@ -2228,7 +2239,8 @@ struct ExerciseGroupHistoryView: View {
                   value: { $0.measurement })
               }
               historyChart(
-                title: unit.targetLabel == "reps" ? "Best reps" : unit.title,
+                title: unit.usesReps
+                  ? "Best \(unit.targetLabel(repCountingMode: repCountingMode))" : unit.title,
                 value: { Double($0.reps) })
             }
             .padding()
