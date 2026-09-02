@@ -2,6 +2,7 @@
 
 ## 2026-09-02
 
+- Simplified the Workout-page resume summary to show only completed sets, without a misleading total that includes empty extra sets.
 - Corrected Balance Board, Battling Ropes, Mountain Climbers, and the three chest/neck isometric entries to seconds; corrected Superman, Toe Touchers, and Ankle Circles to reps, with a one-off existing-store update.
 - Added catalog-backed duration targets independent of the rep preference: 30 seconds generally, reviewed shorter holds from the instructions, 20 seconds for Stomach Vacuum and One Handed Hang, and the existing 60-second Plank default. Saved workout values and later unit edits remain intact.
 - Made master exercise units universal across routines, active workouts, history, and progress, with exercise-name navigation for mid-workout edits.

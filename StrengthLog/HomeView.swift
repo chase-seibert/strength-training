@@ -242,7 +242,8 @@ struct HomeView: View {
   }
 
   private func resumeSummary(for session: WorkoutSession) -> String {
-    let sets = "\(session.completedSetCount) of \(session.totalSetCount) sets completed"
+    let count = session.completedSetCount
+    let sets = "\(count) set\(count == 1 ? "" : "s") completed"
     let started = "Started \(session.startedAt.formatted(date: .omitted, time: .shortened))"
     if let duration = session.workoutDuration {
       return "\(sets) · \(started) · Length \(duration.workoutDurationText)"

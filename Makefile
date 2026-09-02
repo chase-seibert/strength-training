@@ -7,6 +7,7 @@ BUNDLE_ID := com.cseibert.StrengthLog
 
 SIM_DEVICE_NAME ?= iPhone 17 Pro
 SIM_DESTINATION ?= platform=iOS Simulator,name=$(SIM_DEVICE_NAME)
+UI_TEST_FILTER ?= StrengthLogUITests
 GENERIC_SIM_DESTINATION := generic/platform=iOS Simulator
 
 DEVICE_ID ?= 00008150-000E41422E40401C
@@ -79,7 +80,7 @@ workout-navigation-ui-test:
 	  -derivedDataPath build-ui-tests \
 	  CODE_SIGNING_ALLOWED=NO \
 	  -parallel-testing-enabled NO \
-	  -only-testing:StrengthLogUITests \
+	  -only-testing:$(UI_TEST_FILTER) \
 	  test
 
 exercise-unit-ui-test:

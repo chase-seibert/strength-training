@@ -325,6 +325,8 @@ final class WorkoutNavigationUITests: XCTestCase {
       NSPredicate(format: "identifier BEGINSWITH 'resume-completed-workout-'")
     ).firstMatch
     XCTAssertTrue(resumeButton.waitForExistence(timeout: 3))
+    XCTAssertTrue(resumeButton.label.contains("1 set completed"))
+    XCTAssertFalse(resumeButton.label.contains(" of "))
     resumeButton.tap()
 
     XCTAssertTrue(app.otherElements["active-workout-screen"].waitForExistence(timeout: 5))
