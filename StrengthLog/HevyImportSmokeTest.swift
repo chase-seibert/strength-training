@@ -140,8 +140,9 @@
         let alternating = exercise("Single-Arm_Cable_Crossover")
         let set = WorkoutSet(sortOrder: 0, reps: 7, isCompleted: true, measurement: 20)
         let skipped = WorkoutSet(sortOrder: 1, reps: 100, isCompleted: true, isSkipped: true)
+        let bestSet = WorkoutSet(sortOrder: 2, reps: 12, isCompleted: true, measurement: 15)
         let participant = ParticipantLog(
-          participantName: "Tester", measurement: 10, sets: [set, skipped])
+          participantName: "Tester", measurement: 10, sets: [set, skipped, bestSet])
         let log = ExerciseLog(
           exerciseID: cable.id, exerciseName: cable.name, unit: .pounds,
           sortOrder: 0, participants: [participant])
@@ -152,7 +153,11 @@
         sessionID = session.id
         exerciseID = cable.id
         setID = set.id
-        guard log.repCountingMode == .standard, log.completedPoundsVolume(for: "Tester") == 140
+        guard log.repCountingMode == .standard, log.completedPoundsVolume(for: "Tester") == 320
+        else {
+          throw SmokeError.repCounting
+        }
+        guard PersonalRecords.achievements(in: [session]).first?.value == 180
         else {
           throw SmokeError.repCounting
         }
@@ -160,7 +165,7 @@
         guard log.repCountingMode == .perSide, cable.repCountingModeRaw == "perSide",
           userChoice.repCountingMode == .standard, custom.repCountingModeRaw == "standard",
           alternating.repCountingMode == .standard,
-          log.completedPoundsVolume(for: "tester") == 280,
+          log.completedPoundsVolume(for: "tester") == 640,
           log.completedPoundsVolume(for: "Other person") == 0,
           set.summary(
             participant: participant, unit: log.unit, repCountingMode: log.repCountingMode)
@@ -168,7 +173,7 @@
         else { throw SmokeError.repCounting }
         let celebration = WorkoutCelebrationSummary.make(
           session: session, allSessions: [session], routineName: "Test", colorHexByName: [:])
-        guard celebration.totalVolume == 280, celebration.people.first?.completedSetCount == 1
+        guard celebration.totalVolume == 640, celebration.people.first?.completedSetCount == 2
         else {
           throw SmokeError.repCounting
         }
@@ -215,8 +220,8 @@
       guard let session = sessions.first(where: { $0.id == sessionID }),
         let log = session.exercises.first, let set = log.participants.first?.orderedSets.first,
         log.exerciseID == exerciseID, log.repCountingMode == .perSide,
-        log.completedPoundsVolume() == 280, set.id == setID, set.reps == 7, set.isCompleted,
-        log.participants.first?.sets.count == 2
+        log.completedPoundsVolume() == 640, set.id == setID, set.reps == 7, set.isCompleted,
+        log.participants.first?.sets.count == 3
       else { throw SmokeError.repCounting }
     }
 

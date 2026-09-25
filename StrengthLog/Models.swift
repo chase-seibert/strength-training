@@ -28,10 +28,10 @@ enum WorkoutPreferences {
 
 /// Personal-record calculations shared by the workout, history, and progress views.
 ///
-/// A record is the highest completed set value for a person and exercise. Load-based
-/// exercises use the set's recorded load; rep- and time-based exercises use their
-/// corresponding completed value. Exercise IDs are preferred over names so renaming an
-/// exercise never breaks its history.
+/// A record is the highest completed set value for a person and exercise. Weighted
+/// exercises use the set's recorded load multiplied by its reps; rep-, time-, and
+/// distance-based exercises use their corresponding completed value. Exercise IDs are
+/// preferred over names so renaming an exercise never breaks its history.
 enum PersonalRecords {
   struct Achievement: Hashable, Identifiable {
     let id: String
@@ -116,7 +116,7 @@ enum PersonalRecords {
   {
     switch unit {
     case .pounds, .kilograms:
-      return set.measurement ?? participant.measurement
+      return (set.measurement ?? participant.measurement) * Double(set.reps)
     case .repetitions, .steps:
       return Double(set.reps)
     case .seconds:

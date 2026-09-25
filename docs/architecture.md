@@ -42,7 +42,9 @@ mid-workout edits and history. Timed and distance exercises ignore this rep-only
 
 Targets remain the number entered: 7 per side means 7 left + 7 right, with one set
 completion after both sides. Shared pounds-volume calculations multiply per-side reps
-by two; rep records and PR values are not rewritten or doubled. This changes the
+by two; PR values use the recorded load multiplied by the recorded reps without that
+volume multiplier. PRs are derived from completed history rather than persisted, so
+changing the calculation automatically re-evaluates existing logs. This changes the
 interpretation of existing logs, so users should review settings if they previously
 logged total rather than per-side reps. See [the reviewed defaults](rep-counting-defaults.md)
 for the 76 catalog choices and exclusions.

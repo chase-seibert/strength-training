@@ -40,3 +40,7 @@ Adding the nonoptional `WorkoutSet.isSkipped` property without a versioned Swift
 ## 2026-09-02 — Reused UIKit text fields retain stale unit metadata
 
 A live exercise-unit edit updated SwiftUI labels but the existing `SelectAllTextField` retained its original accessibility label and keyboard step size, causing the mid-workout unit regression test to fail. `UIViewRepresentable.updateUIView` must refresh the current coordinator input, accessibility label, and accessory-toolbar settings, not only the text. Verify unit edits without recreating the workout screen; a close-and-resume test alone misses this.
+
+## 2026-09-25 — Device signing requires an available Xcode account and profiles
+
+The project correctly resolved `DEVELOPMENT_TEAM=96NAC4VTEN`, but a generic iOS signing build produced no app because Xcode reported no usable account credentials and no development profiles for the app and Live Activity bundle IDs. Confirm the Xcode account and provisioning profiles before diagnosing the project team setting.

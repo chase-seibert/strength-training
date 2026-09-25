@@ -70,7 +70,7 @@ struct WorkoutCelebrationSummary: Identifiable {
             value: achievement.value,
             unitLabel: session.exercises.first {
               PersonalRecords.key(for: $0) == achievement.exerciseKey
-            }.map { $0.unit == .repetitions ? $0.targetLabel : $0.unit.label } ?? "lb")
+            }.map { personalRecordUnitLabel(for: $0) } ?? "lb·reps")
         }
       let personSessions = recentSessions.filter {
         $0.isParticipantActive(name)
@@ -114,6 +114,17 @@ struct WorkoutCelebrationSummary: Identifiable {
       recentWorkoutCount: recentWorkoutCount,
       recentVolume: recentVolume,
       message: message)
+  }
+
+  private static func personalRecordUnitLabel(for exercise: ExerciseLog) -> String {
+    switch exercise.unit {
+    case .pounds, .kilograms:
+      return "\(exercise.unit.label)·reps"
+    case .repetitions:
+      return exercise.targetLabel
+    default:
+      return exercise.unit.label
+    }
   }
 
   private static func poundsVolume(in session: WorkoutSession, for name: String) -> Double {
