@@ -50,11 +50,13 @@ struct LiftChaseLiveActivityWidget: Widget {
             .foregroundStyle(coral)
         }
       } compactLeading: {
-        EmptyView()
+        Color.clear
+          .frame(width: 1)
       } compactTrailing: {
         Text(timerInterval: Date.now...context.state.restEndDate, countsDown: true)
-          .monospacedDigit()
+          .font(.caption2.monospacedDigit().weight(.semibold))
           .foregroundStyle(coral)
+          .frame(width: 34, alignment: .trailing)
       } minimal: {
         Image(systemName: "timer")
           .foregroundStyle(coral)
