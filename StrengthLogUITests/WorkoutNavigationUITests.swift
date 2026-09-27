@@ -329,7 +329,9 @@ final class WorkoutNavigationUITests: XCTestCase {
 
   func testCompletingWorkoutShowsCelebrationSummary() {
     app.terminate()
-    app.launchArguments = ["-basicWorkoutFixture", "-activeWorkoutFixture"]
+    app.launchArguments = [
+      "-basicWorkoutFixture", "-activeWorkoutFixture", "-celebrationFormattingFixture",
+    ]
     app.launch()
 
     for name in ["Alex", "Jordan", "Owen"] {
@@ -341,6 +343,7 @@ final class WorkoutNavigationUITests: XCTestCase {
 
     XCTAssertTrue(app.staticTexts["Workout complete"].waitForExistence(timeout: 5))
     XCTAssertTrue(app.staticTexts["THIS WORKOUT"].exists)
+    XCTAssertTrue(app.staticTexts["10,880 lb"].exists)
     for name in ["Alex", "Jordan", "Owen"] {
       XCTAssertTrue(app.staticTexts[name.capitalized].waitForExistence(timeout: 5))
     }

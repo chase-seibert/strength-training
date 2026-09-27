@@ -204,7 +204,7 @@ struct WorkoutCelebrationView: View {
       HStack(spacing: 10) {
         celebrationStat(
           title: "Total volume",
-          value: "\(summary.totalVolume.tidy) lb",
+          value: "\(summary.totalVolume.celebrationNumber) lb",
           detail: "lb × reps")
         celebrationStat(
           title: "Duration",
@@ -228,7 +228,7 @@ struct WorkoutCelebrationView: View {
           detail: "completed sessions")
         celebrationStat(
           title: "Volume",
-          value: "\(summary.recentVolume.tidy) lb",
+          value: "\(summary.recentVolume.celebrationNumber) lb",
           detail: "lb × reps")
       }
       ForEach(summary.people) { person in
@@ -240,7 +240,7 @@ struct WorkoutCelebrationView: View {
               .foregroundStyle(.white)
               .accessibilityIdentifier("workout-celebration-recent-name-\(person.id)")
             Text(
-              "\(person.recentWorkoutCount) workout\(person.recentWorkoutCount == 1 ? "" : "s") · \(person.recentVolume.tidy) lb"
+              "\(person.recentWorkoutCount) workout\(person.recentWorkoutCount == 1 ? "" : "s") · \(person.recentVolume.celebrationNumber) lb"
             )
             .font(.subheadline)
             .foregroundStyle(.white.opacity(0.72))
@@ -271,7 +271,7 @@ struct WorkoutCelebrationView: View {
         }
         Spacer()
         VStack(alignment: .trailing, spacing: 2) {
-          Text("\(person.workoutVolume.tidy) lb")
+          Text("\(person.workoutVolume.celebrationNumber) lb")
             .font(.title3.bold().monospacedDigit())
             .foregroundStyle(Color(hex: person.colorHex))
           Text("volume")
@@ -296,7 +296,7 @@ struct WorkoutCelebrationView: View {
               Text(record.exerciseName)
                 .lineLimit(1)
               Spacer()
-              Text("\(record.value.tidy) \(record.unitLabel)")
+              Text("\(record.value.celebrationNumber) \(record.unitLabel)")
                 .monospacedDigit()
             }
             .font(.subheadline)
@@ -344,5 +344,14 @@ struct WorkoutCelebrationView: View {
     }
     .frame(maxWidth: .infinity)
     .padding(.vertical, 6)
+  }
+}
+
+extension Double {
+  fileprivate var celebrationNumber: String {
+    if rounded() == self {
+      return formatted(.number.precision(.fractionLength(0)))
+    }
+    return formatted(.number.precision(.fractionLength(1)))
   }
 }

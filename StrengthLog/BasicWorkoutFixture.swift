@@ -18,6 +18,8 @@
         name: usesLongNames ? "Danielle" : "Jordan", colorHex: "53C8A6", sortOrder: 1)
       let owen = PersonProfile(
         name: usesLongNames ? "Benjamin" : "Owen", colorHex: "59A8FA", sortOrder: 2)
+      let usesLargeCelebrationVolume = ProcessInfo.processInfo.arguments.contains(
+        "-celebrationFormattingFixture")
       let benchPress = Exercise(
         sourceID: "fixture-bench-press",
         name: "Bench Press",
@@ -96,7 +98,7 @@
         prescriptions: [
           Prescription(
             participantName: alex.name,
-            measurement: 95,
+            measurement: usesLargeCelebrationVolume ? 1_250 : 95,
             sets: (0..<3).map { SetTemplate(sortOrder: $0, reps: 8) }),
           Prescription(
             participantName: jordan.name,
@@ -261,7 +263,7 @@
         let activeWorkout = WorkoutSessionStarter.start(
           routine: basicRoutine,
           people: activePeople,
-          sessions: workoutHistory,
+          sessions: usesLargeCelebrationVolume ? [] : workoutHistory,
           catalog: [benchPress, customExercise, squat] + performanceExercises,
           in: context)
         if ProcessInfo.processInfo.arguments.contains("-activeWorkoutCustomizedLastSetFixture"),
