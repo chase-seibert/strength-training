@@ -353,6 +353,54 @@ final class WorkoutNavigationUITests: XCTestCase {
     XCTAssertTrue(app.buttons["start-routine-Basic Workout"].waitForExistence(timeout: 5))
   }
 
+  func testAddingExerciseToActiveWorkoutUpdatesRoutine() {
+    app.terminate()
+    app.launchArguments = ["-basicWorkoutFixture", "-activeWorkoutFixture"]
+    app.launch()
+
+    XCTAssertTrue(app.otherElements["active-workout-screen"].waitForExistence(timeout: 5))
+    app.buttons["Add Exercise"].tap()
+
+    let searchField = app.searchFields["Exercise name"]
+    XCTAssertTrue(searchField.waitForExistence(timeout: 3))
+    searchField.tap()
+    searchField.typeText("Barbell Back Squat")
+
+    let squat = app.buttons.matching(
+      NSPredicate(format: "label CONTAINS[c] %@", "Barbell Back Squat")
+    ).firstMatch
+    XCTAssertTrue(squat.waitForExistence(timeout: 3))
+    squat.tap()
+
+    XCTAssertTrue(app.buttons["next-exercise-Bench Press"].waitForExistence(timeout: 3))
+    for name in ["Alex", "Jordan", "Owen"] {
+      let set = firstHittableElement(
+        in: app.buttons.matching(
+          NSPredicate(format: "identifier == %@", "participant-set-\(name)-1")))
+      XCTAssertNotNil(set)
+      set?.tap()
+    }
+    let completeWorkout = app.buttons["Complete Workout"]
+    for _ in 0..<5 {
+      if completeWorkout.isHittable { break }
+      app.collectionViews.firstMatch.swipeUp()
+    }
+    XCTAssertTrue(completeWorkout.isHittable)
+    completeWorkout.tap()
+    XCTAssertTrue(app.staticTexts["Workout complete"].waitForExistence(timeout: 5))
+    app.buttons["workout-celebration-done"].tap()
+
+    let startButton = app.buttons["start-routine-Basic Workout"]
+    XCTAssertTrue(startButton.waitForExistence(timeout: 5))
+    startButton.tap()
+    XCTAssertTrue(app.otherElements["active-workout-screen"].waitForExistence(timeout: 5))
+
+    let nextExercise = app.buttons["next-exercise-Bench Press"]
+    XCTAssertTrue(nextExercise.waitForExistence(timeout: 3))
+    nextExercise.tap()
+    XCTAssertTrue(app.navigationBars["Barbell Back Squat"].waitForExistence(timeout: 3))
+  }
+
   func testActiveWorkoutScrollPerformance() {
     launchActiveWorkoutPerformanceFixture()
 

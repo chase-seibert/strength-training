@@ -399,7 +399,7 @@ struct ActiveWorkoutView: View {
       }
     #endif
     .sheet(isPresented: $showingExercisePicker) {
-      AddExerciseToWorkoutSheet(session: session)
+      AddExerciseToWorkoutSheet(session: session, routine: activeRoutine)
     }
     .navigationDestination(isPresented: $showingMasterExercise) {
       if let detailExercise { ExerciseDetailView(exercise: detailExercise) }
@@ -1003,6 +1003,7 @@ struct AddExerciseToWorkoutSheet: View {
   @Query(filter: #Predicate<Exercise> { $0.deletedAt == nil }, sort: \Exercise.name)
   private var exercises: [Exercise]
   @Bindable var session: WorkoutSession
+  let routine: Routine?
   @State private var searchText = ""
 
   private var results: [Exercise] {
@@ -1016,6 +1017,7 @@ struct AddExerciseToWorkoutSheet: View {
       List(results) { exercise in
         Button {
           if session.add(exercise) {
+            _ = routine?.add(exercise)
             try? context.save()
             dismiss()
           }
@@ -1327,10 +1329,10 @@ struct ActiveExerciseCard: View {
       Button(action: completeOneSetForEveryone) {
         Label("1 set", systemImage: "checkmark")
           .font(.caption.weight(.bold))
-          .foregroundStyle(Theme.navy)
+          .foregroundStyle(.white)
           .padding(.horizontal, 9)
           .padding(.vertical, 6)
-          .background(Theme.mint.opacity(0.18), in: Capsule())
+          .background(Theme.coral, in: Capsule())
       }
       .buttonStyle(.plain)
       .accessibilityIdentifier("complete-one-set")
@@ -1339,9 +1341,9 @@ struct ActiveExerciseCard: View {
       Button(action: addSetForEveryone) {
         Image(systemName: "plus")
           .font(.caption.weight(.bold))
-          .foregroundStyle(Theme.coral)
+          .foregroundStyle(.white)
           .frame(width: 30, height: 30)
-          .background(Theme.coral.opacity(0.12), in: Circle())
+          .background(Theme.coral, in: Circle())
       }
       .buttonStyle(.plain)
       .accessibilityIdentifier("add-shared-set")
