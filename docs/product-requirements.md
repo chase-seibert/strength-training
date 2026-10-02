@@ -21,9 +21,10 @@
 - As a lifter, I want to tap an exercise name to open its details, edit its universal unit, and return to the same workout without losing entered values.
 - Plank defaults to seconds and a 60-second target; prior recorded targets remain intact. Timed sets use one duration control, including a duration-labeled last-set override.
 - Seconds-based exercises use catalog duration defaults, not the rep preference: generally 30 seconds, with instruction-specific shorter holds. Stomach Vacuum and One Handed Hang default to 20 seconds; Balance Board, Battling Ropes, and Mountain Climbers to 30; Isometric Chest Squeezes to 10; both neck-isometric entries to 5 per direction/side. These are editable per-set targets, not mandatory training prescriptions.
+- As a lifter, I want an explicit timer button on seconds- and minutes-based exercises, so that I can start a large blue countdown for the next timed set without starting recovery time. The active countdown keeps the screen awake, can be stopped, and ends automatically at zero; completing its set also stops it. When visible participants have different next-set durations, the app asks me to resolve those targets before starting.
 - Superman, Toe Touchers, and Ankle Circles default to repetitions. Catalog corrections apply once to original records still using the old unit; other unit choices, custom/duplicated exercises, deleted records, and saved set values are preserved.
 
-- As a lifter, I want only one workout log open at a time, so that logging stays focused without introducing timer state.
+- As a lifter, I want only one workout log open at a time, so that logging stays focused.
 - As a lifter, I want to select today's participants, so that solo, pair, and family sessions stay uncluttered.
 - As a lifter, I want a separate measurement and sets for every participant, so that everyone can progress independently in one routine.
 - As a lifter, I want exercise form thumbnails and optional full-size position images during a workout, so that I can check technique without leaving the session.

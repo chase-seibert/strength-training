@@ -495,6 +495,9 @@ final class WorkoutSession {
   var isActive: Bool
   var restTimerStartedAt: Date?
   var restTimerDurationSeconds: Int?
+  var exerciseTimerStartedAt: Date? = nil
+  var exerciseTimerDurationSeconds: Int? = nil
+  var exerciseTimerExerciseID: UUID? = nil
   var deletedAt: Date?
   var participantNames: [String]
   @Relationship(deleteRule: .cascade) var exercises: [ExerciseLog]
@@ -583,6 +586,13 @@ final class WorkoutSession {
     guard let endDate = restTimerEndDate else { return nil }
     let remaining = endDate.timeIntervalSince(now)
     return remaining > 0 ? remaining : nil
+  }
+
+  var exerciseTimerEndDate: Date? {
+    guard let startedAt = exerciseTimerStartedAt, let duration = exerciseTimerDurationSeconds,
+      duration > 0
+    else { return nil }
+    return startedAt.addingTimeInterval(TimeInterval(duration))
   }
 
   func isParticipantActive(_ name: String) -> Bool {

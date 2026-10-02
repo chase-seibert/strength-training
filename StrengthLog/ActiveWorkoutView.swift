@@ -2,6 +2,7 @@ import AudioToolbox
 import Charts
 import SwiftData
 import SwiftUI
+import UIKit
 
 #if DEBUG
   import QuartzCore
@@ -100,6 +101,12 @@ import SwiftUI
 
 private let activeWorkoutParticipantColumnWidth: CGFloat = 108
 
+extension Int {
+  fileprivate var timerDurationLabel: String {
+    self % 60 == 0 ? "\(self / 60) min" : "\(self) sec"
+  }
+}
+
 private struct ExerciseVisibilityTracker: ViewModifier {
   let exerciseID: UUID
   let isProgrammaticScrollPending: Bool
@@ -139,6 +146,41 @@ private struct ActiveWorkoutDurationLabel: View {
       .monospacedDigit()
       .font(.subheadline.weight(.semibold))
       .foregroundStyle(.secondary)
+  }
+}
+
+private struct ActiveExerciseTimerDisplay: View {
+  @ScaledMetric(relativeTo: .largeTitle) private var timerFontSize: CGFloat = 64
+
+  let endDate: Date
+  let exerciseName: String
+  let onStop: () -> Void
+
+  var body: some View {
+    VStack(spacing: 6) {
+      Text(exerciseName)
+        .font(.headline)
+        .foregroundStyle(.secondary)
+      Text(timerInterval: Date.now...endDate, countsDown: true)
+        .font(.system(size: timerFontSize, weight: .bold, design: .rounded))
+        .monospacedDigit()
+        .minimumScaleFactor(0.55)
+        .lineLimit(1)
+        .foregroundStyle(.blue)
+        .accessibilityLabel("Exercise timer")
+        .accessibilityValue(Text(timerInterval: Date.now...endDate, countsDown: true))
+        .accessibilityIdentifier("exercise-countdown")
+      Button("Stop exercise timer", systemImage: "stop.fill", action: onStop)
+        .font(.subheadline.weight(.semibold))
+        .buttonStyle(.bordered)
+        .tint(.blue)
+        .accessibilityIdentifier("stop-exercise-timer")
+    }
+    .frame(maxWidth: .infinity)
+    .padding(.vertical, 14)
+    .background(Color.blue.opacity(0.08), in: RoundedRectangle(cornerRadius: 16))
+    .accessibilityElement(children: .contain)
+    .accessibilityIdentifier("exercise-timer-panel")
   }
 }
 
@@ -281,7 +323,10 @@ struct ActiveWorkoutView: View {
 
         VStack(spacing: 12) {
           ActiveWorkoutDurationLabel(startedAt: session.startedAt)
-          Button(action: onDone) {
+          Button {
+            clearExerciseTimer()
+            onDone()
+          } label: {
             Text("Complete Workout")
               .font(.headline)
               .frame(maxWidth: .infinity)
@@ -300,7 +345,10 @@ struct ActiveWorkoutView: View {
             "Delete workout?",
             isPresented: $showingDeleteConfirmation
           ) {
-            Button("Delete Workout", role: .destructive, action: onDelete)
+            Button("Delete Workout", role: .destructive) {
+              clearExerciseTimer()
+              onDelete()
+            }
             Button("Cancel", role: .cancel) {}
           } message: {
             Text(
@@ -319,11 +367,22 @@ struct ActiveWorkoutView: View {
       .background(Color(.systemGroupedBackground))
       .background(DismissKeyboardOnTap())
       .safeAreaInset(edge: .top, spacing: 0) {
-        participantPills
-          .padding(.horizontal, participantPickerOuterPadding)
-          .padding(.vertical, 8)
-          .background(Color(.systemBackground))
-          .overlay(alignment: .bottom) { Divider() }
+        VStack(spacing: 0) {
+          participantPills
+            .padding(.horizontal, participantPickerOuterPadding)
+            .padding(.vertical, 8)
+          if isExerciseTimerRunning, let endDate = session.exerciseTimerEndDate {
+            ActiveExerciseTimerDisplay(
+              endDate: endDate,
+              exerciseName: timerExerciseName,
+              onStop: clearExerciseTimer
+            )
+            .padding(.horizontal, 16)
+            .padding(.bottom, 8)
+          }
+        }
+        .background(Color(.systemBackground))
+        .overlay(alignment: .bottom) { Divider() }
       }
       .onAppear {
         guard !didRestoreScrollPosition else { return }
@@ -388,6 +447,13 @@ struct ActiveWorkoutView: View {
       }
     }
     .toolbar(.hidden, for: .tabBar)
+    .task(id: session.exerciseTimerEndDate) {
+      guard let endDate = session.exerciseTimerEndDate else { return }
+      let delay = max(0, endDate.timeIntervalSinceNow)
+      try? await Task.sleep(for: .seconds(delay))
+      guard !Task.isCancelled else { return }
+      handleExerciseTimerExpiry()
+    }
     .accessibilityIdentifier("active-workout-screen")
     #if DEBUG
       .overlay(alignment: .bottomTrailing) {
@@ -413,11 +479,17 @@ struct ActiveWorkoutView: View {
         previousAutosaveEnabled = context.autosaveEnabled
         context.autosaveEnabled = false
       }
+      if let endDate = session.exerciseTimerEndDate, endDate <= .now {
+        clearExerciseTimer()
+      }
+      UIApplication.shared.isIdleTimerDisabled = isExerciseTimerRunning
       loadSupportingDataIfNeeded()
       syncLiveActivity()
     }
     .onDisappear {
+      UIApplication.shared.isIdleTimerDisabled = false
       flushPendingSave()
+      if !session.isActive { clearExerciseTimer() }
       if let previousAutosaveEnabled {
         context.autosaveEnabled = previousAutosaveEnabled
         self.previousAutosaveEnabled = nil
@@ -434,6 +506,9 @@ struct ActiveWorkoutView: View {
     }
     .onChange(of: session.restTimerStartedAt) { _, _ in
       syncLiveActivity()
+    }
+    .onChange(of: isExerciseTimerRunning) { _, isRunning in
+      UIApplication.shared.isIdleTimerDisabled = isRunning
     }
     .onChange(of: scenePhase) { _, phase in
       if phase == .active {
@@ -472,13 +547,50 @@ struct ActiveWorkoutView: View {
     syncLiveActivity()
   }
 
-  private func handleSetCompleted() {
+  private func handleSetCompleted(for exercise: ExerciseLog) {
+    if session.exerciseTimerExerciseID == exercise.id {
+      clearExerciseTimer()
+    }
     updateCurrentPersonalRecords()
     if let duration = activeRoutine?.restDurationSeconds, duration > 0 {
       startRestTimer()
     } else {
       flushPendingSave()
     }
+  }
+
+  private var isExerciseTimerRunning: Bool {
+    guard let endDate = session.exerciseTimerEndDate else { return false }
+    return endDate > .now
+  }
+
+  private var timerExerciseName: String {
+    orderedExercises.first(where: { $0.id == session.exerciseTimerExerciseID })?.exerciseName
+      ?? currentExerciseName
+  }
+
+  private func startExerciseTimer(for exercise: ExerciseLog, duration: Int) {
+    guard exercise.unit == .seconds || exercise.unit == .minutes, duration > 0 else { return }
+    session.exerciseTimerStartedAt = .now
+    session.exerciseTimerDurationSeconds = duration
+    session.exerciseTimerExerciseID = exercise.id
+    saveNow()
+  }
+
+  private func clearExerciseTimer() {
+    guard
+      session.exerciseTimerStartedAt != nil || session.exerciseTimerDurationSeconds != nil
+        || session.exerciseTimerExerciseID != nil
+    else { return }
+    session.exerciseTimerStartedAt = nil
+    session.exerciseTimerDurationSeconds = nil
+    session.exerciseTimerExerciseID = nil
+    saveNow()
+  }
+
+  private func handleExerciseTimerExpiry() {
+    guard let endDate = session.exerciseTimerEndDate, endDate <= .now else { return }
+    clearExerciseTimer()
   }
 
   private func syncLiveActivity() {
@@ -667,7 +779,9 @@ struct ActiveWorkoutView: View {
         detailExercise = exercise.masterExercise
         showingMasterExercise = detailExercise != nil
       },
-      onSetCompleted: handleSetCompleted,
+      onStartExerciseTimer: { duration in startExerciseTimer(for: exercise, duration: duration) },
+      isExerciseTimerRunning: isExerciseTimerRunning,
+      onSetCompleted: { handleSetCompleted(for: exercise) },
       showsPersonalRecord: personalRecordExerciseKeys.contains(PersonalRecords.key(for: exercise))
     )
     .frame(maxWidth: .infinity, alignment: .top)
@@ -1061,6 +1175,8 @@ struct ActiveExerciseCard: View {
   let usesSinglePersonHorizontalLayout: Bool
   let onAdvance: () -> Void
   let onOpenExercise: () -> Void
+  let onStartExerciseTimer: (Int) -> Void
+  let isExerciseTimerRunning: Bool
   let onSetCompleted: () -> Void
   let showsPersonalRecord: Bool
   @State private var showingImages = false
@@ -1077,6 +1193,25 @@ struct ActiveExerciseCard: View {
 
   private var setCount: Int {
     visibleLogs.map(\.sets.count).max() ?? 0
+  }
+
+  private var nextTimedTargets: [Int] {
+    visibleLogs.compactMap { participant in
+      guard let set = participant.orderedSets.first(where: { !$0.isSkipped && !$0.isCompleted })
+      else { return nil }
+      return set.target(for: exercise.unit)
+    }
+  }
+
+  private var timerTargetSeconds: Int? {
+    guard let target = nextTimedTargets.first, target > 0,
+      nextTimedTargets.allSatisfy({ $0 == target })
+    else { return nil }
+    return target * (exercise.unit == .minutes ? 60 : 1)
+  }
+
+  private var hasDifferentTimedTargets: Bool {
+    Set(nextTimedTargets).count > 1
   }
 
   private var participantSetStatuses: [String] {
@@ -1194,6 +1329,33 @@ struct ActiveExerciseCard: View {
       }
 
       Divider()
+
+      if exercise.unit == .seconds || exercise.unit == .minutes {
+        if isExerciseTimerRunning {
+          Label("Exercise timer running", systemImage: "timer")
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(.blue)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        } else if let duration = timerTargetSeconds {
+          Button {
+            onStartExerciseTimer(duration)
+          } label: {
+            Label("Start \(duration.timerDurationLabel) timer", systemImage: "timer")
+              .font(.subheadline.weight(.semibold))
+              .frame(maxWidth: .infinity, alignment: .leading)
+              .contentShape(Rectangle())
+          }
+          .buttonStyle(.bordered)
+          .tint(.blue)
+          .accessibilityIdentifier("start-exercise-timer-\(exercise.exerciseName)")
+          .accessibilityHint("Starts a countdown for the next timed set")
+        } else if hasDifferentTimedTargets {
+          Text("Participants have different timed targets")
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(.secondary)
+            .accessibilityIdentifier("exercise-timer-target-conflict")
+        }
+      }
 
       setCountControls
     }

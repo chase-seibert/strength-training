@@ -15,6 +15,17 @@ Also load and follow the user-level instructions at `/Users/cseibert/.codex/AGEN
 
 Prefer Makefile targets over ad hoc commands. Add recurring commands as Makefile targets.
 
+After implementing an app code change or completing an implementation task, run
+the appropriate verification and then deploy the successful build to Chase's
+iPhone 17 Pro with `make phone-deploy`. This is the default and does not need a
+separate user prompt for each implementation. Apply it to code changes that
+affect the app; skip plan-only, review-only, and documentation-only work. Do not
+deploy a build that failed verification. After deployment, launch the app and
+visually inspect the affected UI on the phone when the change is user-visible.
+If the phone is unavailable or locked, or signing prevents deployment, report
+that clearly and state what verification did complete. When the phone is locked,
+ask the user to unlock it before retrying launch and visual inspection.
+
 - `make setup`: validate the bundled catalog.
 - `make sim-build`: compile for the simulator.
 - `make sim-launch`: build, boot iPhone 17 Pro, install, and launch.
@@ -22,6 +33,7 @@ Prefer Makefile targets over ad hoc commands. Add recurring commands as Makefile
 - `make lint`: validate project/catalog structure and Swift formatting.
 - `make test`: validate the catalog and compile the complete app.
 - `make exercise-unit-ui-test`: verify live unit editing, catalog duration defaults, one-off unit corrections, and on-disk persistence.
+- `make exercise-timer-ui-test`: verify manually started seconds/minutes exercise countdowns and stopping.
 - `make rep-counting-ui-test`: verify master rep-counting edits in running/resumed workouts and on-disk defaults, overrides, and volume calculations.
 - `make workout-navigation-ui-test UI_TEST_FILTER=StrengthLogUITests/WorkoutNavigationUITests/testWorkoutReorderScreenSavesAndCancels`: verify compact workout reordering, Save/Cancel, and persistence. Set `UI_DERIVED_DATA=build-reorder-tests` to use a fresh test build directory when discovery is stale; verify a nonzero executed test count.
 - `make format`: apply Apple's Swift formatter.

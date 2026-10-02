@@ -20,13 +20,18 @@
         name: usesLongNames ? "Benjamin" : "Owen", colorHex: "59A8FA", sortOrder: 2)
       let usesLargeCelebrationVolume = ProcessInfo.processInfo.arguments.contains(
         "-celebrationFormattingFixture")
+      let timedFixtureUnit: TrackingUnit? =
+        ProcessInfo.processInfo.arguments.contains("-activeWorkoutTimedSecondsFixture")
+        ? .seconds
+        : ProcessInfo.processInfo.arguments.contains("-activeWorkoutTimedMinutesFixture")
+          ? .minutes : nil
       let benchPress = Exercise(
         sourceID: "fixture-bench-press",
         name: "Bench Press",
         category: "strength",
         equipment: "barbell",
         primaryMuscle: "chest",
-        unit: .pounds,
+        unit: timedFixtureUnit ?? .pounds,
         instructions: "Lower the bar with control, then press it up.",
         imagePath: "Barbell_Bench_Press_-_Medium_Grip/0.webp",
         additionalImagePaths: ["Barbell_Bench_Press_-_Medium_Grip/1.webp"])
@@ -92,7 +97,7 @@
         } : []
       let basicRoutineExercise = RoutineExercise(
         exerciseName: benchPress.name,
-        unit: .pounds,
+        unit: timedFixtureUnit ?? .pounds,
         sortOrder: 0,
         exerciseID: benchPress.id,
         prescriptions: [
@@ -266,6 +271,15 @@
           sessions: usesLargeCelebrationVolume ? [] : workoutHistory,
           catalog: [benchPress, customExercise, squat] + performanceExercises,
           in: context)
+        if let timedFixtureUnit, let activeWorkout, let exercise = activeWorkout.exercises.first {
+          let target = timedFixtureUnit == .minutes ? 2 : 45
+          for participant in exercise.participants {
+            for set in participant.orderedSets {
+              set.setTarget(target, unit: timedFixtureUnit)
+            }
+          }
+          try? context.save()
+        }
         if ProcessInfo.processInfo.arguments.contains("-activeWorkoutCustomizedLastSetFixture"),
           let participant = activeWorkout?.exercises.first?.participants.first(where: {
             $0.participantName == alex.name

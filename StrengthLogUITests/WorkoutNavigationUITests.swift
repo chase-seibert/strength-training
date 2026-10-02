@@ -93,6 +93,51 @@ final class WorkoutNavigationUITests: XCTestCase {
     XCTAssertFalse(app.otherElements["live-workout-header"].exists)
   }
 
+  func testTimedExerciseCountdownStartsStopsAndConvertsMinutes() {
+    app.terminate()
+    app.launchArguments = [
+      "-basicWorkoutFixture", "-activeWorkoutFixture", "-activeWorkoutOnePersonFixture",
+      "-activeWorkoutTimedSecondsFixture", "-activeWorkoutNavigationFixture", "-restTimerFixture",
+    ]
+    app.launch()
+
+    app.buttons.matching(
+      NSPredicate(
+        format: "identifier == %@ AND label == %@", "participant-set-Alex-1",
+        "Complete Bench Press set 1")
+    ).firstMatch.tap()
+    let skipRest = app.buttons["Skip"]
+    XCTAssertTrue(skipRest.waitForExistence(timeout: 3))
+    let secondsStart = app.buttons["start-exercise-timer-Bench Press"]
+    XCTAssertTrue(secondsStart.waitForExistence(timeout: 5))
+    XCTAssertTrue(secondsStart.label.contains("45 sec"), secondsStart.label)
+    secondsStart.tap()
+    let timerText = app.staticTexts["exercise-countdown"]
+    XCTAssertTrue(timerText.waitForExistence(timeout: 3), app.debugDescription)
+    XCTAssertTrue(skipRest.exists)
+    let headerTimerY = timerText.frame.minY
+    app.swipeUp()
+    XCTAssertTrue(timerText.exists)
+    XCTAssertEqual(timerText.frame.minY, headerTimerY, accuracy: 2)
+    let stop = app.buttons["stop-exercise-timer"]
+    XCTAssertTrue(stop.isHittable)
+    stop.tap()
+    XCTAssertTrue(timerText.waitForNonExistence(timeout: 3))
+    XCTAssertTrue(skipRest.exists)
+
+    app.terminate()
+    app.launchArguments = [
+      "-basicWorkoutFixture", "-activeWorkoutFixture", "-activeWorkoutOnePersonFixture",
+      "-activeWorkoutTimedMinutesFixture",
+    ]
+    app.launch()
+    let minutesStart = app.buttons["start-exercise-timer-Bench Press"]
+    XCTAssertTrue(minutesStart.waitForExistence(timeout: 5))
+    XCTAssertTrue(minutesStart.label.contains("2 min"))
+    minutesStart.tap()
+    XCTAssertTrue(app.staticTexts["exercise-countdown"].waitForExistence(timeout: 3))
+  }
+
   func testExerciseFilterMenuOrdersCustomAfterAllAndExcludesCatalogExercises() {
     app.tabBars.buttons["Exercises"].tap()
     let filterMenu = app.buttons["exercise-filter-menu"]
