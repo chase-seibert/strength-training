@@ -249,6 +249,7 @@ struct WorkoutCelebrationView: View {
         }
         .padding(12)
         .background(.white.opacity(0.1), in: RoundedRectangle(cornerRadius: 14))
+        .accessibilityElement(children: .combine)
         .accessibilityIdentifier("workout-celebration-recent-\(person.id)")
       }
     }
@@ -324,6 +325,9 @@ struct WorkoutCelebrationView: View {
         .foregroundStyle(.white)
         .lineLimit(1)
         .minimumScaleFactor(0.75)
+        .accessibilityIdentifier(
+          "workout-celebration-stat-\(title.lowercased().replacingOccurrences(of: " ", with: "-"))"
+        )
       Text(detail)
         .font(.caption2)
         .foregroundStyle(.white.opacity(0.52))
@@ -349,9 +353,12 @@ struct WorkoutCelebrationView: View {
 
 extension Double {
   fileprivate var celebrationNumber: String {
+    let number = FloatingPointFormatStyle<Double>.number
+      .locale(Locale(identifier: "en_US"))
+      .grouping(.automatic)
     if rounded() == self {
-      return formatted(.number.precision(.fractionLength(0)))
+      return formatted(number.precision(.fractionLength(0)))
     }
-    return formatted(.number.precision(.fractionLength(1)))
+    return formatted(number.precision(.fractionLength(1)))
   }
 }

@@ -446,11 +446,21 @@ final class WorkoutNavigationUITests: XCTestCase {
     XCTAssertTrue(app.staticTexts["Workout complete"].waitForExistence(timeout: 5))
     XCTAssertTrue(app.staticTexts["THIS WORKOUT"].exists)
     XCTAssertTrue(app.staticTexts["10,880 lb"].exists)
+    XCTAssertTrue(app.staticTexts["10,000 lb"].exists)
+    XCTAssertTrue(app.staticTexts["10,000 lb·reps"].exists)
     for name in ["Alex", "Jordan", "Owen"] {
       XCTAssertTrue(app.staticTexts[name.capitalized].waitForExistence(timeout: 5))
     }
     app.scrollViews.firstMatch.swipeUp()
     XCTAssertTrue(app.staticTexts["RECENT MOMENTUM · 4 WEEKS"].waitForExistence(timeout: 5))
+    let recentVolume = app.staticTexts["workout-celebration-stat-volume"]
+    XCTAssertTrue(recentVolume.label.contains(","))
+    XCTAssertTrue(recentVolume.label.hasSuffix(" lb"))
+    app.scrollViews.firstMatch.swipeUp()
+    let recentAlexRow = app.descendants(matching: .any)["workout-celebration-recent-alex"]
+    XCTAssertTrue(recentAlexRow.exists)
+    XCTAssertTrue(recentAlexRow.label.contains(","))
+    XCTAssertTrue(recentAlexRow.label.contains(" lb"))
     app.buttons["workout-celebration-done"].tap()
     XCTAssertTrue(app.buttons["start-routine-Basic Workout"].waitForExistence(timeout: 5))
   }
