@@ -14,6 +14,7 @@
 - As a lifter, I want to rename and duplicate any exercise while retaining its original name and canonical identity, so that personalized labels never disconnect routines or workout history from the source movement.
 - As a lifter, I want the exercise editor to explain tracking, muscle, equipment, type, and form-note choices in workout language, so that creating an exercise does not require understanding catalog internals.
 - As a lifter, I want measurement units for pounds, kilograms, reps, time, distance, and steps, so that strength and conditioning movements share one model.
+- In active workouts, weight adjustment buttons move to adjacent standard sizes: 5 lb or 2.5 kg. Off-size values snap in the selected direction when adjusted, while direct entry preserves the exact value. Decreasing clamps at zero; increasing from zero selects the first positive size.
 
 ## Workout execution
 

@@ -199,6 +199,61 @@ final class WorkoutNavigationUITests: XCTestCase {
     XCTAssertEqual(reps.value as? String, "9")
   }
 
+  func testWeightControlsJumpToStandardSizes() {
+    app.terminate()
+    app.launchArguments = ["-basicWorkoutFixture", "-activeWorkoutFixture"]
+    app.launch()
+
+    let weight = app.textFields["Pounds for Alex"]
+    XCTAssertTrue(weight.waitForExistence(timeout: 5))
+    XCTAssertEqual(weight.value as? String, "100")
+
+    app.buttons["measurement-plus-Alex"].tap()
+    XCTAssertEqual(weight.value as? String, "105")
+    app.buttons["measurement-minus-Alex"].tap()
+    XCTAssertEqual(weight.value as? String, "100")
+
+    weight.tap()
+    weight.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 5) + "22.5")
+    XCTAssertEqual(weight.value as? String, "22.5")
+    app.buttons["Increase value"].tap()
+    XCTAssertEqual(weight.value as? String, "25")
+    app.buttons["Decrease value"].tap()
+    XCTAssertEqual(weight.value as? String, "20")
+
+    app.buttons["Hide keyboard"].tap()
+    app.buttons["exercise-details-Bench Press"].tap()
+    changeExerciseUnit(to: "Weight (kg) + reps")
+    app.navigationBars.buttons.element(boundBy: 0).tap()
+
+    let kilograms = app.textFields["Kilograms for Alex"]
+    XCTAssertTrue(kilograms.waitForExistence(timeout: 5))
+    XCTAssertEqual(kilograms.value as? String, "20")
+    app.buttons["measurement-plus-Alex"].tap()
+    XCTAssertEqual(kilograms.value as? String, "22.5")
+    app.buttons["measurement-minus-Alex"].tap()
+    XCTAssertEqual(kilograms.value as? String, "20")
+
+    kilograms.tap()
+    kilograms.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 5) + "11")
+    app.buttons["Increase value"].tap()
+    XCTAssertEqual(kilograms.value as? String, "12.5")
+    let screenshot = XCTAttachment(screenshot: app.screenshot())
+    screenshot.name = "weight-stepping-keyboard-fractional-kg"
+    screenshot.lifetime = .keepAlways
+    add(screenshot)
+    app.buttons["Decrease value"].tap()
+    XCTAssertEqual(kilograms.value as? String, "10")
+    app.buttons["Hide keyboard"].tap()
+
+    app.buttons["close-active-workout"].tap()
+    let resume = app.buttons["resume-active-workout"]
+    XCTAssertTrue(resume.waitForExistence(timeout: 5))
+    resume.tap()
+    XCTAssertTrue(kilograms.waitForExistence(timeout: 5))
+    XCTAssertEqual(kilograms.value as? String, "10")
+  }
+
   func testPlankDefaultsAndMasterUnitEditingDuringWorkout() {
     app.terminate()
     app.launchArguments = [

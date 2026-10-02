@@ -1903,7 +1903,7 @@ struct CompactRepsControl: View {
           font: .monospacedDigitSystemFont(ofSize: 17, weight: .bold),
           accessibilityLabel:
             "Base \(unit.targetLabel(repCountingMode: repCountingMode)) for \(participant.participantName)",
-          step: 1,
+          adjustmentPolicy: .additive(step: 1),
           minimumValue: 1
         )
         .frame(maxWidth: .infinity, minHeight: 36)
@@ -2017,7 +2017,7 @@ struct LastSetEditorSheet: View {
             font: .monospacedDigitSystemFont(ofSize: 24, weight: .bold),
             accessibilityLabel:
               "Last set \(unit.targetLabel(repCountingMode: repCountingMode)) for \(exerciseName)",
-            step: 1,
+            adjustmentPolicy: .additive(step: 1),
             minimumValue: 1
           )
           .frame(maxWidth: .infinity, minHeight: 52)
@@ -2074,12 +2074,14 @@ struct MeasurementStepper: View {
   @State private var text = ""
   @State private var isFocused = false
 
-  private var step: Double { unit == .pounds ? 5 : 1 }
+  private var adjustmentPolicy: NumericAdjustmentPolicy {
+    NumericAdjustmentPolicy.forWeight(unit: unit) ?? .additive(step: 1)
+  }
 
   var body: some View {
     VStack(spacing: 1) {
       HStack(spacing: 0) {
-        stepButton("minus") { adjust(by: -step) }
+        stepButton("minus") { adjust(direction: .decrease) }
         SelectAllTextField(
           text: $text,
           isFocused: $isFocused,
@@ -2087,7 +2089,7 @@ struct MeasurementStepper: View {
           textAlignment: .center,
           font: .monospacedDigitSystemFont(ofSize: 16, weight: .bold),
           accessibilityLabel: "\(unit.title) for \(participant.participantName)",
-          step: step,
+          adjustmentPolicy: adjustmentPolicy,
           minimumValue: 0
         )
         .frame(maxWidth: .infinity, minHeight: 36)
@@ -2097,7 +2099,7 @@ struct MeasurementStepper: View {
             .frame(height: 1)
             .padding(.horizontal, 4)
         }
-        stepButton("plus") { adjust(by: step) }
+        stepButton("plus") { adjust(direction: .increase) }
       }
       .padding(.top, 4)
       Text(unit.label)
@@ -2135,11 +2137,11 @@ struct MeasurementStepper: View {
       "measurement-\(systemName)-\(participant.participantName)")
   }
 
-  private func adjust(by change: Double) {
-    participant.measurement = max(0, participant.measurement + change)
-    text = participant.measurement.tidy
-    for set in participant.sets { set.measurement = nil }
-    scheduleWorkoutSave()
+  private func adjust(direction: NumericAdjustmentDirection) {
+    guard let value = Double(text.isEmpty ? participant.measurement.tidy : text),
+      let adjusted = adjustmentPolicy.adjusted(value, direction: direction, minimum: 0)
+    else { return }
+    text = numericText(adjusted)
   }
 }
 

@@ -1,6 +1,61 @@
 import SwiftUI
 import UIKit
 
+enum NumericAdjustmentDirection {
+  case decrease
+  case increase
+}
+
+enum NumericAdjustmentPolicy {
+  case additive(step: Double)
+  case standardWeight(interval: Double)
+
+  static func forWeight(unit: TrackingUnit) -> NumericAdjustmentPolicy? {
+    switch unit {
+    case .pounds: .standardWeight(interval: 5)
+    case .kilograms: .standardWeight(interval: 2.5)
+    default: nil
+    }
+  }
+
+  func adjusted(_ value: Double, direction: NumericAdjustmentDirection, minimum: Double) -> Double?
+  {
+    guard value.isFinite, minimum.isFinite else { return nil }
+    let adjusted: Double
+    switch self {
+    case .additive(let step):
+      guard step.isFinite, step > 0 else { return nil }
+      switch direction {
+      case .increase: adjusted = value + step
+      case .decrease: adjusted = value - step
+      }
+    case .standardWeight(let interval):
+      guard interval.isFinite, interval > 0 else { return nil }
+      let position = value / interval
+      guard position.isFinite else { return nil }
+      let nearest = position.rounded()
+      let onBoundary = abs(position - nearest) <= 1e-9
+      let next: Double
+      switch direction {
+      case .increase: next = (onBoundary ? nearest : floor(position)) + 1
+      case .decrease: next = (onBoundary ? nearest : ceil(position)) - 1
+      }
+      adjusted = next * interval
+    }
+    guard adjusted.isFinite else { return nil }
+    let clamped = max(minimum, adjusted)
+    return (clamped * 1_000_000_000).rounded() / 1_000_000_000
+  }
+}
+
+func numericText(_ value: Double) -> String {
+  guard value.isFinite else { return "" }
+  if value.rounded() == value, value >= Double(Int.min), value < Double(Int.max) {
+    return String(Int(value))
+  }
+  return String(value)
+}
+
 func exerciseCountText(_ count: Int) -> String {
   "\(count) \(count == 1 ? "exercise" : "exercises")"
 }
@@ -38,7 +93,7 @@ struct SelectAllTextField: UIViewRepresentable {
   let textAlignment: NSTextAlignment
   let font: UIFont
   let accessibilityLabel: String
-  let step: Double
+  let adjustmentPolicy: NumericAdjustmentPolicy
   let minimumValue: Double
 
   func makeCoordinator() -> Coordinator {
@@ -53,7 +108,7 @@ struct SelectAllTextField: UIViewRepresentable {
     textField.font = font
     textField.accessibilityLabel = accessibilityLabel
     textField.inputAccessoryView = KeyboardAccessoryToolbar(
-      textField: textField, step: step, minimumValue: minimumValue)
+      textField: textField, adjustmentPolicy: adjustmentPolicy, minimumValue: minimumValue)
     textField.addTarget(
       context.coordinator, action: #selector(Coordinator.textDidChange(_:)),
       for: .editingChanged)
@@ -65,7 +120,7 @@ struct SelectAllTextField: UIViewRepresentable {
     textField.accessibilityLabel = accessibilityLabel
     textField.keyboardType = keyboardType
     if let toolbar = textField.inputAccessoryView as? KeyboardAccessoryToolbar {
-      toolbar.update(step: step, minimumValue: minimumValue)
+      toolbar.update(adjustmentPolicy: adjustmentPolicy, minimumValue: minimumValue)
     }
     if textField.text != text {
       textField.text = text
@@ -143,12 +198,12 @@ struct SelectAllTextField: UIViewRepresentable {
 
 private final class KeyboardAccessoryToolbar: UIToolbar {
   private weak var textField: UITextField?
-  private var step: Double
+  private var adjustmentPolicy: NumericAdjustmentPolicy
   private var minimumValue: Double
 
-  init(textField: UITextField, step: Double, minimumValue: Double) {
+  init(textField: UITextField, adjustmentPolicy: NumericAdjustmentPolicy, minimumValue: Double) {
     self.textField = textField
-    self.step = step
+    self.adjustmentPolicy = adjustmentPolicy
     self.minimumValue = minimumValue
     super.init(frame: .zero)
 
@@ -188,8 +243,8 @@ private final class KeyboardAccessoryToolbar: UIToolbar {
     fatalError("init(coder:) has not been implemented")
   }
 
-  func update(step: Double, minimumValue: Double) {
-    self.step = step
+  func update(adjustmentPolicy: NumericAdjustmentPolicy, minimumValue: Double) {
+    self.adjustmentPolicy = adjustmentPolicy
     self.minimumValue = minimumValue
   }
 
@@ -198,20 +253,20 @@ private final class KeyboardAccessoryToolbar: UIToolbar {
   }
 
   @objc private func decreaseValue() {
-    adjustValue(by: -step)
+    adjustValue(direction: .decrease)
   }
 
   @objc private func increaseValue() {
-    adjustValue(by: step)
+    adjustValue(direction: .increase)
   }
 
-  private func adjustValue(by delta: Double) {
+  private func adjustValue(direction: NumericAdjustmentDirection) {
     guard let textField, let value = Double(textField.text ?? "") else { return }
-    let adjustedValue = max(minimumValue, value + delta)
-    textField.text =
-      adjustedValue.rounded() == adjustedValue
-      ? String(Int(adjustedValue))
-      : String(adjustedValue)
+    guard
+      let adjustedValue = adjustmentPolicy.adjusted(
+        value, direction: direction, minimum: minimumValue)
+    else { return }
+    textField.text = numericText(adjustedValue)
     textField.sendActions(for: .editingChanged)
   }
 }
