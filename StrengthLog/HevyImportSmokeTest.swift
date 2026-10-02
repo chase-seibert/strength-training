@@ -108,6 +108,32 @@
       try verifyMasterUnitPersistence(schema: schema)
       try verifyCatalogDefaultsAndCorrections(schema: schema)
       try verifyRepCountingPersistence(schema: schema)
+      try verifyWorkoutDurations()
+    }
+
+    private static func verifyWorkoutDurations() throws {
+      let start = Date(timeIntervalSince1970: 1_800_000_000)
+      let end = start.addingTimeInterval(90 * 60)
+      let active = WorkoutSession(
+        routineID: UUID(), participantNames: [], exercises: [], startedAt: start, isActive: true)
+      let completed = WorkoutSession(
+        routineID: UUID(), participantNames: [], exercises: [], startedAt: start, endedAt: end,
+        isActive: false)
+      let missingEnd = WorkoutSession(
+        routineID: UUID(), participantNames: [], exercises: [], startedAt: start, isActive: false)
+      guard
+        active.workoutDuration == nil,
+        active.workoutDuration(at: end) == 90 * 60,
+        completed.workoutDuration == 90 * 60,
+        completed.workoutDuration(at: end.addingTimeInterval(20 * 60)) == 90 * 60,
+        missingEnd.workoutDuration == nil,
+        WorkoutSession.validatedWorkoutDuration(start: start, end: start) == nil,
+        WorkoutSession.validatedWorkoutDuration(start: end, end: start) == nil,
+        WorkoutSession.validatedWorkoutDuration(
+          start: start, end: start.addingTimeInterval(WorkoutSession.maximumWorkoutDuration + 1))
+          == nil,
+        WorkoutSession.validatedWorkoutDuration(start: .distantFuture, end: .distantPast) == nil
+      else { throw SmokeError.invalidWorkoutDuration }
     }
 
     private static func verifyRepCountingPersistence(schema: Schema) throws {
@@ -486,6 +512,7 @@
     case lostRoutineExercises
     case duplicateImport
     case routineCollision
+    case invalidWorkoutDuration
     case unitPersistence
     case catalogDefaults
     case exerciseOrder
@@ -499,6 +526,8 @@
         "The imported routine did not contain every mapped exercise."
       case .duplicateImport: "The importer did not skip a duplicate workout."
       case .routineCollision: "The importer did not create a uniquely named routine."
+      case .invalidWorkoutDuration:
+        "Workout duration accepted a missing, invalid, or over-limit interval."
       case .unitPersistence:
         "Master exercise units or recorded values failed the on-disk persistence check."
       case .catalogDefaults:

@@ -482,6 +482,7 @@ final class SetTemplate {
 @Model
 final class WorkoutSession {
   static let resumeWindow: TimeInterval = 2 * 60 * 60
+  static let maximumWorkoutDuration: TimeInterval = 24 * 60 * 60
 
   var id: UUID
   var externalID: String?
@@ -562,18 +563,25 @@ final class WorkoutSession {
   }
 
   var workoutDuration: TimeInterval? {
-    let endpoint = lastSetCompletedAt ?? endedAt
-    guard let endpoint else { return nil }
-    return max(0, endpoint.timeIntervalSince(startedAt))
+    guard !isActive, let endedAt else { return nil }
+    return Self.validatedWorkoutDuration(start: startedAt, end: endedAt)
   }
 
-  /// While a workout is open, show elapsed time live from its start.
-  /// Once it is closed, preserve the recorded start-to-last-set duration.
+  /// Active sessions use start-to-now; completed sessions require their explicit end time.
   func workoutDuration(at now: Date) -> TimeInterval? {
     if isActive {
-      return max(0, now.timeIntervalSince(startedAt))
+      return Self.validatedWorkoutDuration(start: startedAt, end: now)
     }
     return workoutDuration
+  }
+
+  static func validatedWorkoutDuration(start: Date, end: Date) -> TimeInterval? {
+    guard start.timeIntervalSince1970.isFinite, end.timeIntervalSince1970.isFinite else {
+      return nil
+    }
+    let duration = end.timeIntervalSince(start)
+    guard duration.isFinite, duration > 0, duration <= maximumWorkoutDuration else { return nil }
+    return duration
   }
 
   var restTimerEndDate: Date? {

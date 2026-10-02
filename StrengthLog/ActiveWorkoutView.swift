@@ -138,14 +138,16 @@ extension EnvironmentValues {
 }
 
 private struct ActiveWorkoutDurationLabel: View {
-  let startedAt: Date
+  let session: WorkoutSession
 
   var body: some View {
-    let duration = max(0, Date.now.timeIntervalSince(startedAt))
-    Text("Workout length \(duration.workoutDurationText)")
-      .monospacedDigit()
-      .font(.subheadline.weight(.semibold))
-      .foregroundStyle(.secondary)
+    TimelineView(.periodic(from: .now, by: 1)) { timeline in
+      let text = session.workoutDuration(at: timeline.date)?.workoutDurationText ?? "—"
+      Text("Workout length \(text)")
+        .monospacedDigit()
+        .font(.subheadline.weight(.semibold))
+        .foregroundStyle(.secondary)
+    }
   }
 }
 
@@ -322,7 +324,7 @@ struct ActiveWorkoutView: View {
         .listRowBackground(Color.clear)
 
         VStack(spacing: 12) {
-          ActiveWorkoutDurationLabel(startedAt: session.startedAt)
+          ActiveWorkoutDurationLabel(session: session)
           Button {
             clearExerciseTimer()
             onDone()

@@ -27,6 +27,9 @@
 - As a lifter, I want only one workout log open at a time, so that logging stays focused.
 - As a lifter, I want to select today's participants, so that solo, pair, and family sessions stay uncluttered.
 - As a lifter, I want a separate measurement and sets for every participant, so that everyone can progress independently in one routine.
+- As a lifter, I want an Apple Health setting I can turn on or off, so that I control whether explicitly completed workouts are recorded in Health. It is off by default, asks for workout write permission when enabled, and represents a multi-person session as one device-owner Health record. Health save failures never interrupt local completion.
+- Workout length is measured from session start to the explicit completion time, with the same value used by the active timer, history, celebration, and Health workout. Reject invalid intervals and intervals longer than 24 hours; never estimate an ended workout's duration from its last completed set.
+- Deleting a local workout does not delete its separately saved Health workout. Sessions with no completed sets, unended sessions, and deleted sessions are not exported.
 - As a lifter, I want exercise form thumbnails and optional full-size position images during a workout, so that I can check technique without leaving the session.
 - As a lifter, I want one compact Load/Sets/Reps matrix per exercise, with one base rep count, an optional remembered last-set override, and numbered per-set completion squares, so that repeated sets stay compact without hiding progress.
 - As a family, we want up to three people visible together in one exercise matrix, with one shared set count and per-person completion controls, so that group workouts do not require horizontal scrolling.
@@ -47,7 +50,7 @@
 - As a lifter, I want to reopen any workout log directly, so that interruptions and later corrections are effortless.
 - As a lifter, I want reopening to jump to the exercise after the last meaningfully progressed exercise and move an offscreen exercise name into the navigation title, so that I immediately recover my place.
 - As a lifter, I want an optional rest timer configured once per routine that starts after each completed set, so that everyone follows the same recovery interval without resetting it manually.
-- As a lifter, I want an active rest countdown to replace the exercise title and elapsed workout length above Complete Workout, plus the same countdown on the Workout home card and a recorded workout length from start to the latest completed set, so that timing stays available without consuming vertical space while I log and scroll. The Lock Screen activity should also identify the current exercise, set progress, reps, and load, with an optional local notification when rest ends.
+- As a lifter, I want an active rest countdown to replace the exercise title and elapsed workout length above Complete Workout, plus the same countdown on the Workout home card and a workout length from start to explicit completion, so that timing stays available without consuming vertical space while I log and scroll. The Lock Screen activity should also identify the current exercise, set progress, reps, and load, with an optional local notification when rest ends.
 - As a lifter, I want a celebratory completion screen showing each person's workout volume, new personal records, recent workout count, and recent volume, so that finishing a session feels rewarding and progress is immediately visible.
 
 ## Persistence and progress

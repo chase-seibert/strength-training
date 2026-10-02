@@ -44,3 +44,7 @@ A live exercise-unit edit updated SwiftUI labels but the existing `SelectAllText
 ## 2026-09-25 — Device signing requires an available Xcode account and profiles
 
 The project correctly resolved `DEVELOPMENT_TEAM=96NAC4VTEN`, but a generic iOS signing build produced no app because Xcode reported no usable account credentials and no development profiles for the app and Live Activity bundle IDs. Confirm the Xcode account and provisioning profiles before diagnosing the project team setting.
+
+## 2026-10-02 — HealthKit device builds need a HealthKit-enabled profile
+
+After adding the HealthKit entitlement, `make phone-deploy` resolved the configured personal team but failed because Xcode had no account and its provisioning profile did not include HealthKit. Simulator builds still succeeded. Configure an Apple Development account/profile with the HealthKit capability before retrying physical deployment; this is a signing setup issue, not a Swift compile error.

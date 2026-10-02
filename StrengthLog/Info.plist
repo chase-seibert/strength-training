@@ -4,6 +4,8 @@
 <dict>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>Lift Chase saves workouts you complete here to Apple Health so they appear alongside your other workouts.</string>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
 	<key>CFBundleDocumentTypes</key>

@@ -6,6 +6,12 @@
 - `jq` for catalog validation.
 - No package installation or API key is required.
 
+## Apple Health
+
+Apple Health recording is off by default. In Settings, turn on **Record Workouts in Apple Health** to request workout write permission. When enabled, explicitly completing a workout with at least one completed set attempts to save one traditional strength-training workout. Lift Chase requests no Health reads and adds no energy or other measurements. Export uses the session's explicit start and end and is omitted for invalid timing or sessions longer than 24 hours. Health access or save errors do not affect the local workout. Turning the setting off stops future exports; it does not delete records already in Apple Health. Group sessions are represented by one record in the device owner's Health data.
+
+Physical-device signing requires a provisioning profile that includes the HealthKit capability. A simulator build does not require a HealthKit provisioning profile.
+
 ## Simulator
 
 ```sh

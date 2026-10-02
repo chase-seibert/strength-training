@@ -1,3 +1,4 @@
+import HealthKit
 import SwiftData
 import SwiftUI
 import UniformTypeIdentifiers
@@ -12,8 +13,12 @@ struct SettingsView: View {
     WorkoutPreferences.fallbackReps
   @AppStorage(WorkoutPreferences.restTimerNotificationsEnabledKey)
   private var restTimerNotificationsEnabled = false
+  @AppStorage(HealthKitWorkoutRecorder.recordingEnabledKey)
+  private var healthKitWorkoutRecordingEnabled = false
   @State private var showingNewPerson = false
   @State private var showingHevyImporter = false
+  @State private var isRequestingHealthAuthorization = false
+  @State private var healthAuthorizationMessage: String?
 
   var body: some View {
     List {
@@ -66,6 +71,37 @@ struct SettingsView: View {
         )
       }
 
+      Section {
+        Toggle(
+          "Record Workouts in Apple Health",
+          isOn: Binding(
+            get: { healthKitWorkoutRecordingEnabled },
+            set: setHealthKitWorkoutRecordingEnabled
+          )
+        )
+        .accessibilityIdentifier("apple-health-workout-export-toggle")
+        .disabled(
+          isRequestingHealthAuthorization || !HealthKitWorkoutRecorder.isHealthDataAvailable)
+
+        if isRequestingHealthAuthorization {
+          SwiftUI.ProgressView("Requesting Health access…")
+        } else if let healthAuthorizationMessage {
+          Text(healthAuthorizationMessage)
+            .font(.footnote)
+            .foregroundStyle(.secondary)
+        } else if !HealthKitWorkoutRecorder.isHealthDataAvailable {
+          Text("Apple Health is unavailable on this device.")
+            .font(.footnote)
+            .foregroundStyle(.secondary)
+        }
+      } header: {
+        Text("Apple Health")
+      } footer: {
+        Text(
+          "When enabled, completed workouts with at least one completed set can be saved to Apple Health. Lift Chase only writes workout records and does not read Health data. Turn this off to stop future workout exports."
+        )
+      }
+
       Section("Data") {
         Button("Import Hevy CSV", systemImage: "square.and.arrow.down") {
           showingHevyImporter = true
@@ -89,6 +125,7 @@ struct SettingsView: View {
       #endif
     }
     .navigationTitle("Settings")
+    .onAppear(perform: refreshHealthAuthorizationMessage)
     .sheet(isPresented: $showingNewPerson) { NewPersonSheet() }
     .fileImporter(
       isPresented: $showingHevyImporter,
@@ -109,6 +146,54 @@ struct SettingsView: View {
     let descriptor = FetchDescriptor<Exercise>(
       predicate: #Predicate<Exercise> { $0.deletedAt == nil })
     return (try? context.fetchCount(descriptor)) ?? 0
+  }
+
+  private func setHealthKitWorkoutRecordingEnabled(_ enabled: Bool) {
+    guard !isRequestingHealthAuthorization else { return }
+    guard enabled else {
+      healthKitWorkoutRecordingEnabled = false
+      healthAuthorizationMessage = nil
+      return
+    }
+
+    guard HealthKitWorkoutRecorder.isHealthDataAvailable else {
+      healthKitWorkoutRecordingEnabled = false
+      healthAuthorizationMessage = "Apple Health is unavailable on this device."
+      return
+    }
+
+    healthKitWorkoutRecordingEnabled = true
+    isRequestingHealthAuthorization = true
+    healthAuthorizationMessage = nil
+    Task {
+      defer { isRequestingHealthAuthorization = false }
+      do {
+        if try await HealthKitWorkoutRecorder.requestWorkoutWriteAuthorization() {
+          healthKitWorkoutRecordingEnabled = true
+          healthAuthorizationMessage = "Enabled. Completed workouts can be saved to Apple Health."
+        } else {
+          healthKitWorkoutRecordingEnabled = false
+          healthAuthorizationMessage =
+            "Permission wasn’t granted. Allow Lift Chase to add workouts in Apple Health, then turn this on again."
+        }
+      } catch {
+        healthKitWorkoutRecordingEnabled = false
+        healthAuthorizationMessage = "Couldn’t request Apple Health access. Try again later."
+      }
+    }
+  }
+
+  private func refreshHealthAuthorizationMessage() {
+    guard healthKitWorkoutRecordingEnabled else {
+      healthAuthorizationMessage = nil
+      return
+    }
+    if HealthKitWorkoutRecorder.hasWorkoutWriteAuthorization {
+      healthAuthorizationMessage = "Enabled. Completed workouts can be saved to Apple Health."
+    } else {
+      healthAuthorizationMessage =
+        "Workout access is off in Apple Health. Allow Lift Chase to add workouts there to resume saving, or turn off recording here."
+    }
   }
 }
 

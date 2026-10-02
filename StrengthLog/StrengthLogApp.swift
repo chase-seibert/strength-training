@@ -1,5 +1,101 @@
+import HealthKit
 import SwiftData
 import SwiftUI
+
+struct CompletedHealthWorkout {
+  let id: UUID
+  let start: Date
+  let end: Date
+  let duration: TimeInterval
+
+  init?(session: WorkoutSession) {
+    guard
+      !session.isActive,
+      session.deletedAt == nil,
+      session.completedSetCount > 0,
+      let end = session.endedAt,
+      let duration = WorkoutSession.validatedWorkoutDuration(start: session.startedAt, end: end)
+    else { return nil }
+    id = session.id
+    start = session.startedAt
+    self.end = end
+    self.duration = duration
+  }
+}
+
+enum HealthKitWorkoutRecorder {
+  static let recordingEnabledKey = "healthKitWorkoutRecordingEnabled"
+  private static let store = HKHealthStore()
+
+  static var isHealthDataAvailable: Bool {
+    HKHealthStore.isHealthDataAvailable()
+  }
+
+  static var hasWorkoutWriteAuthorization: Bool {
+    isHealthDataAvailable
+      && store.authorizationStatus(for: HKObjectType.workoutType()) == .sharingAuthorized
+  }
+
+  static func requestWorkoutWriteAuthorization() async throws -> Bool {
+    guard isHealthDataAvailable else { return false }
+    let workoutType = HKObjectType.workoutType()
+    if store.authorizationStatus(for: workoutType) == .sharingAuthorized { return true }
+    let shareTypes: Set<HKSampleType> = [workoutType]
+    try await store.requestAuthorization(toShare: shareTypes, read: [])
+    return store.authorizationStatus(for: workoutType) == .sharingAuthorized
+  }
+
+  static func record(_ workout: CompletedHealthWorkout) async throws {
+    guard hasWorkoutWriteAuthorization else { return }
+    let workoutType = HKObjectType.workoutType()
+
+    let metadata: [String: Any] = [
+      HKMetadataKeySyncIdentifier: "com.cseibert.StrengthLog.workout.\(workout.id.uuidString)",
+      HKMetadataKeySyncVersion: 1,
+    ]
+    let configuration = HKWorkoutConfiguration()
+    configuration.activityType = .traditionalStrengthTraining
+    configuration.locationType = .unknown
+    let builder = HKWorkoutBuilder(
+      healthStore: store, configuration: configuration, device: nil)
+    try await perform { builder.beginCollection(withStart: workout.start, completion: $0) }
+    try await perform { builder.addMetadata(metadata, completion: $0) }
+    try await perform { builder.endCollection(withEnd: workout.end, completion: $0) }
+    try await finish(builder)
+  }
+
+  private static func perform(
+    _ operation: (@escaping @Sendable (Bool, (any Error)?) -> Void) -> Void
+  ) async throws {
+    try await withCheckedThrowingContinuation {
+      (continuation: CheckedContinuation<Void, any Error>) in
+      operation { success, error in
+        if let error {
+          continuation.resume(throwing: error)
+        } else if success {
+          continuation.resume()
+        } else {
+          continuation.resume(throwing: NSError(domain: "HealthKitWorkoutRecorder", code: 1))
+        }
+      }
+    }
+  }
+
+  private static func finish(_ builder: HKWorkoutBuilder) async throws {
+    try await withCheckedThrowingContinuation {
+      (continuation: CheckedContinuation<Void, any Error>) in
+      builder.finishWorkout { workout, error in
+        if let error {
+          continuation.resume(throwing: error)
+        } else if workout != nil {
+          continuation.resume()
+        } else {
+          continuation.resume(throwing: NSError(domain: "HealthKitWorkoutRecorder", code: 2))
+        }
+      }
+    }
+  }
+}
 
 @main
 struct StrengthLogApp: App {
@@ -184,6 +280,8 @@ struct RootView: View {
   @Query(sort: \PersonProfile.sortOrder)
   private var people: [PersonProfile]
   @Query private var routines: [Routine]
+  @AppStorage(HealthKitWorkoutRecorder.recordingEnabledKey)
+  private var healthKitWorkoutRecordingEnabled = false
   @State private var navigationPath: [ActiveWorkoutRoute] = []
   @State private var selectedTab = 0
   @State private var didRestoreActiveWorkout = false
@@ -258,7 +356,14 @@ struct RootView: View {
   }
 
   private func completeAndDismiss(_ session: WorkoutSession) {
-    close(session)
+    let didSaveCompletion = close(session)
+    if didSaveCompletion, healthKitWorkoutRecordingEnabled,
+      let workout = CompletedHealthWorkout(session: session)
+    {
+      Task {
+        try? await HealthKitWorkoutRecorder.record(workout)
+      }
+    }
     celebrationSummary = makeCelebrationSummary(for: session)
     dismissActiveWorkout()
   }
@@ -268,14 +373,19 @@ struct RootView: View {
     dismissActiveWorkout()
   }
 
-  private func close(_ session: WorkoutSession) {
-    guard session.isActive else { return }
+  private func close(_ session: WorkoutSession) -> Bool {
+    guard session.isActive else { return false }
     session.endedAt = .now
     session.isActive = false
     session.restTimerStartedAt = nil
     session.restTimerDurationSeconds = nil
-    try? context.save()
     LiveActivityManager.shared.end()
+    do {
+      try context.save()
+    } catch {
+      return false
+    }
+    return true
   }
 
   private func makeCelebrationSummary(for session: WorkoutSession) -> WorkoutCelebrationSummary {

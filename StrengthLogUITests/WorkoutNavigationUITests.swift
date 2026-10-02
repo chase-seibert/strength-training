@@ -48,6 +48,8 @@ final class WorkoutNavigationUITests: XCTestCase {
     XCTAssertTrue(
       defaultReps.label.contains("8") || String(describing: defaultReps.value).contains("8"))
     XCTAssertTrue(app.switches["Rest timer notifications"].exists)
+    XCTAssertTrue(app.staticTexts["Apple Health"].exists)
+    XCTAssertTrue(app.switches["apple-health-workout-export-toggle"].exists)
   }
 
   func testRoutineRestTimerCanBeConfigured() {
