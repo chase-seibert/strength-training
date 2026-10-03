@@ -1493,12 +1493,10 @@ struct ActiveExerciseCard: View {
       Button(action: completeOneSetForEveryone) {
         Label("1 set", systemImage: "checkmark")
           .font(.caption.weight(.bold))
-          .foregroundStyle(.white)
-          .padding(.horizontal, 9)
-          .padding(.vertical, 6)
-          .background(Theme.coral, in: Capsule())
       }
-      .buttonStyle(.plain)
+      .buttonStyle(.borderedProminent)
+      .controlSize(.small)
+      .tint(Theme.coral)
       .accessibilityIdentifier("complete-one-set")
       .accessibilityLabel("Complete one set for everyone")
 
