@@ -55,17 +55,6 @@ struct ProgressView: View {
                   )
                   .foregroundStyle(by: .value("Person", point.personName))
                 }
-                ForEach(personalRecordPoints) { point in
-                  PointMark(
-                    x: .value("Week", point.weekStart, unit: .weekOfYear),
-                    y: .value("Volume", 0)
-                  )
-                  .foregroundStyle(.clear)
-                  .symbolSize(1)
-                  .annotation(position: .top, spacing: 0) {
-                    PersonalRecordBadge(count: point.count)
-                  }
-                }
               }
               .chartForegroundStyleScale(
                 domain: progressPeople,
@@ -73,6 +62,7 @@ struct ProgressView: View {
               )
               .chartLegend(position: .bottom, alignment: .leading)
               .frame(height: 220)
+              .accessibilityIdentifier("progress-volume-chart")
               .chartYAxisLabel("lb × reps")
               .chartYScale(domain: 0...max(volumePoints.map(\.volume).max() ?? 1, 1))
 
@@ -198,23 +188,6 @@ struct ProgressView: View {
     }
   }
 
-  private var personalRecordPoints: [WeeklyPersonalRecordPoint] {
-    let calendar = Calendar.current
-    let sessionsByID = Dictionary(uniqueKeysWithValues: filteredSessions.map { ($0.id, $0) })
-    var counts: [Date: Int] = [:]
-    for achievement in PersonalRecords.achievements(in: sessions) {
-      guard let session = sessionsByID[achievement.sessionID] else { continue }
-      let weekStart =
-        calendar.dateInterval(of: .weekOfYear, for: session.startedAt)?.start
-        ?? calendar.startOfDay(for: session.startedAt)
-      counts[weekStart, default: 0] += 1
-    }
-    return counts.map { weekStart, count in
-      WeeklyPersonalRecordPoint(
-        id: "\(weekStart.timeIntervalSinceReferenceDate)", weekStart: weekStart, count: count)
-    }.sorted { $0.weekStart < $1.weekStart }
-  }
-
   private func volume(for session: WorkoutSession, participantName: String) -> Double {
     session.exercises.reduce(0) { $0 + $1.completedPoundsVolume(for: participantName) }
   }
@@ -279,28 +252,20 @@ private struct PersonVolumePoint: Identifiable {
   let volume: Double
 }
 
-private struct WeeklyPersonalRecordPoint: Identifiable {
-  let id: String
-  let weekStart: Date
-  let count: Int
-}
-
 private struct PersonalRecordBadge: View {
   let count: Int
 
   var body: some View {
-    HStack(spacing: 3) {
+    HStack(spacing: 4) {
       Image(systemName: "trophy.fill")
-        .font(.caption2)
-        .foregroundStyle(Theme.prYellow)
-      if count > 0 {
-        Text("+\(count)")
-          .font(.system(size: 8, weight: .bold))
-          .foregroundStyle(.black)
-          .padding(.horizontal, 3)
-          .background(Theme.prYellow, in: Capsule())
-      }
+        .font(.caption2.weight(.bold))
+      Text("+\(count)")
+        .font(.caption2.weight(.bold))
     }
+    .foregroundStyle(.black)
+    .padding(.horizontal, 8)
+    .padding(.vertical, 5)
+    .background(Theme.prYellow, in: Capsule())
     .fixedSize(horizontal: true, vertical: true)
     .accessibilityElement(children: .ignore)
     .accessibilityLabel("\(count) personal record\(count == 1 ? "" : "s")")

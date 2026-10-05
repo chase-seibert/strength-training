@@ -19,6 +19,7 @@
 		A1000000000000000000000A /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000A /* SettingsView.swift */; };
 		A1000000000000000000000B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000B /* Assets.xcassets */; };
 		A1000000000000000000000C /* exercise-catalog.json in Resources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000C /* exercise-catalog.json */; };
+		A10000000000000000000016 /* pr-sticker-phone-history-fixture.json in Resources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000016 /* pr-sticker-phone-history-fixture.json */; };
 		A1000000000000000000000E /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000E /* OnboardingView.swift */; };
 		A1000000000000000000000F /* HevyCSVParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000F /* HevyCSVParser.swift */; };
 		A10000000000000000000010 /* HevyImportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000010 /* HevyImportView.swift */; };
@@ -64,6 +65,7 @@
 		A2000000000000000000000A /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		A2000000000000000000000B /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A2000000000000000000000C /* exercise-catalog.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "exercise-catalog.json"; sourceTree = "<group>"; };
+		A20000000000000000000016 /* pr-sticker-phone-history-fixture.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "pr-sticker-phone-history-fixture.json"; sourceTree = "<group>"; };
 		A2000000000000000000000D /* StrengthLog.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = StrengthLog.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A2000000000000000000000E /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		A2000000000000000000000F /* HevyCSVParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HevyCSVParser.swift; sourceTree = "<group>"; };
@@ -131,6 +133,7 @@
 			isa = PBXGroup;
 			children = (
 				A2000000000000000000000C /* exercise-catalog.json */,
+				A20000000000000000000016 /* pr-sticker-phone-history-fixture.json */,
 				A20000000000000000000013 /* ExerciseImages */,
 			);
 			path = Resources;
@@ -237,7 +240,7 @@
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		A30000000000000000000003 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (A1000000000000000000000B /* Assets.xcassets in Resources */, A1000000000000000000000C /* exercise-catalog.json in Resources */, A10000000000000000000012 /* ExerciseImages in Resources */,); runOnlyForDeploymentPostprocessing = 0; };
+		A30000000000000000000003 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (A1000000000000000000000B /* Assets.xcassets in Resources */, A1000000000000000000000C /* exercise-catalog.json in Resources */, A10000000000000000000012 /* ExerciseImages in Resources */, A10000000000000000000016 /* pr-sticker-phone-history-fixture.json in Resources */,); runOnlyForDeploymentPostprocessing = 0; };
 		B30000000000000000000003 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
 		C30000000000000000000003 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXResourcesBuildPhase section */

@@ -5,6 +5,10 @@
   @MainActor
   enum BasicWorkoutFixture {
     static func install(in context: ModelContext) {
+      if ProcessInfo.processInfo.arguments.contains("-prStickerPhoneFixture") {
+        installPRStickerPhoneHistory(in: context)
+        return
+      }
       if ProcessInfo.processInfo.arguments.contains("-validatePersistenceFixture") {
         do { try HevyImportSmokeTest.run() } catch {
           fatalError("Persistence fixture failed: \(error)")
@@ -344,6 +348,171 @@
           }
           try? context.save()
         }
+      }
+    }
+
+    private struct PRStickerPhoneHistory: Decodable {
+      let workouts: [FixtureWorkout]
+    }
+
+    private struct FixtureWorkout: Decodable {
+      let secondsAgo: TimeInterval
+      let routine: Int
+      let participants: [Int]
+      let prCount: Int
+      let exercises: [FixtureExercise]
+    }
+
+    private struct FixtureExercise: Decodable {
+      let exercise: Int
+      let participants: [FixtureParticipant]
+    }
+
+    private struct FixtureParticipant: Decodable {
+      let person: Int
+      let sets: [FixtureSet]
+    }
+
+    private struct FixtureSet: Decodable {
+      let reps: Int
+      let completed: Bool
+      let skipped: Bool
+      let load: Double
+    }
+
+    private static func installPRStickerPhoneHistory(in context: ModelContext) {
+      guard
+        let url = Bundle.main.url(
+          forResource: "pr-sticker-phone-history-fixture", withExtension: "json"),
+        let data = try? Data(contentsOf: url),
+        let fixture = try? JSONDecoder().decode(PRStickerPhoneHistory.self, from: data)
+      else {
+        print("Unable to load the sanitized phone-history fixture.")
+        return
+      }
+
+      let personCount =
+        fixture.workouts.flatMap(\.exercises).flatMap(\.participants).map(\.person).max() ?? -1
+      let routineCount = fixture.workouts.map(\.routine).max() ?? -1
+      let people = (0...personCount).map { index in
+        PersonProfile(
+          name: "Lifter \(index + 1)",
+          colorHex: ["FF5A45", "53C8A6", "59A8FA", "A78BFA"][index % 4],
+          sortOrder: index)
+      }
+      let routines = (0...routineCount).map { index in
+        Routine(
+          name: "Routine \(index + 1)",
+          symbol: ["dumbbell.fill", "figure.strengthtraining.functional", "figure.run"][index % 3],
+          colorHex: ["FF5A45", "53C8A6", "59A8FA"][index % 3])
+      }
+
+      people.forEach(context.insert)
+      routines.forEach(context.insert)
+
+      let now = Date.now
+      var bestValuesByKey: [String: Double] = [:]
+      let workouts = fixture.workouts.enumerated().map { workoutIndex, workout in
+        let participants = workout.participants.map { people[$0].name }
+        var candidateKeys: [String] = []
+        for exercise in workout.exercises {
+          for participant in exercise.participants
+          where workout.participants.contains(participant.person)
+            && participant.sets.contains(where: { $0.completed && !$0.skipped && $0.reps > 0 })
+          {
+            let key = "\(exercise.exercise)|\(participant.person)"
+            if !candidateKeys.contains(key) { candidateKeys.append(key) }
+          }
+        }
+        if workout.prCount > candidateKeys.count {
+          print(
+            "Phone-history fixture row \(workoutIndex) requests \(workout.prCount) PRs but has only \(candidateKeys.count) eligible exercises."
+          )
+        }
+        let recordKeys = Set(candidateKeys.prefix(min(workout.prCount, candidateKeys.count)))
+        let startDate: Date
+        if workoutIndex == fixture.workouts.count - 2 {
+          // The source phone history has no same-day pair. Co-locate its second-latest
+          // session with today's workout to exercise the calendar's combined cues.
+          startDate = now.addingTimeInterval(-3_600)
+        } else {
+          startDate = now.addingTimeInterval(-workout.secondsAgo)
+        }
+        let exercises = workout.exercises.enumerated().map { exerciseIndex, exercise in
+          let participantLogs = exercise.participants.map { participant in
+            let key = "\(exercise.exercise)|\(participant.person)"
+            let isRecordWorkout = recordKeys.contains(key)
+            let previousBest = bestValuesByKey[key, default: 0]
+            let firstRecordReps =
+              participant.sets.first(where: { $0.completed && !$0.skipped && $0.reps > 0 })?.reps
+              ?? 1
+            let recordValue =
+              isRecordWorkout
+              ? previousBest + Double(firstRecordReps)
+              : previousBest
+            var assignedRecord = false
+            let sets = participant.sets.enumerated().map { setIndex, set in
+              let measurement: Double
+              if set.completed && !set.skipped && set.reps > 0 {
+                if isRecordWorkout && !assignedRecord {
+                  measurement = recordValue / Double(set.reps)
+                  assignedRecord = true
+                } else if recordValue > 0 {
+                  measurement = recordValue / Double(set.reps)
+                } else {
+                  measurement = 0
+                }
+              } else {
+                measurement = set.load
+              }
+              return WorkoutSet(
+                sortOrder: setIndex,
+                reps: set.reps,
+                isCompleted: set.completed,
+                isSkipped: set.skipped,
+                measurement: measurement,
+                completedAt: set.completed
+                  ? startDate.addingTimeInterval(600 + Double(setIndex)) : nil)
+            }
+            if isRecordWorkout { bestValuesByKey[key] = recordValue }
+            return ParticipantLog(
+              participantName: people[participant.person].name,
+              measurement: 0,
+              sets: sets)
+          }
+          return ExerciseLog(
+            exerciseName: "Exercise \(exercise.exercise + 1)",
+            unit: .pounds,
+            sortOrder: exerciseIndex,
+            participants: participantLogs)
+        }
+        let session = WorkoutSession(
+          routineID: routines[workout.routine].id,
+          participantNames: participants,
+          exercises: exercises,
+          startedAt: startDate,
+          endedAt: startDate.addingTimeInterval(3_000),
+          isActive: false)
+        context.insert(session)
+        return (session, workout.prCount)
+      }
+
+      do {
+        try context.save()
+      } catch {
+        print("Unable to save the sanitized phone-history fixture: \(error)")
+        return
+      }
+
+      let sessions = workouts.map(\.0)
+      let actualCounts = Dictionary(
+        grouping: PersonalRecords.achievements(in: sessions), by: \.sessionID
+      ).mapValues(\.count)
+      for (index, workout) in workouts.enumerated()
+      where actualCounts[workout.0.id, default: 0] != workout.1 {
+        print(
+          "Phone-history fixture PR count mismatch at row \(index): expected \(workout.1), got \(actualCounts[workout.0.id, default: 0])."
+        )
       }
     }
 

@@ -1094,6 +1094,60 @@ final class WorkoutNavigationUITests: XCTestCase {
     XCTAssertFalse(app.staticTexts["Routine"].exists)
   }
 
+  func testPhoneHistoryFixtureCalendarPRBadgeAndDetails() {
+    app.terminate()
+    app.launchArguments = ["-basicWorkoutFixture", "-prStickerPhoneFixture"]
+    app.launch()
+    let prDay = app.buttons.matching(
+      NSPredicate(format: "value CONTAINS[c] %@", "personal record")
+    ).firstMatch
+    XCTAssertTrue(prDay.waitForExistence(timeout: 10))
+    scrollToHittable(prDay)
+
+    let screenshot = XCTAttachment(screenshot: app.screenshot())
+    screenshot.name = "phone-history-calendar-pr-badges"
+    screenshot.lifetime = .keepAlways
+    add(screenshot)
+
+    let isMultiWorkoutDay = prDay.label.localizedCaseInsensitiveContains("2 workouts")
+    prDay.tap()
+    if isMultiWorkoutDay {
+      let workoutChoice = app.buttons.matching(
+        NSPredicate(format: "identifier BEGINSWITH %@", "select-completed-workout-")
+      ).firstMatch
+      XCTAssertTrue(workoutChoice.waitForExistence(timeout: 5))
+      workoutChoice.tap()
+    }
+    XCTAssertTrue(
+      app.descendants(matching: .any)["day-workout-summary"].firstMatch.waitForExistence(
+        timeout: 5)
+    )
+  }
+
+  func testPhoneHistoryFixtureProgressUsesCombinedHistoryBadgesAndClearChart() {
+    app.terminate()
+    app.launchArguments = ["-basicWorkoutFixture", "-prStickerPhoneFixture"]
+    app.launch()
+    app.tabBars.buttons["Progress"].tap()
+
+    let chart = app.descendants(matching: .any)["progress-volume-chart"].firstMatch
+    XCTAssertTrue(chart.waitForExistence(timeout: 10))
+    let recordBadge = app.buttons.matching(
+      NSPredicate(format: "label CONTAINS[c] %@", "personal record")
+    ).firstMatch
+    XCTAssertTrue(recordBadge.waitForExistence(timeout: 5))
+    XCTAssertFalse(chart.label.localizedCaseInsensitiveContains("personal record"))
+
+    let screenshot = XCTAttachment(screenshot: app.screenshot())
+    screenshot.name = "phone-history-progress-pr-badges"
+    screenshot.lifetime = .keepAlways
+    add(screenshot)
+
+    app.buttons["progress-range-menu"].tap()
+    app.buttons["1 year"].tap()
+    XCTAssertTrue(recordBadge.waitForExistence(timeout: 5))
+  }
+
   func testSoftDeleteFromProgressExcludesCalendarAndRestores() {
     app.tabBars.buttons["Progress"].tap()
 

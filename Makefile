@@ -14,7 +14,7 @@ GENERIC_SIM_DESTINATION := generic/platform=iOS Simulator
 DEVICE_ID ?= 00008150-000E41422E40401C
 DEVELOPMENT_TEAM ?= 96NAC4VTEN
 
-.PHONY: rep-counting-ui-test exercise-unit-ui-test exercise-timer-ui-test setup build run format lint test catalog-check exercise-images-check bundle-exercise-images hevy-import-check sim-build sim-launch workout-navigation-ui-test active-workout-regression-ui-test active-workout-performance-ui-test phone-build phone-install phone-launch phone-deploy clean
+.PHONY: rep-counting-ui-test exercise-unit-ui-test exercise-timer-ui-test pr-sticker-ui-test setup build run format lint test catalog-check exercise-images-check bundle-exercise-images hevy-import-check sim-build sim-launch workout-navigation-ui-test active-workout-regression-ui-test active-workout-performance-ui-test phone-build phone-install phone-launch phone-deploy clean
 
 setup: catalog-check exercise-images-check
 
@@ -97,6 +97,19 @@ workout-navigation-ui-test:
 	  CODE_SIGNING_ALLOWED=NO \
 	  -parallel-testing-enabled NO \
 	  -only-testing:$(UI_TEST_FILTER) \
+	  test
+
+pr-sticker-ui-test:
+	xcodebuild \
+	  -project $(PROJECT) \
+	  -scheme $(SCHEME) \
+	  -configuration $(CONFIGURATION) \
+	  -destination '$(SIM_DESTINATION)' \
+	  -derivedDataPath $(UI_DERIVED_DATA) \
+	  CODE_SIGNING_ALLOWED=NO \
+	  -parallel-testing-enabled NO \
+	  -only-testing:StrengthLogUITests/WorkoutNavigationUITests/testPhoneHistoryFixtureCalendarPRBadgeAndDetails \
+	  -only-testing:StrengthLogUITests/WorkoutNavigationUITests/testPhoneHistoryFixtureProgressUsesCombinedHistoryBadgesAndClearChart \
 	  test
 
 exercise-unit-ui-test:

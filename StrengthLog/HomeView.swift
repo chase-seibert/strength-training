@@ -483,6 +483,11 @@ struct ActivityGrid: View {
                   ? "; \(personalRecordCount) personal record\(personalRecordCount == 1 ? "" : "s")"
                   : "")
             )
+            .accessibilityIdentifier(
+              calendar.isDateInToday(day)
+                ? "activity-day-today"
+                : "activity-day-\(Int(calendar.startOfDay(for: day).timeIntervalSince1970))"
+            )
             .accessibilityHint("Shows workout details for this day")
           } else {
             ActivityPaddingDayCell()
@@ -589,65 +594,62 @@ private struct ActivityDayCell: View {
           }
         }
 
-      if workoutCount > 0 {
-        HStack(spacing: 3) {
-          ForEach(routineMarkers.prefix(3)) { marker in
-            if let symbol = marker.symbol {
-              Image(systemName: symbol)
-                .font(.caption.weight(.bold))
-                .foregroundStyle(Color(hex: marker.colorHex))
-            } else {
-              Text(marker.acronym)
-                .font(.caption2.weight(.heavy))
-                .foregroundStyle(Color(hex: marker.colorHex))
+      VStack(spacing: 1) {
+        HStack(spacing: 2) {
+          if participantCount > 1 {
+            Image(systemName: "person.2.fill")
+              .font(.system(size: 7, weight: .bold))
+              .foregroundStyle(accentColor)
+          }
+          Spacer(minLength: 0)
+          if workoutCount > 1 {
+            Text("\(workoutCount)")
+              .font(.system(size: 8, weight: .bold))
+              .foregroundStyle(.white)
+              .frame(minWidth: 14, minHeight: 14)
+              .background(accentColor, in: Circle())
+          }
+        }
+        .frame(height: 14)
+
+        Spacer(minLength: 0)
+
+        if workoutCount > 0 {
+          HStack(spacing: 3) {
+            ForEach(routineMarkers.prefix(3)) { marker in
+              if let symbol = marker.symbol {
+                Image(systemName: symbol)
+                  .font(.caption.weight(.bold))
+                  .foregroundStyle(Color(hex: marker.colorHex))
+              } else {
+                Text(marker.acronym)
+                  .font(.caption2.weight(.heavy))
+                  .foregroundStyle(Color(hex: marker.colorHex))
+              }
             }
           }
+          .lineLimit(1)
+          .minimumScaleFactor(0.65)
         }
-        .lineLimit(1)
-        .minimumScaleFactor(0.65)
-        .padding(.horizontal, workoutCount > 1 ? 10 : 4)
-      }
 
-      if workoutCount > 1 {
-        Text("\(workoutCount)")
-          .font(.system(size: 9, weight: .bold))
-          .foregroundStyle(.white)
-          .frame(minWidth: 16, minHeight: 16)
-          .background(accentColor, in: Circle())
-          .padding(3)
-          .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-      }
+        Spacer(minLength: 0)
 
-      if participantCount > 1 {
-        Image(systemName: "person.2.fill")
-          .font(.system(size: 7, weight: .bold))
-          .foregroundStyle(accentColor)
-          .frame(width: 16, height: 16)
-          .background(.background.opacity(0.92), in: Circle())
-          .padding(3)
-          .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
-          .accessibilityHidden(true)
-      }
-
-      if personalRecordCount > 0 {
-        HStack(spacing: 3) {
-          Image(systemName: "trophy.fill")
-            .font(.system(size: 7, weight: .bold))
-            .foregroundStyle(Theme.prYellow)
-            .frame(width: 14, height: 14)
-            .background(.background.opacity(0.92), in: Circle())
-          if personalRecordCount > 0 {
-            Text("+\(personalRecordCount)")
+        if personalRecordCount > 0 {
+          HStack(spacing: 3) {
+            Image(systemName: "trophy.fill")
               .font(.system(size: 7, weight: .bold))
-              .foregroundStyle(.black)
-              .padding(.horizontal, 2)
-              .background(Theme.prYellow, in: Capsule())
+            Text("+\(personalRecordCount)")
+              .font(.system(size: 8, weight: .bold))
           }
+          .foregroundStyle(.black)
+          .padding(.horizontal, 5)
+          .padding(.vertical, 2)
+          .background(Theme.prYellow, in: Capsule())
+          .accessibilityHidden(true)
         }
-        .padding(3)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
-        .accessibilityHidden(true)
       }
+      .padding(.horizontal, 3)
+      .padding(.vertical, 2)
     }
     .aspectRatio(1.25, contentMode: .fit)
     .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
@@ -784,6 +786,7 @@ private struct DayWorkoutSummaryView: View {
             .accessibilityHidden(true)
         }
         .listStyle(.insetGrouped)
+        .accessibilityIdentifier("day-workout-summary")
       }
     }
     .navigationTitle(summaryTitle)
