@@ -4,6 +4,8 @@
 
 Use this workflow when an interaction feels slow on a physical iPhone but simulator UI tests, button navigation, or ordinary code inspection do not explain it. It is designed for intermittent scrolling freezes, dropped frames, slow taps, and synchronous main-thread work in SwiftUI and SwiftData.
 
+See [the 2026-10-07 timer-enabled active-workout findings](active-workout-performance-findings-2026-10-07.md) for the latest set-completion and up/down scroll Simulator measurements, including the XCTest polling overhead and current evidence limits.
+
 The simulator remains useful for repeatable regression tests and CPU, memory, and signpost proxies. It does not reproduce the physical display pipeline, ProMotion behavior, finger-driven scrolling, or device-only frame hitches reliably enough to answer “is this screen actually smooth?” Physical-device measurements are authoritative for that question.
 
 ## Recommended diagnostic design
@@ -38,6 +40,18 @@ Keep before and after runs comparable:
 8. Record whether a hitch happens during profiler attachment. Instruments can briefly suspend or perturb the process, so distinguish that event from hitches inside the recorded interval.
 
 Treat “it becomes faster after one pass” as evidence of lazy loading, relationship faulting, image decoding, or cache warm-up—not as proof that the problem is fixed.
+
+## Controlled active-workout load
+
+Use `make workout-profile PROFILE_LABEL=<label>` for the repeatable simulator workflow and `make workout-profile-graph` to regenerate retained trend charts. See [the detailed findings and measurement contract](active-workout-performance-findings-2026-10-07.md) and [run history](performance/history.html). The normal profile uses an isolated disposable SQLite store, ten exercises, three participants and five sets per exercise, with 48 generated plus eight basic historical sessions. Individual and shared completion run with a rest countdown; scrolling starts after completing a set and keeps both the rest countdown and elapsed-workout label active.
+
+The runner records actual completion-indication pixels in simulator video using a Debug optical clock, plus app-handler/save phases. It explicitly targets app CPU, memory and logical writes. Scroll samples separate UIKit dragging/deceleration callbacks from whole-window cadence, and retain the native dragging/deceleration metric. This simulator currently provides native scroll duration but no rendered FPS/hitch measurements; callback proxies must stay labelled as proxies. Results include source/configuration metadata, actual fixture validation, raw samples and sample counts. The optional `PROFILE_DENSE=1` profile is a separate twelve-exercise stress case with 64 sets on the first active exercise; `PROFILE_HISTORY=192` is a separate history-scaling case. Raw video and result bundles are under `build/performance/`; durable JSON summaries are under `docs/performance/runs/`.
+
+For an app-local load comparison on a physical phone, install a Debug build and go to Settings → Developer → Bounded Device Load. Select CPU, memory, temporary-file I/O, or a combination, start the 30-second run, and immediately open the same active workout state used for the unloaded capture. Enable the Active Workout Frame Monitor for both runs and repeat the same 15-second finger-scroll pattern. Keep the workout, history, display settings, profiler attachment, and action duration matched. Capture CPU or memory with Instruments; capture file operations with an available File Activity or Filesystem instrument and record the exact template name. If no disk instrument is available on the current Xcode version, report that app-generated file I/O was enabled without claiming a measured physical-storage rate.
+
+The Debug-only harness is bounded to one CPU worker at about 40% duty cycle, a 64 MiB allocation, and/or an 8 MiB temporary file read and rewritten at up to 4 MiB/s. It never writes to the workout database. It stops after 30 seconds, when Stop is pressed, on app backgrounding, or when the active workout closes; cancellation releases the allocation and removes the temporary file. The file workload establishes repeatable app-local I/O calls but cannot guarantee NAND writes or system-wide disk pressure because the OS may cache or coalesce them. These settings are a moderate, controlled comparison, not a thermal stress test.
+
+Simulator CPU/memory tools and Simulator device controls apply to the Mac-hosted simulator. They cannot create actual CPU, memory, storage, or display pressure on the iPhone. The in-app harness adds app-local work on the phone, but cannot force pressure from unrelated processes or prove how the entire device behaves under system-wide contention. Treat simulator metrics as regression proxies and use physical-device frame logs plus Instruments for phone conclusions.
 
 ## Build and live frame capture
 

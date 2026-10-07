@@ -6,6 +6,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		F6C398CB9D25464E97C3A050 /* WorkoutPerformanceProbe.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6C398CB9D25464E97C3A051 /* WorkoutPerformanceProbe.swift */; };
 		A10000000000000000000001 /* StrengthLogApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000001 /* StrengthLogApp.swift */; };
 		A10000000000000000000002 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000002 /* Models.swift */; };
 		A10000000000000000000003 /* SeedData.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000003 /* SeedData.swift */; };
@@ -52,6 +53,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		F6C398CB9D25464E97C3A051 /* WorkoutPerformanceProbe.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutPerformanceProbe.swift; sourceTree = "<group>"; };
 		A20000000000000000000001 /* StrengthLogApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrengthLogApp.swift; sourceTree = "<group>"; };
 		A20000000000000000000002 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		A20000000000000000000003 /* SeedData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeedData.swift; sourceTree = "<group>"; };
@@ -111,6 +113,7 @@
 				A20000000000000000000005 /* HomeView.swift */,
 				A20000000000000000000006 /* RoutinesView.swift */,
 				A20000000000000000000007 /* ActiveWorkoutView.swift */,
+				F6C398CB9D25464E97C3A051 /* WorkoutPerformanceProbe.swift */,
 				A20000000000000000000015 /* WorkoutCelebrationView.swift */,
 				A20000000000000000000008 /* LibraryView.swift */,
 				A20000000000000000000009 /* ProgressView.swift */,
@@ -257,6 +260,7 @@
 				A10000000000000000000005 /* HomeView.swift in Sources */,
 				A10000000000000000000006 /* RoutinesView.swift in Sources */,
 				A10000000000000000000007 /* ActiveWorkoutView.swift in Sources */,
+				F6C398CB9D25464E97C3A050 /* WorkoutPerformanceProbe.swift in Sources */,
 				A10000000000000000000015 /* WorkoutCelebrationView.swift in Sources */,
 				A10000000000000000000008 /* LibraryView.swift in Sources */,
 				A10000000000000000000009 /* ProgressView.swift in Sources */,

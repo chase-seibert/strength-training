@@ -746,6 +746,24 @@ final class ParticipantLog {
     orderedSets.last?.reps ?? WorkoutPreferences.defaultReps
   }
 
+  // Eligibility for the whole grid: one sort and two linear passes rather than a
+  // sort plus prefix/suffix scan for every button.
+  var completionToggleAvailability: [UUID: Bool] {
+    let ordered = orderedSets
+    var result: [UUID: Bool] = [:]
+    var hasLaterCompleted = false
+    for set in ordered.reversed() {
+      if set.isCompleted { result[set.id] = !hasLaterCompleted }
+      hasLaterCompleted = hasLaterCompleted || set.isCompleted
+    }
+    var allEarlierCompleted = true
+    for set in ordered {
+      if !set.isCompleted { result[set.id] = allEarlierCompleted }
+      allEarlierCompleted = allEarlierCompleted && set.isCompleted
+    }
+    return result
+  }
+
   func canToggleCompletion(of set: WorkoutSet) -> Bool {
     let ordered = orderedSets
     guard let index = ordered.firstIndex(where: { $0.id == set.id }) else { return false }

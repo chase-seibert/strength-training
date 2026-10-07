@@ -1,0 +1,65 @@
+{
+  "id": "20261007T152741Z",
+  "label": "after-immediate-badges-and-scan-reduction",
+  "git_head": "ad6275c0fdefd238197425fcdc52aa9f6f9ba891",
+  "source_digest": "6c4faad5f442ee9808e23129c703a846cdaa62e1972c4d85f63cb33ef7ecd077",
+  "device": {
+    "dataPath": "/Users/cseibert/Library/Developer/CoreSimulator/Devices/74DC16F7-4678-490D-AD86-60CC218F56EB/data",
+    "dataPathSize": 6158905344,
+    "logPath": "/Users/cseibert/Library/Logs/CoreSimulator/74DC16F7-4678-490D-AD86-60CC218F56EB",
+    "udid": "74DC16F7-4678-490D-AD86-60CC218F56EB",
+    "lastUsedAt": "2026-10-07T15:25:20Z",
+    "isAvailable": true,
+    "logPathSize": 729088,
+    "deviceTypeIdentifier": "com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro",
+    "state": "Booted",
+    "name": "iPhone 17 Pro"
+  },
+  "runtime": "com.apple.CoreSimulator.SimRuntime.iOS-27-0",
+  "xcode": "Xcode 27.0\nBuild version 27A266a",
+  "artifacts": "/Users/cseibert/projects/strength-training/build/performance/20261007T152741Z",
+  "profile": {
+    "history_workouts": 48,
+    "dense": false,
+    "store": "sqlite",
+    "build": "Debug -O",
+    "load": "none",
+    "timer": "rest-countdown-and-workout-elapsed",
+    "simulator_runtime": "com.apple.CoreSimulator.SimRuntime.iOS-27-0",
+    "scenario_version": 3
+  },
+  "status": "failed",
+  "test_exit_code": 2,
+  "collection_error": "[Errno 2] No such file or directory: '/Users/cseibert/Library/Developer/CoreSimulator/Devices/74DC16F7-4678-490D-AD86-60CC218F56EB/data/Containers/Data/Application/E7E3A3F1-302C-4BC9-AC94-3DC0DABA9C18/Documents/WorkoutPerformance'",
+  "samples": [],
+  "xcresult_metrics": [],
+  "xcresult_summary": {
+    "devicesAndConfigurations": [],
+    "environmentDescription": "StrengthLog \u00b7 Built with macOS 27.0.1",
+    "expectedFailures": 0,
+    "failedTests": 0,
+    "finishTime": 1791386879.46,
+    "passedTests": 0,
+    "result": "unknown",
+    "runtimeWarnings": [],
+    "skippedTests": 0,
+    "startTime": 1791386863.206,
+    "statistics": [],
+    "testFailures": [],
+    "title": "Test - StrengthLog",
+    "topInsights": [],
+    "totalTestCount": 0
+  },
+  "summary": {
+    "individual": {
+      "n": 0,
+      "phase_medians_ms": {}
+    },
+    "shared": {
+      "n": 0,
+      "phase_medians_ms": {}
+    },
+    "scroll": []
+  },
+  "video_analysis_error": "Command '['/Users/cseibert/projects/strength-training/build/performance/video-decoder', '/Users/cseibert/projects/strength-training/build/performance/20261007T152741Z/screen.mov', '/Users/cseibert/projects/strength-training/build/performance/20261007T152741Z/snapshots/samples.jsonl', '/Users/cseibert/projects/strength-training/build/performance/20261007T152741Z/visual.json']' died with <Signals.SIGTRAP: 5>."
+}

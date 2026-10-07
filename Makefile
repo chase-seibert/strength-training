@@ -14,7 +14,7 @@ GENERIC_SIM_DESTINATION := generic/platform=iOS Simulator
 DEVICE_ID ?= 00008150-000E41422E40401C
 DEVELOPMENT_TEAM ?= 96NAC4VTEN
 
-.PHONY: rep-counting-ui-test exercise-unit-ui-test exercise-timer-ui-test pr-sticker-ui-test setup build run format lint test catalog-check exercise-images-check bundle-exercise-images hevy-import-check sim-build sim-launch workout-navigation-ui-test active-workout-regression-ui-test active-workout-performance-ui-test phone-build phone-install phone-launch phone-deploy clean
+.PHONY: workout-profile workout-profile-graph rep-counting-ui-test exercise-unit-ui-test exercise-timer-ui-test pr-sticker-ui-test setup build run format lint test catalog-check exercise-images-check bundle-exercise-images hevy-import-check sim-build sim-launch workout-navigation-ui-test active-workout-regression-ui-test active-workout-performance-ui-test phone-build phone-install phone-launch phone-deploy clean
 
 setup: catalog-check exercise-images-check
 
@@ -155,7 +155,25 @@ active-workout-regression-ui-test:
 	  -only-testing:StrengthLogUITests/WorkoutNavigationUITests/testSinglePersonWorkoutUsesHorizontalFullWidthCard \
 	  -only-testing:StrengthLogUITests/WorkoutNavigationUITests/testStartCloseAndResumeActiveWorkout \
 	  -only-testing:StrengthLogUITests/WorkoutNavigationUITests/testTwoPersonColumnsAndScrolledPillsShareHorizontalCenters \
+	  -only-testing:StrengthLogUITests/WorkoutNavigationUITests/testThreePersonWorkoutMatrixAndSharedCompletion \
+	  -only-testing:StrengthLogUITests/WorkoutNavigationUITests/testCompleteOneSetForEveryoneCatchesUpParticipants \
+	  -only-testing:StrengthLogUITests/WorkoutNavigationUITests/testSetCompletionControlsWrapByParticipantCount \
+	  -only-testing:StrengthLogUITests/WorkoutNavigationUITests/testParticipantStatusKeepsRepValuesAlignedAndMovesSetButtonsDown \
+	  -only-testing:StrengthLogUITests/WorkoutNavigationUITests/testTimedExerciseCountdownStartsStopsAndConvertsMinutes \
+	  -only-testing:StrengthLogUITests/WorkoutNavigationUITests/testWeightFieldInitializationPreservesSetOverrideAndPrecision \
 	  test
+
+PROFILE_DEVICE ?=
+PROFILE_LABEL ?= working-tree
+PROFILE_HISTORY ?= 48
+PROFILE_DENSE ?= 0
+PROFILE_RESULTS ?=
+
+workout-profile:
+	python3 scripts/workout-profile.py run --label "$(PROFILE_LABEL)" --history $(PROFILE_HISTORY) --dense $(PROFILE_DENSE) $(if $(PROFILE_DEVICE),--device $(PROFILE_DEVICE))
+
+workout-profile-graph:
+	python3 scripts/workout-profile.py graph
 
 active-workout-performance-ui-test:
 	xcodebuild \
@@ -164,10 +182,13 @@ active-workout-performance-ui-test:
 	  -configuration $(CONFIGURATION) \
 	  -destination '$(SIM_DESTINATION)' \
 	  -derivedDataPath $(UI_DERIVED_DATA) \
-	  CODE_SIGNING_ALLOWED=NO \
+	  CODE_SIGNING_ALLOWED=NO SWIFT_OPTIMIZATION_LEVEL=-O \
 	  -parallel-testing-enabled NO \
+	  -enableCodeCoverage NO \
+	  $(if $(PROFILE_RESULTS),-resultBundlePath "$(PROFILE_RESULTS)") \
 	  -only-testing:StrengthLogUITests/WorkoutNavigationUITests/testActiveWorkoutScrollPerformance \
 	  -only-testing:StrengthLogUITests/WorkoutNavigationUITests/testActiveWorkoutButtonPerformance \
+	  -only-testing:StrengthLogUITests/WorkoutNavigationUITests/testActiveWorkoutSharedSetCompletionPerformance \
 	  test
 
 phone-build:

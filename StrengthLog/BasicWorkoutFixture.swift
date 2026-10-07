@@ -76,17 +76,18 @@
       ]
       let performanceExercises: [Exercise] =
         ProcessInfo.processInfo.arguments.contains("-activeWorkoutPerformanceFixture")
-        ? (1...11).map { index in
-          Exercise(
-            sourceID: "fixture-performance-\(index)",
-            name: "Performance Exercise \(index)",
-            category: "strength",
-            equipment: index.isMultiple(of: 2) ? "dumbbell" : "barbell",
-            primaryMuscle: index.isMultiple(of: 2) ? "back" : "legs",
-            unit: .pounds,
-            instructions: "Performance fixture exercise \(index).",
-            imagePath: performanceImagePaths[index - 1])
-        } : []
+        ? (1...(ProcessInfo.processInfo.arguments.contains("-denseWorkoutPerformanceFixture")
+          ? 11 : 9)).map { index in
+            Exercise(
+              sourceID: "fixture-performance-\(index)",
+              name: "Performance Exercise \(index)",
+              category: "strength",
+              equipment: index.isMultiple(of: 2) ? "dumbbell" : "barbell",
+              primaryMuscle: index.isMultiple(of: 2) ? "back" : "legs",
+              unit: .pounds,
+              instructions: "Performance fixture exercise \(index).",
+              imagePath: performanceImagePaths[index - 1])
+          } : []
       let performanceCatalogFillers: [Exercise] =
         ProcessInfo.processInfo.arguments.contains("-activeWorkoutPerformanceFixture")
         ? (1...600).map { index in
@@ -99,6 +100,11 @@
             unit: .pounds,
             instructions: "Catalog-size performance fixture.")
         } : []
+      let activeWorkoutSetCount =
+        ProcessInfo.processInfo.arguments.contains(
+          "-activeWorkoutPerformanceFixture")
+        ? (ProcessInfo.processInfo.arguments.contains("-denseWorkoutPerformanceFixture") ? 64 : 5)
+        : 3
       let basicRoutineExercise = RoutineExercise(
         exerciseName: benchPress.name,
         unit: timedFixtureUnit ?? .pounds,
@@ -108,15 +114,15 @@
           Prescription(
             participantName: alex.name,
             measurement: usesLargeCelebrationVolume ? 1_250 : 95,
-            sets: (0..<3).map { SetTemplate(sortOrder: $0, reps: 8) }),
+            sets: (0..<activeWorkoutSetCount).map { SetTemplate(sortOrder: $0, reps: 8) }),
           Prescription(
             participantName: jordan.name,
             measurement: 65,
-            sets: (0..<3).map { SetTemplate(sortOrder: $0, reps: 8) }),
+            sets: (0..<activeWorkoutSetCount).map { SetTemplate(sortOrder: $0, reps: 8) }),
           Prescription(
             participantName: owen.name,
             measurement: 45,
-            sets: (0..<3).map { SetTemplate(sortOrder: $0, reps: 8) }),
+            sets: (0..<activeWorkoutSetCount).map { SetTemplate(sortOrder: $0, reps: 8) }),
         ])
       let basicRoutine = Routine(
         name: "Basic Workout",
@@ -211,13 +217,15 @@
       }
       if ProcessInfo.processInfo.arguments.contains("-activeWorkoutPerformanceFixture") {
         workoutHistory.append(
-          contentsOf: (0..<48).map { workoutIndex in
-            makePerformanceWorkout(
-              routine: basicRoutine,
-              people: [alex, jordan, owen],
-              exercises: [benchPress] + performanceExercises,
-              workoutIndex: workoutIndex)
-          })
+          contentsOf: (0..<(Int(
+            ProcessInfo.processInfo.environment["WORKOUT_PROFILE_HISTORY"] ?? "48") ?? 48)).map {
+              workoutIndex in
+              makePerformanceWorkout(
+                routine: basicRoutine,
+                people: [alex, jordan, owen],
+                exercises: [benchPress] + performanceExercises,
+                workoutIndex: workoutIndex)
+            })
       }
 
       context.insert(alex)
@@ -275,6 +283,34 @@
           sessions: usesLargeCelebrationVolume ? [] : workoutHistory,
           catalog: [benchPress, customExercise, squat] + performanceExercises,
           in: context)
+        if ProcessInfo.processInfo.arguments.contains("-measurementOverrideFixture"),
+          let participant = activeWorkout?.exercises.min(by: { $0.sortOrder < $1.sortOrder })?
+            .participants.first(where: {
+              $0.participantName == alex.name
+            })
+        {
+          participant.measurement = 95.06  // Displays 95.1; preserve stored precision.
+          // Historical prescriptions can contain one set; make both test targets explicit.
+          while participant.sets.count < 2 {
+            participant.sets.append(WorkoutSet(sortOrder: participant.sets.count, reps: 8))
+          }
+          participant.orderedSets.first?.measurement = 123.5
+          participant.orderedSets[1].measurement = nil
+          try? context.save()
+        }
+        if ProcessInfo.processInfo.arguments.contains("-denseWorkoutPerformanceFixture"),
+          let activeWorkout,
+          let exercise = activeWorkout.exercises.min(by: { $0.sortOrder < $1.sortOrder })
+        {
+          // SessionStarter carries forward history prescriptions, which have five sets.
+          // Enforce the dense stress case on the active logs, not just routine templates.
+          for participant in exercise.participants {
+            while participant.sets.count < 64 {
+              participant.sets.append(WorkoutSet(sortOrder: participant.sets.count, reps: 8))
+            }
+          }
+          try? context.save()
+        }
         if let timedFixtureUnit, let activeWorkout, let exercise = activeWorkout.exercises.first {
           let target = timedFixtureUnit == .minutes ? 2 : 45
           for participant in exercise.participants {

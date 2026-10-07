@@ -513,27 +513,56 @@ final class WorkoutNavigationUITests: XCTestCase {
     XCTAssertTrue(app.navigationBars["Barbell Back Squat"].waitForExistence(timeout: 3))
   }
 
-  func testActiveWorkoutScrollPerformance() {
-    launchActiveWorkoutPerformanceFixture()
+  func testWeightFieldInitializationPreservesSetOverrideAndPrecision() {
+    app.terminate()
+    app.launchArguments = [
+      "-basicWorkoutFixture", "-activeWorkoutFixture", "-measurementOverrideFixture",
+    ]
+    app.launch()
+    let weight = app.textFields["Pounds for Alex"]
+    XCTAssertTrue(weight.waitForExistence(timeout: 5))
+    XCTAssertEqual(weight.value as? String, "95.1")
+    app.buttons["participant-set-Alex-1"].tap()
+    app.buttons["participant-set-Alex-2"].tap()
+    app.buttons["Complete Workout"].tap()
+    XCTAssertTrue(app.staticTexts["Workout complete"].waitForExistence(timeout: 5))
+    // 123.5 × 8 + 95.06 × 8 = 1,748.48, displayed rounded to 1,748.5.
+    // Reinitialization must preserve both the per-set override and the base precision.
+    XCTAssertTrue(app.staticTexts["1,748.5 lb"].firstMatch.waitForExistence(timeout: 5))
+  }
 
+  func testActiveWorkoutScrollPerformance() {
+    launchActiveWorkoutPerformanceFixture(scenario: "scroll")
+    startPerformanceRestTimer()
+    app.buttons["complete-one-set"].firstMatch.tap()
+    XCTAssertTrue(app.buttons["Skip"].exists)
+    // First pass warms image decoding and reusable rows; not part of the scroll window.
+    app.swipeUp(velocity: .fast)
+    app.swipeDown(velocity: .fast)
+    app.buttons["profile-scroll-start"].tap()
     let options = XCTMeasureOptions()
     options.iterationCount = 5
     measure(
       metrics: [
-        XCTClockMetric(),
-        XCTCPUMetric(),
-        XCTMemoryMetric(),
-        XCTOSSignpostMetric.scrollDecelerationMetric,
-      ],
-      options: options
+        XCTClockMetric(), XCTCPUMetric(application: app), XCTMemoryMetric(application: app),
+        XCTStorageMetric(application: app),
+        XCTOSSignpostMetric.scrollingAndDecelerationMetric,
+      ], options: options
     ) {
       app.swipeUp(velocity: .fast)
       app.swipeDown(velocity: .fast)
     }
+    app.buttons["profile-scroll-end"].tap()
+    XCTAssertTrue(app.buttons["Skip"].exists)
+    let screenshot = XCTAttachment(screenshot: app.screenshot())
+    screenshot.name = "scroll-with-rest-timer"
+    screenshot.lifetime = .keepAlways
+    add(screenshot)
   }
 
   func testActiveWorkoutSustainedFlickTrace() {
-    launchActiveWorkoutPerformanceFixture()
+    launchActiveWorkoutPerformanceFixture(scenario: "scroll-trace")
+    startPerformanceRestTimer()
 
     // Leave a deterministic attachment window for an external Instruments trace.
     Thread.sleep(forTimeInterval: 5)
@@ -542,26 +571,60 @@ final class WorkoutNavigationUITests: XCTestCase {
       app.swipeDown(velocity: .fast)
     }
     Thread.sleep(forTimeInterval: 2)
+    XCTAssertTrue(app.buttons["Skip"].exists)
   }
 
   func testActiveWorkoutButtonPerformance() {
-    launchActiveWorkoutPerformanceFixture()
-    let plus = app.buttons["base-reps-plus-Alex"].firstMatch
-    let minus = app.buttons["base-reps-minus-Alex"].firstMatch
-    XCTAssertTrue(plus.waitForExistence(timeout: 5))
-    XCTAssertTrue(minus.exists)
-    let plusCoordinate = plus.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
-    let minusCoordinate = minus.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
-
+    launchActiveWorkoutPerformanceFixture(scenario: "individual")
+    startPerformanceRestTimer()
     let options = XCTMeasureOptions()
     options.iterationCount = 5
+    options.invocationOptions = [.manuallyStop]
     measure(
-      metrics: [XCTClockMetric(), XCTCPUMetric(), XCTMemoryMetric()],
-      options: options
+      metrics: [
+        XCTClockMetric(), XCTCPUMetric(application: app), XCTMemoryMetric(application: app),
+        XCTStorageMetric(application: app),
+        XCTOSSignpostMetric(
+          subsystem: "com.cseibert.StrengthLog.performance",
+          category: "Workout", name: "SetCompletion"),
+      ], options: options
     ) {
-      plusCoordinate.tap()
-      minusCoordinate.tap()
+      let button = app.buttons["participant-set-Alex-2"].firstMatch
+      button.tap()
+      stopMeasuring()
+      XCTAssertEqual(button.label, "Remove completed Bench Press set 2")
+      button.tap()  // Undo outside the measurement; reset to the same visible button.
+      XCTAssertEqual(button.label, "Complete Bench Press set 2")
     }
+    XCTAssertTrue(app.buttons["Skip"].exists)
+  }
+
+  func testActiveWorkoutSharedSetCompletionPerformance() {
+    launchActiveWorkoutPerformanceFixture(scenario: "shared")
+    startPerformanceRestTimer()
+    // Catch up the other participants before measuring equal-progress group completions.
+    app.buttons["complete-one-set"].firstMatch.tap()
+    let options = XCTMeasureOptions()
+    options.iterationCount = 5
+    options.invocationOptions = [.manuallyStop]
+    measure(
+      metrics: [
+        XCTClockMetric(), XCTCPUMetric(application: app), XCTMemoryMetric(application: app),
+        XCTStorageMetric(application: app),
+        XCTOSSignpostMetric(
+          subsystem: "com.cseibert.StrengthLog.performance",
+          category: "Workout", name: "SetCompletion"),
+      ], options: options
+    ) {
+      app.buttons["complete-one-set"].firstMatch.tap()
+      stopMeasuring()
+      for name in ["Alex", "Jordan", "Owen"] {
+        let button = app.buttons["participant-set-\(name)-2"].firstMatch
+        XCTAssertEqual(button.label, "Remove completed Bench Press set 2")
+        button.tap()  // Reset all three participants outside the measured interval.
+      }
+    }
+    XCTAssertTrue(app.buttons["Skip"].exists)
   }
 
   func testRecentlyCompletedWorkoutCanBeResumedFromWorkoutScreen() {
@@ -1223,16 +1286,35 @@ final class WorkoutNavigationUITests: XCTestCase {
     XCTAssertGreaterThan(firstOnNextRow.frame.minY, first.frame.maxY)
   }
 
-  private func launchActiveWorkoutPerformanceFixture() {
+  private func launchActiveWorkoutPerformanceFixture(scenario: String = "trace") {
     app.terminate()
     app.launchArguments =
       [
         "-basicWorkoutFixture",
         "-activeWorkoutFixture",
         "-activeWorkoutPerformanceFixture",
+        "-restTimerFixture",
+        "-diskWorkoutPerformanceFixture",
+        "-workoutPerformanceProbe",
       ]
+    if ProcessInfo.processInfo.environment["WORKOUT_PROFILE_DENSE"] == "1" {
+      app.launchArguments.append("-denseWorkoutPerformanceFixture")
+    }
+    app.launchEnvironment["WORKOUT_PROFILE_SCENARIO"] = scenario
+    app.launchEnvironment["WORKOUT_PROFILE_HISTORY"] =
+      ProcessInfo.processInfo.environment["WORKOUT_PROFILE_HISTORY"] ?? "48"
     app.launch()
     XCTAssertTrue(app.otherElements["active-workout-screen"].waitForExistence(timeout: 30))
+  }
+
+  private func startPerformanceRestTimer() {
+    let firstSet = app.buttons["participant-set-Alex-1"].firstMatch
+    XCTAssertTrue(firstSet.waitForExistence(timeout: 5))
+    XCTAssertEqual(firstSet.label, "Complete Bench Press set 1")
+    firstSet.tap()
+    XCTAssertEqual(firstSet.label, "Remove completed Bench Press set 1")
+    XCTAssertTrue(app.otherElements["live-workout-header"].waitForExistence(timeout: 3))
+    XCTAssertTrue(app.buttons["Skip"].exists)
   }
 
   private func assertParticipantControlAlignment(

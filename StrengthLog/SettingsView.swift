@@ -202,6 +202,11 @@ struct SettingsView: View {
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @AppStorage(DeveloperPreferences.activeWorkoutFrameMonitorEnabledKey)
     private var activeWorkoutFrameMonitorEnabled = false
+    @Environment(\.scenePhase) private var scenePhase
+    @StateObject private var loadHarness = DebugLoadHarness.shared
+    @State private var cpuLoadEnabled = false
+    @State private var memoryLoadEnabled = false
+    @State private var diskLoadEnabled = false
 
     var body: some View {
       List {
@@ -220,6 +225,41 @@ struct SettingsView: View {
         }
 
         Section {
+          Toggle("CPU load", isOn: $cpuLoadEnabled)
+            .accessibilityIdentifier("debug-load-cpu-toggle")
+          Toggle("Memory load (64 MiB)", isOn: $memoryLoadEnabled)
+            .accessibilityIdentifier("debug-load-memory-toggle")
+          Toggle("Temporary-file I/O (up to 4 MiB/s)", isOn: $diskLoadEnabled)
+            .accessibilityIdentifier("debug-load-disk-toggle")
+          HStack {
+            Button("Start 30-second load") {
+              loadHarness.start(
+                cpu: cpuLoadEnabled,
+                memory: memoryLoadEnabled,
+                disk: diskLoadEnabled)
+            }
+            .disabled(!cpuLoadEnabled && !memoryLoadEnabled && !diskLoadEnabled)
+            .accessibilityIdentifier("debug-load-start")
+            Button("Stop", role: .destructive) {
+              loadHarness.stop()
+              cpuLoadEnabled = false
+              memoryLoadEnabled = false
+              diskLoadEnabled = false
+            }
+            .disabled(!loadHarness.isRunning)
+            .accessibilityIdentifier("debug-load-stop")
+          }
+          Text(loadHarness.isRunning ? "Load is running" : "Load is stopped")
+            .accessibilityIdentifier("debug-load-status")
+        } header: {
+          Text("Bounded Device Load")
+        } footer: {
+          Text(
+            "Debug only. CPU uses one worker at about 40% duty cycle; memory holds 64 MiB; file I/O uses an 8 MiB temporary file at up to 4 MiB/s. Runs stop after 30 seconds, when stopped, when the app backgrounds, or when the active workout closes. File I/O does not guarantee physical flash pressure."
+          )
+        }
+
+        Section {
           Button("Replay First-Time Experience", systemImage: "arrow.counterclockwise") {
             hasCompletedOnboarding = false
           }
@@ -233,6 +273,112 @@ struct SettingsView: View {
       }
       .navigationTitle("Developer")
       .navigationBarTitleDisplayMode(.inline)
+      .onChange(of: scenePhase) { _, phase in
+        if phase != .active {
+          loadHarness.stop()
+          cpuLoadEnabled = false
+          memoryLoadEnabled = false
+          diskLoadEnabled = false
+        }
+      }
+    }
+  }
+
+  @MainActor
+  final class DebugLoadHarness: ObservableObject {
+    static let shared = DebugLoadHarness()
+
+    @Published private(set) var isRunning = false
+    private var workers: [Task<Void, Never>] = []
+    private var timeoutTask: Task<Void, Never>?
+
+    func start(cpu: Bool, memory: Bool, disk: Bool) {
+      stop()
+      guard cpu || memory || disk else { return }
+      isRunning = true
+      if cpu {
+        workers.append(
+          Task.detached(priority: .utility) {
+            await runBoundedCPULoad()
+          })
+      }
+      if memory {
+        workers.append(
+          Task.detached(priority: .utility) {
+            await runBoundedMemoryLoad()
+          })
+      }
+      if disk {
+        workers.append(
+          Task.detached(priority: .utility) {
+            await runBoundedDiskLoad()
+          })
+      }
+      timeoutTask = Task { [weak self] in
+        try? await Task.sleep(for: .seconds(30))
+        guard !Task.isCancelled else { return }
+        self?.stop()
+      }
+    }
+
+    func stop() {
+      for worker in workers {
+        worker.cancel()
+      }
+      workers.removeAll()
+      timeoutTask?.cancel()
+      timeoutTask = nil
+      isRunning = false
+    }
+  }
+
+  private func runBoundedCPULoad() async {
+    let end = ContinuousClock.now.advanced(by: .seconds(30))
+    var value: UInt64 = 0x9E37_79B9_7F4A_7C15
+    while !Task.isCancelled && ContinuousClock.now < end {
+      let sliceEnd = ContinuousClock.now.advanced(by: .milliseconds(40))
+      while !Task.isCancelled && ContinuousClock.now < sliceEnd {
+        value = (value &* 2_862_933_555_777_941_757) &+ 3_037_000_493
+      }
+      try? await Task.sleep(for: .milliseconds(60))
+    }
+    _ = value
+  }
+
+  private func runBoundedMemoryLoad() async {
+    var bytes = [UInt8](repeating: 0, count: 64 * 1024 * 1024)
+    let end = ContinuousClock.now.advanced(by: .seconds(30))
+    while !Task.isCancelled && ContinuousClock.now < end {
+      for offset in stride(from: 0, to: bytes.count, by: 4096) {
+        bytes[offset] &+= 1
+      }
+      try? await Task.sleep(for: .milliseconds(250))
+    }
+    _ = bytes.first
+  }
+
+  private func runBoundedDiskLoad() async {
+    let url = FileManager.default.temporaryDirectory
+      .appendingPathComponent("active-workout-load-\(UUID().uuidString).tmp")
+    let chunk = Data(repeating: 0xA5, count: 1024 * 1024)
+    do {
+      try Data(repeating: 0xA5, count: 8 * 1024 * 1024).write(to: url, options: .atomic)
+      let handle = try FileHandle(forUpdating: url)
+      defer {
+        try? handle.close()
+        try? FileManager.default.removeItem(at: url)
+      }
+      let end = ContinuousClock.now.advanced(by: .seconds(30))
+      while !Task.isCancelled && ContinuousClock.now < end {
+        try handle.seek(toOffset: 0)
+        try handle.write(contentsOf: chunk)
+        try handle.seek(toOffset: 0)
+        _ = try handle.read(upToCount: chunk.count)
+        try await Task.sleep(for: .milliseconds(500))
+      }
+    } catch {
+      try? FileManager.default.removeItem(at: url)
+      print("DEBUG_ACTIVE_WORKOUT_LOAD disk_error=\(error.localizedDescription)")
     }
   }
 #endif

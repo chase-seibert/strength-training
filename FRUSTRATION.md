@@ -1,5 +1,23 @@
 # Frustration log
 
+## 2026-10-07 — Performance metrics and fixture counts can target the wrong work
+
+Default XCTest CPU/memory metrics measure the test runner; use `application: app`.
+An in-memory fixture cannot characterize SQLite saves. Use the opt-in disposable
+disk fixture, and validate active logs: SessionStarter inherits historical
+prescriptions, so routine templates do not guarantee a particular set count.
+App-side PNG snapshots added substantial CPU/write overhead; the primary profile
+now uses external simulator video. Compare matching measurement versions and
+retain failed/incomplete attempts without including them in trend lines.
+
+## 2026-10-07 — SwiftUI type-check diagnostics can hide a callback mismatch
+
+The compiler blamed the large active-workout body when a callback received
+`clearExerciseTimer(saveImmediately:)` where a zero-argument closure was expected.
+A default parameter does not make that function a zero-argument function value;
+use `{ clearExerciseTimer() }`. Check recently changed callback/property types
+before restructuring the whole view to chase a type-check timeout.
+
 ## 2026-09-02 — Concurrent apps can steal the shared simulator foreground
 
 A UI test's tap failed after XCTest reported waiting for `com.cseibert.CalorieTracker`

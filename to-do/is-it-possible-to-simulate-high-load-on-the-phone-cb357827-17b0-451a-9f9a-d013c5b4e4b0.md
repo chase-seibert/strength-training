@@ -1,0 +1,36 @@
+## User requirements
+
+- As a tester, I want a repeatable way to put the active workout under controlled high load on an iPhone, so that I can see whether the workout remains responsive and investigate performance limits.
+- As a tester, I want the scenario to include disk activity as well as CPU or memory pressure, so that I can observe the app while its local data store and storage are busy.
+- As a tester, I want performance UI tests to measure completing a set for one participant and completing a set for multiple participants together, so that the workout's primary logging actions remain responsive at both interaction sizes.
+- As a tester, I want performance UI tests to measure repeated scrolling up and down through the active workout, so that I can catch dropped frames and scroll regressions in both directions.
+- As a tester, I want to reuse Xcode and Simulator facilities when they can produce the needed load, so that we avoid building and maintaining a separate load service unnecessarily.
+- As a tester, I want to compare the same workload unloaded and loaded, so that the frame monitor and Instruments results are useful and repeatable.
+- Assumption: the primary target is app responsiveness during an active workout, and “disk load” means bounded app-local reads/writes or realistic SwiftData history volume. Simulator facilities should be investigated first. Simulator runs on the Mac and cannot create actual CPU, memory, or disk pressure on the physical iPhone; physical-device findings still require a workload running on that device. Exact load levels and duration remain to be set during implementation.
+
+## Architecture and data model
+
+No production SwiftData schema, migration, or workout-history change is required. Prefer Xcode performance tooling and Simulator controls for repeatable simulator-side cases where they exercise the behavior being measured. Keep simulator measurements as regression proxies; they cannot establish how the physical phone behaves.
+
+For scenarios that must run on the iPhone, investigate a Debug-only, default-off test harness scoped to the active-workout profiling flow. Reuse existing developer controls and the frame monitor. If system tools cannot create app-local storage activity, use a separate disposable SwiftData store or bounded temporary-file reads/writes rather than the user's workout database. Keep CPU, memory, and disk workloads independently selectable and strictly bounded. Run work away from the main actor, and stop it on disable, backgrounding, workout dismissal, or cancellation. Keep all controls and workload code out of Release builds; do not persist load samples as workout data or analytics.
+
+## Basic test cases
+
+- On Simulator, run the existing performance UI tests with the existing fixture and collect their CPU, memory, and timing metrics. Confirm which Xcode/Simulator facilities can add repeatable resource pressure, including whether any facility measures or generates disk activity.
+- Measure the individual participant set-completion button on an active multi-person workout; verify the intended participant's set completes and collect timing, CPU, and memory metrics.
+- Measure the shared “complete one set” action with two or more participants; verify all expected participants advance together and collect timing, CPU, and memory metrics. Keep functional assertions for completion semantics alongside, but distinguish them from, the measured performance case.
+- Measure a repeatable sequence of active-workout scrolls upward and downward, with enough repetitions to compare runs; retain the existing clock, CPU, memory, and scroll-deceleration metrics and check for hitch/frame data where available.
+- On a disposable simulator store, exercise a realistically larger history and repeatable database reads/writes; verify the fixture never alters normal app data and can be reset safely.
+- On a Debug iPhone build, compare the same workout, interaction, duration, and diagnostic setup with load disabled and enabled. The frame monitor continues reporting FPS, hitch count, and worst frame time while the selected bounded workload runs.
+- When disk activity is enabled, confirm it stays within its configured bounds, stops on cancellation/background/dismissal, and does not corrupt or change the user's workout history.
+- Toggle and cancel each workload repeatedly; verify no worker or temporary allocation remains active after stopping and that workout controls still respond and persist edits.
+- Confirm Release builds expose no load controls or workload execution. Report simulator results separately from physical-device measurements and app-generated work separately from system-wide pressure.
+
+## High-level implementation details
+
+1. Inventory current Xcode/Simulator options and the existing `active-workout-performance-ui-test` before adding code. Determine which available facilities can reproduce CPU, memory-warning, and disk-I/O scenarios, and which apply only to Simulator rather than a connected phone.
+2. Extend the performance coverage in `StrengthLogUITests/WorkoutNavigationUITests.swift`, using `StrengthLog/BasicWorkoutFixture.swift` and its active-workout fixture as the starting point. Preserve a measured repeated up/down scroll scenario; add measured cases for an individual `participant-set-…` completion and the shared `complete-one-set` action with multiple participants. The suite already has functional shared-completion coverage, but the current measured button case taps rep steppers rather than completing sets. Keep result-state checks deterministic without allowing setup/assertion work to dominate the measured interval. Existing metrics include clock, CPU, memory, and scroll deceleration; they do not establish physical-device frame performance or currently report disk I/O.
+3. If realistic data volume is needed, build it only in an isolated disposable store and measure active-workout behavior against a documented history size. Keep that scenario distinct from artificial CPU/memory pressure and repeated storage I/O.
+4. If Xcode/Simulator cannot produce the needed app-local load, add a small Debug-only harness reachable through the existing Developer menu. Bound duration, CPU duty cycle, memory allocation, and bytes/read-write rate separately; execute off the main actor; clean up temporary files; and cancel on toggle-off, scene backgrounding, workout dismissal, or task cancellation. Do not attempt unbounded allocation or write to the user's workout store to manufacture pressure.
+5. Compare matched unloaded/loaded Simulator runs with `make active-workout-performance-ui-test`, then profile the physical iPhone using the existing `make phone-deploy`, active-workout frame monitor, and Instruments workflow in `docs/on-device-performance-profiling.md`. Capture disk measurements with an appropriate Xcode/Instruments instrument if available and document the tool and limits; do not treat Simulator load as phone load.
+6. Verify workload cleanup, data isolation, unchanged workout persistence, and Release exclusion. Update `docs/on-device-performance-profiling.md` with the reproducible scenarios and limits. Before implementation, settle safe maximum duration/intensity and whether phone-side disk activity should be generated by SwiftData fixture operations, temporary-file I/O, or both.

@@ -282,8 +282,6 @@ struct ActiveWorkoutView: View {
   @State private var requestedExerciseID: UUID?
   @State private var catalogByID: [UUID: Exercise] = [:]
   @State private var catalogByName: [String: Exercise] = [:]
-  @State private var priorPersonalRecordValues: [String: Double] = [:]
-  @State private var personalRecordExerciseKeys: Set<String> = []
   @State private var hasPendingSave = false
   @State private var didLoadSupportingData = false
   @State private var previousAutosaveEnabled: Bool?
@@ -298,14 +296,10 @@ struct ActiveWorkoutView: View {
     ScrollViewReader { proxy in
       List {
         ForEach(Array(orderedExercises.enumerated()), id: \.element.id) { index, exercise in
-          exerciseCard(
-            exercise,
-            index: index,
-            personalRecordExerciseKeys: personalRecordExerciseKeys
-          )
-          .listRowInsets(EdgeInsets(top: 8, leading: 12, bottom: 12, trailing: 12))
-          .listRowSeparator(.hidden)
-          .listRowBackground(Color.clear)
+          exerciseCard(exercise, index: index)
+            .listRowInsets(EdgeInsets(top: 8, leading: 12, bottom: 12, trailing: 12))
+            .listRowSeparator(.hidden)
+            .listRowBackground(Color.clear)
         }
 
         HStack(spacing: 10) {
@@ -377,7 +371,7 @@ struct ActiveWorkoutView: View {
             ActiveExerciseTimerDisplay(
               endDate: endDate,
               exerciseName: timerExerciseName,
-              onStop: clearExerciseTimer
+              onStop: { clearExerciseTimer() }
             )
             .padding(.horizontal, 16)
             .padding(.bottom, 8)
@@ -459,10 +453,20 @@ struct ActiveWorkoutView: View {
     .accessibilityIdentifier("active-workout-screen")
     #if DEBUG
       .overlay(alignment: .bottomTrailing) {
-        if activeWorkoutFrameMonitorEnabled {
+        if WorkoutPerformanceProbe.enabled {
+          WorkoutPerformanceControls().padding(.bottom, 4)
+        } else if activeWorkoutFrameMonitorEnabled {
           ActiveWorkoutFrameOverlay()
           .padding(.trailing, 8)
           .padding(.bottom, 8)
+        }
+      }
+    #endif
+    #if DEBUG
+      .overlay(alignment: .bottomLeading) {
+        if WorkoutPerformanceProbe.enabled {
+          WorkoutOpticalClock().frame(width: 256, height: 30)
+          .padding(.leading, 8).padding(.bottom, 30)
         }
       }
     #endif
@@ -477,6 +481,18 @@ struct ActiveWorkoutView: View {
     }
     .environment(\.scheduleWorkoutSave, scheduleSave)
     .onAppear {
+      #if DEBUG
+        if WorkoutPerformanceProbe.enabled {
+          WorkoutPerformanceProbe.shared.fixture = [
+            "exercise_count": session.exercises.count,
+            "participant_count": visiblePeople.count,
+            "set_counts": orderedExercises.map { $0.participants.map { $0.sets.count } },
+            "history_session_count": (try? context.fetchCount(FetchDescriptor<WorkoutSession>()))
+              ?? 0,
+            "catalog_count": (try? context.fetchCount(FetchDescriptor<Exercise>())) ?? 0,
+          ]
+        }
+      #endif
       if previousAutosaveEnabled == nil {
         previousAutosaveEnabled = context.autosaveEnabled
         context.autosaveEnabled = false
@@ -489,6 +505,10 @@ struct ActiveWorkoutView: View {
       syncLiveActivity()
     }
     .onDisappear {
+      #if DEBUG
+        DebugLoadHarness.shared.stop()
+        if WorkoutPerformanceProbe.enabled { WorkoutPerformanceProbe.shared.cancel() }
+      #endif
       UIApplication.shared.isIdleTimerDisabled = false
       flushPendingSave()
       if !session.isActive { clearExerciseTimer() }
@@ -499,11 +519,9 @@ struct ActiveWorkoutView: View {
     }
     .onChange(of: session.exercises.map(\.id)) { _, _ in
       loadRelevantCatalogExercises()
-      updateCurrentPersonalRecords()
     }
     .onChange(of: session.exercises.map { $0.unit.rawValue + $0.repCountingMode.rawValue }) {
       _, _ in
-      loadPersonalRecordBaseline()
       syncLiveActivity()
     }
     .onChange(of: session.restTimerStartedAt) { _, _ in
@@ -516,6 +534,10 @@ struct ActiveWorkoutView: View {
       if phase == .active {
         syncLiveActivity()
       } else {
+        #if DEBUG
+          DebugLoadHarness.shared.stop()
+          if WorkoutPerformanceProbe.enabled { WorkoutPerformanceProbe.shared.cancel() }
+        #endif
         flushPendingSave()
       }
     }
@@ -546,14 +568,13 @@ struct ActiveWorkoutView: View {
     session.restTimerStartedAt = .now
     session.restTimerDurationSeconds = duration
     saveNow()
-    syncLiveActivity()
+    // restTimerStartedAt onChange synchronizes the Live Activity once.
   }
 
   private func handleSetCompleted(for exercise: ExerciseLog) {
     if session.exerciseTimerExerciseID == exercise.id {
-      clearExerciseTimer()
+      clearExerciseTimer(saveImmediately: false)
     }
-    updateCurrentPersonalRecords()
     if let duration = activeRoutine?.restDurationSeconds, duration > 0 {
       startRestTimer()
     } else {
@@ -579,7 +600,7 @@ struct ActiveWorkoutView: View {
     saveNow()
   }
 
-  private func clearExerciseTimer() {
+  private func clearExerciseTimer(saveImmediately: Bool = true) {
     guard
       session.exerciseTimerStartedAt != nil || session.exerciseTimerDurationSeconds != nil
         || session.exerciseTimerExerciseID != nil
@@ -587,7 +608,7 @@ struct ActiveWorkoutView: View {
     session.exerciseTimerStartedAt = nil
     session.exerciseTimerDurationSeconds = nil
     session.exerciseTimerExerciseID = nil
-    saveNow()
+    if saveImmediately { saveNow() } else { scheduleSave() }
   }
 
   private func handleExerciseTimerExpiry() {
@@ -596,6 +617,10 @@ struct ActiveWorkoutView: View {
   }
 
   private func syncLiveActivity() {
+    #if DEBUG
+      let phaseStart = CACurrentMediaTime()
+      defer { WorkoutPerformanceProbe.shared.recordPhase("live_activity", since: phaseStart) }
+    #endif
     guard
       let startedAt = session.restTimerStartedAt,
       let duration = session.restTimerDurationSeconds,
@@ -612,16 +637,17 @@ struct ActiveWorkoutView: View {
     if !restTimerNotificationsEnabled {
       LiveActivityManager.shared.cancelRestTimerNotification()
     }
+    let details = liveActivityDetails
     LiveActivityManager.shared.startOrUpdate(
       sessionID: session.id.uuidString,
       routineName: activeRoutine?.name ?? "Workout",
       restEndDate: restEndDate,
-      exerciseName: liveActivityDetails.exerciseName,
-      setProgress: liveActivityDetails.setProgress,
-      effort: liveActivityDetails.effort)
+      exerciseName: details.exerciseName,
+      setProgress: details.setProgress,
+      effort: details.effort)
     if restTimerNotificationsEnabled {
       LiveActivityManager.shared.scheduleRestTimerNotification(
-        at: restEndDate, exerciseName: liveActivityDetails.exerciseName)
+        at: restEndDate, exerciseName: details.exerciseName)
     }
   }
 
@@ -640,10 +666,10 @@ struct ActiveWorkoutView: View {
     }
     let participantsToUse = participants.isEmpty ? exercise.participants : participants
     let totalSets = max(
-      participantsToUse.map { $0.orderedSets.filter { !$0.isSkipped }.count }.max() ?? 0, 1)
+      participantsToUse.map { $0.sets.filter { !$0.isSkipped }.count }.max() ?? 0, 1)
     let latestCompletedSet =
       participantsToUse
-      .flatMap { $0.orderedSets.filter(\.isCompleted) }
+      .flatMap { $0.sets.filter(\.isCompleted) }
       .max { lhs, rhs in
         let lhsDate = lhs.completedAt ?? .distantPast
         let rhsDate = rhs.completedAt ?? .distantPast
@@ -653,9 +679,9 @@ struct ActiveWorkoutView: View {
     let setNumber = min(max((latestCompletedSet?.sortOrder ?? 0) + 1, 1), totalSets)
     let participant = participantsToUse.first
     let set =
-      participant?.orderedSets.first {
+      participant?.sets.first {
         !$0.isSkipped && $0.sortOrder + 1 == setNumber
-      } ?? participant?.orderedSets.first(where: { !$0.isSkipped })
+      } ?? participant?.sets.filter { !$0.isSkipped }.min(by: { $0.sortOrder < $1.sortOrder })
     let reps = set?.target(for: exercise.unit) ?? exercise.defaultTarget
     let measurement = set?.measurement ?? participant?.measurement ?? 0
     let effort =
@@ -764,8 +790,7 @@ struct ActiveWorkoutView: View {
 
   private func exerciseCard(
     _ exercise: ExerciseLog,
-    index: Int,
-    personalRecordExerciseKeys: Set<String>
+    index: Int
   ) -> some View {
     ActiveExerciseCard(
       exercise: exercise,
@@ -783,8 +808,7 @@ struct ActiveWorkoutView: View {
       },
       onStartExerciseTimer: { duration in startExerciseTimer(for: exercise, duration: duration) },
       isExerciseTimerRunning: isExerciseTimerRunning,
-      onSetCompleted: { handleSetCompleted(for: exercise) },
-      showsPersonalRecord: personalRecordExerciseKeys.contains(PersonalRecords.key(for: exercise))
+      onSetCompleted: { handleSetCompleted(for: exercise) }
     )
     .frame(maxWidth: .infinity, alignment: .top)
     .id(exercise.id)
@@ -950,7 +974,6 @@ struct ActiveWorkoutView: View {
     guard !didLoadSupportingData else { return }
     didLoadSupportingData = true
     loadRelevantCatalogExercises()
-    loadPersonalRecordBaseline()
   }
 
   private func loadRelevantCatalogExercises() {
@@ -966,46 +989,6 @@ struct ActiveWorkoutView: View {
     }
   }
 
-  private func loadPersonalRecordBaseline() {
-    let descriptor = FetchDescriptor<WorkoutSession>(
-      predicate: #Predicate { $0.deletedAt == nil })
-    guard let history = try? context.fetch(descriptor) else { return }
-    let previousAchievements = PersonalRecords.achievements(
-      in: history.filter { $0.id != session.id })
-    priorPersonalRecordValues = previousAchievements.reduce(into: [:]) { result, achievement in
-      let key = personalRecordKey(
-        exerciseKey: achievement.exerciseKey, personName: achievement.personName)
-      result[key] = max(result[key] ?? 0, achievement.value)
-    }
-    updateCurrentPersonalRecords()
-  }
-
-  private func updateCurrentPersonalRecords() {
-    var currentRecordKeys: Set<String> = []
-    for exercise in session.exercises {
-      let exerciseKey = PersonalRecords.key(for: exercise)
-      for participant in exercise.participants
-      where session.isParticipantActive(participant.participantName) {
-        let recordKey = personalRecordKey(
-          exerciseKey: exerciseKey, personName: participant.participantName)
-        let previousBest = priorPersonalRecordValues[recordKey] ?? 0
-        let hasRecord = participant.sets.contains { set in
-          guard set.isCompleted, !set.isSkipped,
-            let value = PersonalRecords.value(
-              for: set, participant: participant, unit: exercise.unit)
-          else { return false }
-          return value > previousBest
-        }
-        if hasRecord { currentRecordKeys.insert(exerciseKey) }
-      }
-    }
-    personalRecordExerciseKeys = currentRecordKeys
-  }
-
-  private func personalRecordKey(exerciseKey: String, personName: String) -> String {
-    "\(exerciseKey)|\(personName.lowercased())"
-  }
-
   private func scheduleSave() {
     if !hasPendingSave { hasPendingSave = true }
   }
@@ -1017,7 +1000,12 @@ struct ActiveWorkoutView: View {
 
   private func saveNow() {
     do {
-      try context.save()
+      #if DEBUG
+        WorkoutPerformanceProbe.shared.willSave(context)
+        try WorkoutPerformanceProbe.shared.phase("save") { try context.save() }
+      #else
+        try context.save()
+      #endif
       hasPendingSave = false
     } catch {
       hasPendingSave = true
@@ -1180,7 +1168,6 @@ struct ActiveExerciseCard: View {
   let onStartExerciseTimer: (Int) -> Void
   let isExerciseTimerRunning: Bool
   let onSetCompleted: () -> Void
-  let showsPersonalRecord: Bool
   @State private var showingImages = false
   @State private var showingHistory = false
   @State private var lastSetEditorParticipant: ParticipantLog?
@@ -1267,15 +1254,6 @@ struct ActiveExerciseCard: View {
           }
         }
         Spacer(minLength: 4)
-        if showsPersonalRecord {
-          Label("PR", systemImage: "trophy.fill")
-            .font(.caption.bold())
-            .foregroundStyle(Theme.prYellow)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 6)
-            .background(Theme.prYellow.opacity(0.18), in: Capsule())
-            .accessibilityLabel("Personal record")
-        }
         Button {
           showingHistory = true
         } label: {
@@ -1529,23 +1507,29 @@ struct ActiveExerciseCard: View {
   }
 
   private func completeOneSetForEveryone() {
+    #if DEBUG
+      WorkoutPerformanceProbe.shared.begin("shared")
+      let mutationStart = CACurrentMediaTime()
+    #endif
     let participants = visibleLogs
     guard !participants.isEmpty else { return }
     let completedCounts = participants.map { participant in
-      participant.orderedSets.filter { !$0.isSkipped && $0.isCompleted }.count
+      participant.sets.filter { !$0.isSkipped && $0.isCompleted }.count
     }
     guard let maximumCompleted = completedCounts.max() else { return }
     let everyoneIsAtMaximum = completedCounts.allSatisfy { $0 == maximumCompleted }
     let targetCompletedCount = maximumCompleted + (everyoneIsAtMaximum ? 1 : 0)
     var didComplete = false
 
-    withAnimation(.snappy) {
-      for participant in participants {
-        let completedCount = participant.orderedSets.filter { !$0.isSkipped && $0.isCompleted }
-          .count
+    do {
+      for (participant, completedCount) in zip(participants, completedCounts) {
         guard completedCount < targetCompletedCount else { continue }
-        if let nextSet = participant.orderedSets.first(where: { !$0.isSkipped && !$0.isCompleted })
+        if let nextSet = participant.sets.filter({ !$0.isSkipped && !$0.isCompleted })
+          .min(by: { $0.sortOrder < $1.sortOrder })
         {
+          #if DEBUG
+            WorkoutPerformanceProbe.shared.expect(nextSet)
+          #endif
           nextSet.isCompleted = true
           nextSet.isLeftCompleted = true
           nextSet.isRightCompleted = true
@@ -1557,14 +1541,23 @@ struct ActiveExerciseCard: View {
             reps: baseReps(for: participant),
             isCompleted: true,
             completedAt: .now)
+          #if DEBUG
+            WorkoutPerformanceProbe.shared.expect(set)
+          #endif
           participant.sets.append(set)
           didComplete = true
         }
       }
     }
     guard didComplete else { return }
+    #if DEBUG
+      WorkoutPerformanceProbe.shared.recordPhase("mutation", since: mutationStart)
+    #endif
     scheduleWorkoutSave()
     onSetCompleted()
+    #if DEBUG
+      WorkoutPerformanceProbe.shared.handlerFinished()
+    #endif
   }
 
   private func addSetForEveryone() {
@@ -1906,19 +1899,23 @@ struct SinglePersonSetCompletionGrid: View {
   }
 
   var body: some View {
+    let sets = activeSets
+    let rows = itemRows
+    let enabled = participant.completionToggleAvailability
     VStack(alignment: .leading, spacing: 4) {
-      ForEach(itemRows.indices, id: \.self) { rowIndex in
+      ForEach(rows.indices, id: \.self) { rowIndex in
         HStack(spacing: 4) {
-          ForEach(itemRows[rowIndex], id: \.self) { itemIndex in
-            if itemIndex < activeSets.count {
+          ForEach(rows[rowIndex], id: \.self) { itemIndex in
+            if itemIndex < sets.count {
               SetCompletionButton(
-                set: activeSets[itemIndex],
+                set: sets[itemIndex],
                 participant: participant,
                 exerciseName: exerciseName,
                 setNumber: itemIndex + 1,
                 colorHex: colorHex,
                 size: 36,
-                onSetCompleted: onSetCompleted)
+                onSetCompleted: onSetCompleted,
+                completionIsEnabled: enabled[sets[itemIndex].id] ?? false)
             } else {
               ParticipantSetOptionsMenu(
                 participant: participant,
@@ -1958,10 +1955,12 @@ struct ParticipantSetCompletionGrid: View {
   }
 
   var body: some View {
+    let rows = completionRows
+    let enabled = participant.completionToggleAvailability
     VStack(alignment: .leading, spacing: 4) {
-      ForEach(completionRows.indices, id: \.self) { rowIndex in
+      ForEach(rows.indices, id: \.self) { rowIndex in
         HStack(spacing: 4) {
-          ForEach(completionRows[rowIndex], id: \.element.id) { indexedSet in
+          ForEach(rows[rowIndex], id: \.element.id) { indexedSet in
             SetCompletionButton(
               set: indexedSet.element,
               participant: participant,
@@ -1969,7 +1968,8 @@ struct ParticipantSetCompletionGrid: View {
               setNumber: indexedSet.offset + 1,
               colorHex: colorHex,
               size: 36,
-              onSetCompleted: onSetCompleted)
+              onSetCompleted: onSetCompleted,
+              completionIsEnabled: enabled[indexedSet.element.id] ?? false)
           }
         }
       }
@@ -1987,12 +1987,13 @@ struct SetCompletionButton: View {
   let colorHex: String
   let size: CGFloat
   let onSetCompleted: () -> Void
+  var completionIsEnabled: Bool? = nil
 
   var body: some View {
     Button(action: toggleCompletion) {
       ZStack(alignment: .topTrailing) {
         let participantColor = Color(hex: colorHex)
-        let canToggle = participant.canToggleCompletion(of: set)
+        let canToggle = (completionIsEnabled ?? participant.canToggleCompletion(of: set))
         Text("\(setNumber)")
           .font(.system(size: 15, weight: .bold, design: .rounded))
           .foregroundStyle(
@@ -2022,8 +2023,18 @@ struct SetCompletionButton: View {
       .frame(width: size, height: size)
       .contentShape(Rectangle())
     }
+    #if DEBUG
+      .background {
+        if WorkoutPerformanceProbe.enabled {
+          CompletionRenderObserver(setID: set.id, completed: set.isCompleted)
+        }
+      }
+    #endif
     .buttonStyle(.plain)
-    .disabled(!participant.canToggleCompletion(of: set))
+    // Completion is confirmation feedback: show the fill and badge immediately.
+    // Parent layout changes can still animate without fading this confirmation.
+    .transaction { $0.animation = nil }
+    .disabled(!(completionIsEnabled ?? participant.canToggleCompletion(of: set)))
     .accessibilityIdentifier("participant-set-\(participant.participantName)-\(setNumber)")
     .accessibilityLabel(
       set.isCompleted
@@ -2033,13 +2044,22 @@ struct SetCompletionButton: View {
 
   private func toggleCompletion() {
     let wasCompleted = set.isCompleted
-    withAnimation(.snappy) {
-      participant.toggleCompletion(of: set).forEach(context.delete)
-    }
+    #if DEBUG
+      WorkoutPerformanceProbe.shared.begin("individual", completing: !wasCompleted)
+      WorkoutPerformanceProbe.shared.expect(set)
+      let mutationStart = CACurrentMediaTime()
+    #endif
+    participant.toggleCompletion(of: set).forEach(context.delete)
+    #if DEBUG
+      WorkoutPerformanceProbe.shared.recordPhase("mutation", since: mutationStart)
+    #endif
     scheduleWorkoutSave()
     if !wasCompleted && set.isCompleted {
       onSetCompleted()
     }
+    #if DEBUG
+      WorkoutPerformanceProbe.shared.handlerFinished()
+    #endif
   }
 }
 
@@ -2271,7 +2291,11 @@ struct MeasurementStepper: View {
     .foregroundStyle(Color(hex: colorHex))
     .onAppear { text = participant.measurement.tidy }
     .onChange(of: text) { _, newValue in
-      guard let value = Double(newValue), value >= 0 else { return }
+      // Display initialization and refresh must not write models or clear set overrides.
+      // tidy rounds for presentation; comparing the text also preserves stored precision.
+      guard newValue != participant.measurement.tidy,
+        let value = Double(newValue), value >= 0, value != participant.measurement
+      else { return }
       participant.measurement = value
       for set in participant.sets { set.measurement = nil }
       scheduleWorkoutSave()

@@ -126,6 +126,18 @@ struct StrengthLogApp: App {
     var configuration = ModelConfiguration(
       schema: schema, isStoredInMemoryOnly: usesBasicWorkoutFixture)
     #if DEBUG
+      if ProcessInfo.processInfo.arguments.contains("-diskWorkoutPerformanceFixture") {
+        // Fresh disposable SQLite store per launch, separate from all user data.
+        let directory = FileManager.default.temporaryDirectory
+          .appendingPathComponent("WorkoutPerformanceStore", isDirectory: true)
+        try? FileManager.default.removeItem(at: directory)
+        do {
+          try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        } catch { fatalError("Unable to create performance store: \(error)") }
+        configuration = ModelConfiguration(
+          "WorkoutPerformance", schema: schema,
+          url: directory.appendingPathComponent("workout.sqlite"))
+      }
       if ProcessInfo.processInfo.arguments.contains("-repCountingMigrationFixture") {
         // A separate disposable store, never the user's normal workout database.
         configuration = ModelConfiguration("RepCountingMigrationFixture", schema: schema)
