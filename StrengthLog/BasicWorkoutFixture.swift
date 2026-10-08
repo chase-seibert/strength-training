@@ -227,6 +227,80 @@
                 workoutIndex: workoutIndex)
             })
       }
+      if ProcessInfo.processInfo.arguments.contains("-crossRoutineHistoryFixture")
+        || ProcessInfo.processInfo.arguments.contains("-crossRoutineLegacyHistoryFixture")
+        || ProcessInfo.processInfo.arguments.contains("-crossRoutineUncompletedHistoryFixture")
+      {
+        lowerRoutine.exercises.append(
+          RoutineExercise.make(exercise: benchPress, sortOrder: lowerRoutine.exercises.count))
+        let usesLegacyHistory = ProcessInfo.processInfo.arguments.contains(
+          "-crossRoutineLegacyHistoryFixture")
+        let usesUncompletedHistory = ProcessInfo.processInfo.arguments.contains(
+          "-crossRoutineUncompletedHistoryFixture")
+        let now = Date.now
+        func crossRoutineSession(
+          exerciseID: UUID?, name: String, startedAt: Date,
+          alexMeasurement: Double, alexReps: [Int], jordanMeasurement: Double,
+          jordanReps: [Int], setsCompleted: Bool = true, includesJordan: Bool = true
+        ) -> WorkoutSession {
+          let efforts =
+            [(alex.name, alexMeasurement, alexReps)]
+            + (includesJordan ? [(jordan.name, jordanMeasurement, jordanReps)] : [])
+          let participants = efforts.map { name, measurement, reps in
+            ParticipantLog(
+              participantName: name,
+              measurement: measurement,
+              sets: reps.enumerated().map { index, repCount in
+                WorkoutSet(
+                  sortOrder: index, reps: repCount, isCompleted: setsCompleted,
+                  measurement: measurement,
+                  completedAt: setsCompleted
+                    ? startedAt.addingTimeInterval(60 + Double(index)) : nil)
+              })
+          }
+          let exerciseLog = ExerciseLog(
+            exerciseID: exerciseID, exerciseName: name, unit: .pounds, sortOrder: 0,
+            participants: participants)
+          return WorkoutSession(
+            routineID: lowerRoutine.id,
+            participantNames: efforts.map { $0.0 },
+            exercises: [exerciseLog],
+            startedAt: startedAt,
+            endedAt: startedAt.addingTimeInterval(300),
+            isActive: false)
+        }
+        if usesLegacyHistory {
+          workoutHistory.append(
+            crossRoutineSession(
+              exerciseID: nil, name: "bench press", startedAt: now.addingTimeInterval(-10),
+              alexMeasurement: 150, alexReps: [7, 6], jordanMeasurement: 90,
+              jordanReps: [11]))
+        } else if usesUncompletedHistory {
+          workoutHistory.append(
+            crossRoutineSession(
+              exerciseID: benchPress.id, name: benchPress.name,
+              startedAt: now.addingTimeInterval(-10), alexMeasurement: 160,
+              alexReps: [15, 14], jordanMeasurement: 100, jordanReps: [13],
+              setsCompleted: false))
+        } else {
+          workoutHistory.append(
+            crossRoutineSession(
+              exerciseID: benchPress.id, name: benchPress.name,
+              startedAt: now.addingTimeInterval(-20), alexMeasurement: 130,
+              alexReps: [5], jordanMeasurement: 80, jordanReps: [10]))
+          workoutHistory.append(
+            crossRoutineSession(
+              exerciseID: benchPress.id, name: benchPress.name,
+              startedAt: now.addingTimeInterval(-10), alexMeasurement: 140,
+              alexReps: [6, 5], jordanMeasurement: 85, jordanReps: [12],
+              includesJordan: false))
+          // A different master exercise with the same display name must not win by recency.
+          workoutHistory.append(
+            crossRoutineSession(
+              exerciseID: UUID(), name: benchPress.name, startedAt: now,
+              alexMeasurement: 999, alexReps: [1], jordanMeasurement: 999, jordanReps: [1]))
+        }
+      }
 
       context.insert(alex)
       context.insert(jordan)

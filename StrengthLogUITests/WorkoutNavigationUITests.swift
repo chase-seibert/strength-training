@@ -246,6 +246,59 @@ final class WorkoutNavigationUITests: XCTestCase {
     XCTAssertEqual(reps.value as? String, "9")
   }
 
+  func testSameExerciseHistorySeedsAcrossRoutinesPerPerson() {
+    app.terminate()
+    app.launchArguments = [
+      "-basicWorkoutFixture", "-crossRoutineHistoryFixture", "-activeWorkoutFixture",
+      "-activeWorkoutTwoPersonFixture",
+    ]
+    app.launch()
+
+    let alexWeight = app.textFields["Pounds for Alex"]
+    let alexReps = app.textFields["Base reps for Alex"]
+    let jordanWeight = app.textFields["Pounds for Jordan"]
+    let jordanReps = app.textFields["Base reps for Jordan"]
+    XCTAssertTrue(alexWeight.waitForExistence(timeout: 5))
+    XCTAssertEqual(alexWeight.value as? String, "140")
+    XCTAssertEqual(alexReps.value as? String, "6")
+    XCTAssertEqual(jordanWeight.value as? String, "80")
+    XCTAssertEqual(jordanReps.value as? String, "10")
+    XCTAssertTrue(app.buttons["participant-set-Alex-2"].exists)
+    XCTAssertTrue(app.buttons["participant-set-Jordan-2"].exists)
+    XCTAssertFalse(app.buttons["participant-set-Alex-3"].exists)
+    XCTAssertFalse(app.buttons["participant-set-Jordan-3"].exists)
+  }
+
+  func testLegacyIDLessExerciseHistorySeedsAcrossRoutines() {
+    app.terminate()
+    app.launchArguments = [
+      "-basicWorkoutFixture", "-crossRoutineLegacyHistoryFixture", "-activeWorkoutFixture",
+      "-activeWorkoutOnePersonFixture",
+    ]
+    app.launch()
+
+    let weight = app.textFields["Pounds for Alex"]
+    XCTAssertTrue(weight.waitForExistence(timeout: 5))
+    XCTAssertEqual(weight.value as? String, "150")
+    XCTAssertEqual(app.textFields["Base reps for Alex"].value as? String, "7")
+  }
+
+  func testCrossRoutineHistoryWithoutCompletedSetsUsesDefaults() {
+    app.terminate()
+    app.launchArguments = [
+      "-basicWorkoutFixture", "-crossRoutineUncompletedHistoryFixture", "-activeWorkoutFixture",
+      "-activeWorkoutOnePersonFixture",
+    ]
+    app.launch()
+
+    let weight = app.textFields["Pounds for Alex"]
+    XCTAssertTrue(weight.waitForExistence(timeout: 5))
+    XCTAssertEqual(weight.value as? String, "160")
+    XCTAssertEqual(app.textFields["Base reps for Alex"].value as? String, "8")
+    XCTAssertTrue(app.buttons["participant-set-Alex-3"].exists)
+    XCTAssertFalse(app.buttons["participant-set-Alex-4"].exists)
+  }
+
   func testWeightControlsJumpToStandardSizes() {
     app.terminate()
     app.launchArguments = ["-basicWorkoutFixture", "-activeWorkoutFixture"]

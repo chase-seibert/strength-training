@@ -825,11 +825,15 @@ enum WorkoutSessionStarter {
     }
 
     let orderedPeople = PersonProfile.ordered(people)
-    let history =
+    let orderedHistory =
       sessions
-      .filter { $0.routineID == routine.id }
-      .sorted { $0.startedAt > $1.startedAt }
-    let lastNames = history.first?.participantNames ?? routine.configuredParticipantNames
+      .filter { $0.deletedAt == nil }
+      .sorted { lhs, rhs in
+        if lhs.startedAt != rhs.startedAt { return lhs.startedAt > rhs.startedAt }
+        return lhs.id.uuidString > rhs.id.uuidString
+      }
+    let routineHistory = orderedHistory.filter { $0.routineID == routine.id }
+    let lastNames = routineHistory.first?.participantNames ?? routine.configuredParticipantNames
     let lastKeys = Set(lastNames.map { $0.lowercased() })
     let selectedNames = orderedPeople.map(\.name).filter {
       lastKeys.isEmpty || lastKeys.contains($0.lowercased())
@@ -838,7 +842,7 @@ enum WorkoutSessionStarter {
     guard !participantNames.isEmpty else { return nil }
 
     let knownNames = orderedKnownNames(
-      history: history, routine: routine, orderedPeople: orderedPeople)
+      history: routineHistory, routine: routine, orderedPeople: orderedPeople)
     let logs = routine.exercises.sorted(by: { $0.sortOrder < $1.sortOrder }).map { item in
       let master =
         catalog.first(where: { $0.id == item.exerciseID })
@@ -847,12 +851,15 @@ enum WorkoutSessionStarter {
             $0.name.caseInsensitiveCompare(item.exerciseName) == .orderedSame
           })
           : nil)
-      let previousExercise = history.lazy.flatMap(\.exercises).first {
+      let exerciseHistory = orderedHistory.filter { session in
+        session.exercises.contains { matches($0, item) }
+      }
+      let previousExercise = exerciseHistory.lazy.flatMap(\.exercises).first {
         matches($0, item)
       }
       let participantLogs = knownNames.map {
         participantLog(
-          for: $0, exercise: item, history: history,
+          for: $0, exercise: item, history: exerciseHistory,
           defaultTarget: master?.defaultTarget ?? WorkoutPreferences.defaultReps)
       }
       equalizeSetCounts(participantLogs)
@@ -913,7 +920,7 @@ enum WorkoutSessionStarter {
       }
     if let previous {
       let completedSets = previous.sets
-        .filter(\.isCompleted)
+        .filter { $0.isCompleted && !$0.isSkipped }
         .sorted(by: { $0.sortOrder < $1.sortOrder })
       return ParticipantLog(
         participantName: name, measurement: previous.measurement,
@@ -947,8 +954,8 @@ enum WorkoutSessionStarter {
   }
 
   private static func matches(_ log: ExerciseLog, _ exercise: RoutineExercise) -> Bool {
-    if let exerciseID = exercise.exerciseID, let logExerciseID = log.exerciseID {
-      return exerciseID == logExerciseID
+    if let exerciseID = exercise.exerciseID {
+      if let logExerciseID = log.exerciseID { return exerciseID == logExerciseID }
     }
     return log.exerciseName.caseInsensitiveCompare(exercise.exerciseName) == .orderedSame
   }
