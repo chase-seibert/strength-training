@@ -131,7 +131,7 @@ struct RoutinesView: View {
 
   private func deleteRoutines(at offsets: IndexSet) {
     for offset in offsets { routines[offset].deletedAt = .now }
-    try? context.save()
+    _ = saveAndRefreshProgressWidget(context)
   }
 }
 
@@ -184,7 +184,7 @@ struct DeletedRoutinesView: View {
 
   private func restore(_ routine: Routine) {
     routine.deletedAt = nil
-    try? context.save()
+    _ = saveAndRefreshProgressWidget(context)
   }
 }
 
@@ -295,7 +295,7 @@ struct StarterRoutinePicker: View {
     for template in availableTemplates where selectedIDs.contains(template.id) {
       context.insert(template.makeRoutine())
     }
-    try? context.save()
+    _ = saveAndRefreshProgressWidget(context)
     dismiss()
   }
 }
@@ -347,7 +347,7 @@ struct NewRoutineSheet: View {
               Routine(
                 name: name.trimmingCharacters(in: .whitespacesAndNewlines), symbol: symbol,
                 colorHex: colorHex, restDurationSeconds: restDurationSeconds))
-            try? context.save()
+            _ = saveAndRefreshProgressWidget(context)
             dismiss()
           }
           .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
@@ -710,7 +710,7 @@ struct RoutineDetailView: View {
       draftExercises.append(
         RoutineExercise.make(exercise: exercise, sortOrder: draftExercises.count))
     } else if routine.add(exercise) {
-      try? context.save()
+      _ = saveAndRefreshProgressWidget(context)
     }
   }
 
@@ -740,14 +740,14 @@ struct RoutineDetailView: View {
     routine.exercises = draftExercises
     for (index, exercise) in draftExercises.enumerated() { exercise.sortOrder = index }
     deleted.forEach(context.delete)
-    try? context.save()
+    _ = saveAndRefreshProgressWidget(context)
     draftExercises = []
     editMode = .inactive
   }
 
   private func deleteRoutine() {
     routine.deletedAt = .now
-    try? context.save()
+    _ = saveAndRefreshProgressWidget(context)
     dismiss()
   }
 
@@ -813,6 +813,7 @@ struct AddExerciseToRoutineSheet: View {
 
 enum WorkoutSessionStarter {
   @discardableResult
+  @MainActor
   static func start(
     routine: Routine,
     people: [PersonProfile],
@@ -878,6 +879,7 @@ enum WorkoutSessionStarter {
     context.insert(session)
     do {
       try context.save()
+      ProgressWidgetPublication.schedule()
       return session
     } catch {
       return nil

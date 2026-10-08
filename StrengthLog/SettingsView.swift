@@ -439,7 +439,7 @@ struct NewPersonSheet: View {
                 PersonProfile(
                   name: name.trimmingCharacters(in: .whitespacesAndNewlines), colorHex: "A778F5",
                   sortOrder: (people.map(\.sortOrder).max() ?? -1) + 1))
-              try? context.save()
+              _ = saveAndRefreshProgressWidget(context)
               dismiss()
             }
             .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)

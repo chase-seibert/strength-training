@@ -33,6 +33,11 @@
 		C10000000000000000000003 /* LiveActivityAttributes.swift in LiveActivity Sources */ = {isa = PBXBuildFile; fileRef = C20000000000000000000001 /* LiveActivityAttributes.swift */; };
 		C10000000000000000000004 /* LiveActivityWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000000000000000000003 /* LiveActivityWidget.swift */; };
 		C10000000000000000000005 /* LiftChaseLiveActivity.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = C20000000000000000000005 /* LiftChaseLiveActivity.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		A10000000000000000000017 /* ProgressWidgetShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000017 /* ProgressWidgetShared.swift */; };
+		A10000000000000000000018 /* ProgressWidgetPublisher.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000018 /* ProgressWidgetPublisher.swift */; };
+		A10000000000000000000019 /* ProgressSummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000019 /* ProgressSummary.swift */; };
+		C10000000000000000000006 /* ProgressWidgetShared.swift in Extension Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000017 /* ProgressWidgetShared.swift */; };
+		C10000000000000000000007 /* ProgressWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000000000000000000006 /* ProgressWidget.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -83,6 +88,10 @@
 		C20000000000000000000003 /* LiveActivityWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveActivityWidget.swift; sourceTree = "<group>"; };
 		C20000000000000000000004 /* LiveActivityInfo.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = LiveActivityInfo.plist; sourceTree = "<group>"; };
 		C20000000000000000000005 /* LiftChaseLiveActivity.appex */ = {isa = PBXFileReference; explicitFileType = wrapper.app-extension; includeInIndex = 0; path = LiftChaseLiveActivity.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		A20000000000000000000017 /* ProgressWidgetShared.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressWidgetShared.swift; sourceTree = "<group>"; };
+		A20000000000000000000018 /* ProgressWidgetPublisher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressWidgetPublisher.swift; sourceTree = "<group>"; };
+		A20000000000000000000019 /* ProgressSummary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressSummary.swift; sourceTree = "<group>"; };
+		C20000000000000000000006 /* ProgressWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressWidget.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -124,6 +133,9 @@
 				A20000000000000000000011 /* Info.plist */,
 				A20000000000000000000012 /* HevyImportSmokeTest.swift */,
 				A20000000000000000000014 /* BasicWorkoutFixture.swift */,
+				A20000000000000000000017 /* ProgressWidgetShared.swift */,
+				A20000000000000000000018 /* ProgressWidgetPublisher.swift */,
+				A20000000000000000000019 /* ProgressSummary.swift */,
 				C20000000000000000000001 /* LiveActivityAttributes.swift */,
 				C20000000000000000000002 /* LiveActivityManager.swift */,
 				A2000000000000000000000B /* Assets.xcassets */,
@@ -158,6 +170,7 @@
 			isa = PBXGroup;
 			children = (
 				C20000000000000000000003 /* LiveActivityWidget.swift */,
+				C20000000000000000000006 /* ProgressWidget.swift */,
 				C20000000000000000000004 /* LiveActivityInfo.plist */,
 			);
 			path = StrengthLog;
@@ -224,7 +237,7 @@
 				TargetAttributes = {
 					A50000000000000000000001 = {
 						CreatedOnToolsVersion = 26.6;
-						SystemCapabilities = { com.apple.HealthKit = { enabled = 1; }; };
+						SystemCapabilities = { com.apple.ApplicationGroups = { enabled = 1; }; com.apple.HealthKit = { enabled = 1; }; };
 					};
 					B50000000000000000000001 = { CreatedOnToolsVersion = 26.6; TestTargetID = A50000000000000000000001; };
 				};
@@ -258,6 +271,9 @@
 				A10000000000000000000003 /* SeedData.swift in Sources */,
 				A10000000000000000000004 /* Components.swift in Sources */,
 				A10000000000000000000005 /* HomeView.swift in Sources */,
+				A10000000000000000000017 /* ProgressWidgetShared.swift in Sources */,
+				A10000000000000000000018 /* ProgressWidgetPublisher.swift in Sources */,
+				A10000000000000000000019 /* ProgressSummary.swift in Sources */,
 				A10000000000000000000006 /* RoutinesView.swift in Sources */,
 				A10000000000000000000007 /* ActiveWorkoutView.swift in Sources */,
 				F6C398CB9D25464E97C3A050 /* WorkoutPerformanceProbe.swift in Sources */,
@@ -287,6 +303,8 @@
 			files = (
 				C10000000000000000000003 /* LiveActivityAttributes.swift in LiveActivity Sources */,
 				C10000000000000000000004 /* LiveActivityWidget.swift in Sources */,
+				C10000000000000000000006 /* ProgressWidgetShared.swift in Extension Sources */,
+				C10000000000000000000007 /* ProgressWidget.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -408,6 +426,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = StrengthLog/LiveActivity.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 96NAC4VTEN;
@@ -428,6 +447,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = StrengthLog/LiveActivity.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 96NAC4VTEN;

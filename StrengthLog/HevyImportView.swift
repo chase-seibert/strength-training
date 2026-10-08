@@ -699,6 +699,7 @@ enum HevyImporter {
     }
 
     try context.save()
+    ProgressWidgetPublication.schedule()
     return HevyImportResult(
       routineCount: createdRoutineCount,
       routineExerciseCount: routineExerciseCount,

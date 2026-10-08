@@ -101,6 +101,7 @@ enum HealthKitWorkoutRecorder {
 struct StrengthLogApp: App {
   @State private var importCoordinator = HevyImportCoordinator()
   @State private var storageError: String?
+  @State private var widgetError: String?
   private let container: ModelContainer
 
   init() {
@@ -124,7 +125,7 @@ struct StrengthLogApp: App {
       let usesBasicWorkoutFixture = false
     #endif
     var configuration = ModelConfiguration(
-      schema: schema, isStoredInMemoryOnly: usesBasicWorkoutFixture)
+      schema: schema, isStoredInMemoryOnly: usesBasicWorkoutFixture, groupContainer: .none)
     #if DEBUG
       if ProcessInfo.processInfo.arguments.contains("-diskWorkoutPerformanceFixture") {
         // Fresh disposable SQLite store per launch, separate from all user data.
@@ -140,13 +141,21 @@ struct StrengthLogApp: App {
       }
       if ProcessInfo.processInfo.arguments.contains("-repCountingMigrationFixture") {
         // A separate disposable store, never the user's normal workout database.
-        configuration = ModelConfiguration("RepCountingMigrationFixture", schema: schema)
+        configuration = ModelConfiguration(
+          "RepCountingMigrationFixture", schema: schema, groupContainer: .none)
       }
     #endif
     do {
       container = try ModelContainer(for: schema, configurations: [configuration])
     } catch {
       fatalError("Unable to create StrengthLog data store: \(error)")
+    }
+    let usesIsolatedStorageFixture =
+      usesBasicWorkoutFixture
+      || ProcessInfo.processInfo.arguments.contains("-diskWorkoutPerformanceFixture")
+      || ProcessInfo.processInfo.arguments.contains("-repCountingMigrationFixture")
+    if !usesIsolatedStorageFixture {
+      ProgressWidgetPublication.configure(modelContainer: container)
     }
 
     #if DEBUG
@@ -177,6 +186,11 @@ struct StrengthLogApp: App {
       AppRootView()
         .environment(importCoordinator)
         .onOpenURL { importCoordinator.open($0) }
+        .onReceive(NotificationCenter.default.publisher(for: .progressWidgetPublicationFailed)) {
+          notification in
+          widgetError =
+            notification.object as? String ?? "Open StrengthLog to retry the widget refresh."
+        }
         .alert(
           "Couldn’t update exercise data",
           isPresented: Binding(
@@ -186,6 +200,16 @@ struct StrengthLogApp: App {
           Button("OK") { storageError = nil }
         } message: {
           Text(storageError ?? "")
+        }
+        .alert(
+          "Couldn’t refresh the Progress widget",
+          isPresented: Binding(
+            get: { widgetError != nil }, set: { if !$0 { widgetError = nil } }
+          )
+        ) {
+          Button("OK") { widgetError = nil }
+        } message: {
+          Text(widgetError ?? "")
         }
         .task {
           do {
@@ -199,6 +223,7 @@ struct StrengthLogApp: App {
           } catch {
             storageError = error.localizedDescription
           }
+          ProgressWidgetPublication.schedule()
           #if DEBUG
             if ProcessInfo.processInfo.arguments.contains("-runHevyImportSmokeTest") {
               do {
@@ -220,6 +245,7 @@ struct StrengthLogApp: App {
 
 struct AppRootView: View {
   @Environment(\.modelContext) private var context
+  @Environment(\.scenePhase) private var scenePhase
   @Environment(HevyImportCoordinator.self) private var importCoordinator
   @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
   @AppStorage("hasInitializedOnboardingState") private var hasInitializedOnboardingState = false
@@ -249,6 +275,9 @@ struct AppRootView: View {
       if !people.isEmpty { hasCompletedOnboarding = true }
       hasInitializedOnboardingState = true
     }
+    .onChange(of: scenePhase) { _, phase in
+      if phase == .active { ProgressWidgetPublication.schedule() }
+    }
     .sheet(item: $importCoordinator.document) { document in
       HevyImportView(
         document: document,
@@ -274,7 +303,7 @@ struct AppRootView: View {
       return lhs.name.localizedCaseInsensitiveCompare(rhs.name) == .orderedAscending
     }
     for (index, person) in ordered.enumerated() { person.sortOrder = index }
-    try? context.save()
+    _ = saveAndRefreshProgressWidget(context)
   }
 }
 
@@ -394,6 +423,7 @@ struct RootView: View {
     LiveActivityManager.shared.end()
     do {
       try context.save()
+      ProgressWidgetPublication.schedule()
     } catch {
       return false
     }
@@ -421,7 +451,7 @@ struct RootView: View {
     session.endedAt = session.endedAt ?? .now
     session.restTimerStartedAt = nil
     session.restTimerDurationSeconds = nil
-    try? context.save()
+    _ = saveAndRefreshProgressWidget(context)
     LiveActivityManager.shared.end()
   }
 }

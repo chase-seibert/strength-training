@@ -74,5 +74,6 @@ struct LiftChaseLiveActivityWidget: Widget {
 struct LiftChaseLiveActivityWidgetBundle: WidgetBundle {
   var body: some Widget {
     LiftChaseLiveActivityWidget()
+    ProgressWidget()
   }
 }

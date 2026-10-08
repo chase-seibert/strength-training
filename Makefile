@@ -14,7 +14,7 @@ GENERIC_SIM_DESTINATION := generic/platform=iOS Simulator
 DEVICE_ID ?= 00008150-000E41422E40401C
 DEVELOPMENT_TEAM ?= 96NAC4VTEN
 
-.PHONY: workout-profile workout-profile-graph rep-counting-ui-test exercise-unit-ui-test exercise-timer-ui-test cross-routine-history-ui-test pr-sticker-ui-test setup build run format lint test catalog-check exercise-images-check bundle-exercise-images hevy-import-check sim-build sim-launch workout-navigation-ui-test active-workout-regression-ui-test active-workout-performance-ui-test phone-build phone-install phone-launch phone-deploy clean
+.PHONY: workout-profile workout-profile-graph rep-counting-ui-test exercise-unit-ui-test exercise-timer-ui-test cross-routine-history-ui-test pr-sticker-ui-test progress-widget-check setup build run format lint test catalog-check exercise-images-check bundle-exercise-images hevy-import-check sim-build sim-launch workout-navigation-ui-test active-workout-regression-ui-test active-workout-performance-ui-test phone-build phone-install phone-launch phone-deploy clean
 
 setup: catalog-check exercise-images-check
 
@@ -29,7 +29,14 @@ lint: catalog-check exercise-images-check hevy-import-check
 	plutil -lint $(PROJECT)/project.pbxproj
 	xcrun swift-format lint --recursive StrengthLog StrengthLogUITests
 
-test: catalog-check exercise-images-check sim-build
+test: catalog-check exercise-images-check progress-widget-check sim-build
+
+progress-widget-check:
+	@set -eu; \
+	TEMP_DIR=$$(mktemp -d); \
+	trap 'rm -rf "$$TEMP_DIR"' EXIT; \
+	xcrun swiftc StrengthLog/ProgressWidgetShared.swift scripts/validate-progress-widget-snapshot.swift -o "$$TEMP_DIR/validate-progress-widget-snapshot"; \
+	"$$TEMP_DIR/validate-progress-widget-snapshot"
 
 catalog-check:
 	@jq -e 'all(.[]; (.repCountingMode // "standard") as $$mode | ($$mode == "standard" or $$mode == "perSide") and (if $$mode == "perSide" then (.unit == "pounds" or .unit == "kilograms" or .unit == "repetitions") else true end))' StrengthLog/Resources/exercise-catalog.json >/dev/null

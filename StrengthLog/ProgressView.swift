@@ -85,7 +85,7 @@ struct ProgressView: View {
                         .font(.caption).foregroundStyle(.secondary)
                     }
                     Spacer()
-                    let prCount = PersonalRecords.count(for: session, in: sessions)
+                    let prCount = personalRecordCounts[session.id] ?? 0
                     if prCount > 0 {
                       PersonalRecordBadge(count: prCount)
                     }
@@ -140,61 +140,19 @@ struct ProgressView: View {
   }
 
   private var progressPeople: [String] {
-    var names: [String] = []
-    for session in filteredSessions {
-      for name in session.participantNames
-      where !names.contains(where: {
-        $0.caseInsensitiveCompare(name) == .orderedSame
-      }) {
-        names.append(name)
-      }
-    }
-    return names.sorted { lhs, rhs in
-      let leftOrder =
-        people.first(where: { $0.name.caseInsensitiveCompare(lhs) == .orderedSame })?.sortOrder
-        ?? Int.max
-      let rightOrder =
-        people.first(where: { $0.name.caseInsensitiveCompare(rhs) == .orderedSame })?.sortOrder
-        ?? Int.max
-      if leftOrder != rightOrder { return leftOrder < rightOrder }
-      return lhs.localizedCaseInsensitiveCompare(rhs) == .orderedAscending
-    }
+    ProgressSummaryBuilder.participantNames(in: filteredSessions, people: people)
   }
 
-  private var volumePoints: [PersonVolumePoint] {
-    let calendar = Calendar.current
-    var buckets: [String: PersonVolumePoint] = [:]
-    for session in chronological {
-      let weekStart =
-        calendar.dateInterval(of: .weekOfYear, for: session.startedAt)?.start
-        ?? calendar.startOfDay(for: session.startedAt)
-      for name in session.participantNames {
-        let sessionVolume = volume(for: session, participantName: name)
-        guard sessionVolume > 0 else { continue }
-        let key = "\(weekStart.timeIntervalSinceReferenceDate)|\(name.lowercased())"
-        if let existing = buckets[key] {
-          buckets[key] = PersonVolumePoint(
-            id: existing.id, personName: existing.personName, weekStart: existing.weekStart,
-            volume: existing.volume + sessionVolume)
-        } else {
-          buckets[key] = PersonVolumePoint(
-            id: key, personName: name, weekStart: weekStart, volume: sessionVolume)
-        }
-      }
-    }
-    return buckets.values.sorted {
-      if $0.weekStart != $1.weekStart { return $0.weekStart < $1.weekStart }
-      return $0.personName.localizedCaseInsensitiveCompare($1.personName) == .orderedAscending
-    }
+  private var volumePoints: [ProgressVolumePoint] {
+    ProgressSummaryBuilder.volumePoints(sessions: chronological)
   }
 
-  private func volume(for session: WorkoutSession, participantName: String) -> Double {
-    session.exercises.reduce(0) { $0 + $1.completedPoundsVolume(for: participantName) }
+  private var personalRecordCounts: [UUID: Int] {
+    ProgressSummaryBuilder.personalRecordCounts(in: sessions)
   }
 
   private func colorHex(for name: String) -> String {
-    people.first(where: { $0.name.caseInsensitiveCompare(name) == .orderedSame })?.colorHex
-      ?? "6B7280"
+    ProgressSummaryBuilder.colorHex(for: name, people: people)
   }
 
   private func requestDelete(_ offsets: IndexSet) {
@@ -214,7 +172,7 @@ struct ProgressView: View {
     session.endedAt = session.endedAt ?? .now
     session.restTimerStartedAt = nil
     session.restTimerDurationSeconds = nil
-    try? context.save()
+    _ = saveAndRefreshProgressWidget(context)
     LiveActivityManager.shared.end()
     pendingDeletion = nil
   }
@@ -243,13 +201,6 @@ private enum ProgressRange: String, CaseIterable, Identifiable {
     case .oneYear: return Calendar.current.date(byAdding: .year, value: -1, to: .now)
     }
   }
-}
-
-private struct PersonVolumePoint: Identifiable {
-  let id: String
-  let personName: String
-  let weekStart: Date
-  let volume: Double
 }
 
 private struct PersonalRecordBadge: View {
@@ -369,7 +320,7 @@ struct SessionDetailView: View {
     session.isActive = true
     session.restTimerStartedAt = nil
     session.restTimerDurationSeconds = nil
-    try? context.save()
+    _ = saveAndRefreshProgressWidget(context)
     LiveActivityManager.shared.end()
   }
 
@@ -379,7 +330,7 @@ struct SessionDetailView: View {
     session.endedAt = session.endedAt ?? .now
     session.restTimerStartedAt = nil
     session.restTimerDurationSeconds = nil
-    try? context.save()
+    _ = saveAndRefreshProgressWidget(context)
     LiveActivityManager.shared.end()
     dismiss()
   }

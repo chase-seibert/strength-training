@@ -1006,6 +1006,7 @@ struct ActiveWorkoutView: View {
       #else
         try context.save()
       #endif
+      ProgressWidgetPublication.schedule()
       hasPendingSave = false
     } catch {
       hasPendingSave = true
@@ -1122,7 +1123,7 @@ struct AddExerciseToWorkoutSheet: View {
         Button {
           if session.add(exercise) {
             _ = routine?.add(exercise)
-            try? context.save()
+            _ = saveAndRefreshProgressWidget(context)
             dismiss()
           }
         } label: {

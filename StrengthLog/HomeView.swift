@@ -256,7 +256,7 @@ struct HomeView: View {
     session.isActive = true
     session.restTimerStartedAt = nil
     session.restTimerDurationSeconds = nil
-    try? context.save()
+    _ = saveAndRefreshProgressWidget(context)
     LiveActivityManager.shared.end()
     onOpenWorkout(session)
   }
@@ -312,7 +312,7 @@ struct DeletedWorkoutsView: View {
 
   private func restore(_ session: WorkoutSession) {
     session.deletedAt = nil
-    try? context.save()
+    _ = saveAndRefreshProgressWidget(context)
   }
 
   private func routineName(for session: WorkoutSession) -> String {
@@ -855,7 +855,7 @@ private struct DayWorkoutSummaryView: View {
         }
       }
     }
-    try? context.save()
+    _ = saveAndRefreshProgressWidget(context)
     showingDestructiveConfirmation = false
     didDeleteUncompletedSets = true
   }
@@ -1026,7 +1026,7 @@ private struct DayWorkoutSummaryView: View {
     session.deletedAt = .now
     session.isActive = false
     session.endedAt = session.endedAt ?? .now
-    try? context.save()
+    _ = saveAndRefreshProgressWidget(context)
     pendingWorkoutDeletion = nil
     showingDestructiveConfirmation = false
     dismiss()

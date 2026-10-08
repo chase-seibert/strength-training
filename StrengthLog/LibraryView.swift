@@ -142,7 +142,7 @@ private struct ExerciseLibraryRow: View {
 
   private func softDelete() {
     exercise.deletedAt = .now
-    try? context.save()
+    _ = saveAndRefreshProgressWidget(context)
   }
 }
 
@@ -272,7 +272,7 @@ struct ExerciseDetailView: View {
 
   private func softDelete() {
     exercise.deletedAt = .now
-    try? context.save()
+    _ = saveAndRefreshProgressWidget(context)
     dismiss()
   }
 
@@ -336,7 +336,7 @@ struct DeletedCustomExercisesView: View {
 
   private func restore(_ exercise: Exercise) {
     exercise.deletedAt = nil
-    try? context.save()
+    _ = saveAndRefreshProgressWidget(context)
   }
 }
 
@@ -401,7 +401,7 @@ struct AddExerciseFromLibrarySheet: View {
 
   private func add(to routine: Routine) {
     guard routine.add(exercise) else { return }
-    try? context.save()
+    _ = saveAndRefreshProgressWidget(context)
     dismiss()
   }
 }
@@ -656,6 +656,7 @@ private struct ExerciseEditorSheet: View {
         context.insert(newExercise)
       }
       try context.save()
+      ProgressWidgetPublication.schedule()
       dismiss()
     } catch {
       saveError = error.localizedDescription

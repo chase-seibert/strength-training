@@ -253,7 +253,7 @@ struct OnboardingView: View {
     where selectedStarterIDs.contains(template.id) && !existingStarterIDs.contains(template.id) {
       context.insert(template.makeRoutine())
     }
-    try? context.save()
+    _ = saveAndRefreshProgressWidget(context)
     hasCompletedOnboarding = true
   }
 

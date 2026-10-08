@@ -66,3 +66,11 @@ The project correctly resolved `DEVELOPMENT_TEAM=96NAC4VTEN`, but a generic iOS 
 ## 2026-10-02 — HealthKit device builds need a HealthKit-enabled profile
 
 After adding the HealthKit entitlement, `make phone-deploy` resolved the configured personal team but failed because Xcode had no account and its provisioning profile did not include HealthKit. Simulator builds still succeeded. Configure an Apple Development account/profile with the HealthKit capability before retrying physical deployment; this is a signing setup issue, not a Swift compile error.
+
+## 2026-10-08 — App Group device builds also require Xcode account access
+
+The progress widget simulator build and UI tests passed, but `make phone-deploy`
+could not provision the app or widget extension because Xcode has no account and
+no development profiles for either bundle ID. The installed Apple Development
+certificate alone is insufficient to verify App Group access. Add the developer
+account and matching App Group profiles before attempting device acceptance.
