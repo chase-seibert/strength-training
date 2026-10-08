@@ -58,8 +58,11 @@ struct LiftChaseLiveActivityWidget: Widget {
           .foregroundStyle(coral)
           .frame(width: 34, alignment: .trailing)
       } minimal: {
-        Image(systemName: "timer")
+        Text(timerInterval: Date.now...context.state.restEndDate, countsDown: true)
+          .font(.system(size: 10, weight: .bold, design: .rounded).monospacedDigit())
           .foregroundStyle(coral)
+          .lineLimit(1)
+          .minimumScaleFactor(0.65)
       }
       .keylineTint(coral)
       .contentMargins(.all, 0, for: .expanded)
