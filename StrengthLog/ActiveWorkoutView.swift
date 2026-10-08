@@ -1459,9 +1459,10 @@ struct ActiveExerciseCard: View {
       Button(action: removeLastSetForEveryone) {
         Image(systemName: "minus")
           .font(.caption.weight(.bold))
-          .foregroundStyle(setCount > 1 ? Theme.navy : Color.secondary.opacity(0.4))
+          .foregroundStyle(.white)
           .frame(width: 30, height: 30)
-          .background(Color.secondary.opacity(0.08), in: Circle())
+          .background(Theme.coral, in: Circle())
+          .opacity(setCount > 1 ? 1 : 0.45)
       }
       .buttonStyle(.plain)
       .disabled(setCount <= 1)
@@ -1471,10 +1472,12 @@ struct ActiveExerciseCard: View {
       Button(action: completeOneSetForEveryone) {
         Label("1 set", systemImage: "checkmark")
           .font(.caption.weight(.bold))
+          .foregroundStyle(.white)
+          .padding(.horizontal, 10)
+          .frame(height: 30)
+          .background(Theme.coral, in: Capsule())
       }
-      .buttonStyle(.borderedProminent)
-      .controlSize(.small)
-      .tint(Theme.coral)
+      .buttonStyle(.plain)
       .accessibilityIdentifier("complete-one-set")
       .accessibilityLabel("Complete one set for everyone")
 
@@ -1492,16 +1495,22 @@ struct ActiveExerciseCard: View {
   }
 
   private var nextExerciseButton: some View {
-    Button(action: onAdvance) {
-      Image(systemName: "arrow.down.circle.fill")
+    let canAdvance = position < total
+
+    return Button(action: onAdvance) {
+      Image(systemName: "arrow.down")
         .font(.title3.weight(.semibold))
-        .foregroundStyle(position >= total ? Color.secondary.opacity(0.35) : Theme.coral)
+        .foregroundStyle(canAdvance ? Color.white : Color.secondary.opacity(0.35))
         .frame(width: 36, height: 36)
-        .contentShape(Rectangle())
+        .background(
+          canAdvance ? Theme.coral : Color.secondary.opacity(0.08),
+          in: Circle()
+        )
+        .contentShape(Circle())
     }
     .buttonStyle(.plain)
-    .disabled(position >= total)
-    .opacity(position >= total ? 0.45 : 1)
+    .disabled(!canAdvance)
+    .opacity(canAdvance ? 1 : 0.45)
     .accessibilityLabel("Next exercise")
     .accessibilityIdentifier("next-exercise-\(exercise.exerciseName)")
   }
