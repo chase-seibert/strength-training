@@ -143,6 +143,8 @@ exercise-timer-ui-test:
 	  CODE_SIGNING_ALLOWED=NO \
 	  -parallel-testing-enabled NO \
 	  -only-testing:StrengthLogUITests/WorkoutNavigationUITests/testTimedExerciseCountdownStartsStopsAndConvertsMinutes \
+	  -only-testing:StrengthLogUITests/WorkoutNavigationUITests/testTimedExerciseExpiryCompletesOneSetAndStartsRest \
+	  -only-testing:StrengthLogUITests/WorkoutNavigationUITests/testManualSetCompletionDuringTimerPreRollCancelsTimer \
 	  test
 
 cross-routine-history-ui-test:

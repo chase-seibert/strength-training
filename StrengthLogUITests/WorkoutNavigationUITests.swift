@@ -81,7 +81,7 @@ final class WorkoutNavigationUITests: XCTestCase {
     let nextExercise = app.buttons["next-exercise-Bench Press"]
     XCTAssertTrue(waitForHittable(nextExercise))
     nextExercise.tap()
-    XCTAssertTrue(app.buttons["previous-exercise"].waitForExistence(timeout: 3))
+    XCTAssertTrue(app.buttons["workout-exercise-menu"].waitForExistence(timeout: 3))
     let skip = app.buttons["Skip"]
     XCTAssertTrue(skip.waitForExistence(timeout: 3))
     XCTAssertTrue(skip.isHittable)
@@ -114,17 +114,13 @@ final class WorkoutNavigationUITests: XCTestCase {
     XCTAssertTrue(secondsStart.waitForExistence(timeout: 5))
     XCTAssertTrue(secondsStart.label.contains("45 sec"), secondsStart.label)
     secondsStart.tap()
+    let preRoll = app.staticTexts["exercise-timer-preroll"]
+    XCTAssertTrue(preRoll.waitForExistence(timeout: 3), app.debugDescription)
+    XCTAssertTrue(app.buttons["Cancel exercise timer countdown"].isHittable)
+    app.buttons["Cancel exercise timer countdown"].tap()
+    XCTAssertTrue(preRoll.waitForNonExistence(timeout: 3))
     let timerText = app.staticTexts["exercise-countdown"]
-    XCTAssertTrue(timerText.waitForExistence(timeout: 3), app.debugDescription)
-    XCTAssertTrue(skipRest.exists)
-    let headerTimerY = timerText.frame.minY
-    app.swipeUp()
-    XCTAssertTrue(timerText.exists)
-    XCTAssertEqual(timerText.frame.minY, headerTimerY, accuracy: 2)
-    let stop = app.buttons["stop-exercise-timer"]
-    XCTAssertTrue(stop.isHittable)
-    stop.tap()
-    XCTAssertTrue(timerText.waitForNonExistence(timeout: 3))
+    XCTAssertFalse(timerText.exists)
     XCTAssertTrue(skipRest.exists)
 
     app.terminate()
@@ -137,7 +133,59 @@ final class WorkoutNavigationUITests: XCTestCase {
     XCTAssertTrue(minutesStart.waitForExistence(timeout: 5))
     XCTAssertTrue(minutesStart.label.contains("2 min"))
     minutesStart.tap()
-    XCTAssertTrue(app.staticTexts["exercise-countdown"].waitForExistence(timeout: 3))
+    XCTAssertTrue(app.staticTexts["exercise-timer-preroll"].waitForExistence(timeout: 3))
+    let minutesTimerText = app.staticTexts["exercise-countdown"]
+    XCTAssertTrue(minutesTimerText.waitForExistence(timeout: 8), app.debugDescription)
+    let minutesTimerValue = minutesTimerText.value as? String ?? ""
+    XCTAssertTrue(
+      minutesTimerValue.contains("2:00") || minutesTimerValue.contains("1:59"),
+      minutesTimerText.debugDescription)
+    let stop = app.buttons["stop-exercise-timer"]
+    XCTAssertTrue(stop.isHittable)
+    stop.tap()
+    XCTAssertTrue(minutesTimerText.waitForNonExistence(timeout: 3))
+  }
+
+  func testTimedExerciseExpiryCompletesOneSetAndStartsRest() {
+    app.terminate()
+    app.launchArguments = [
+      "-basicWorkoutFixture", "-activeWorkoutFixture", "-activeWorkoutOnePersonFixture",
+      "-activeWorkoutTimedSecondsFixture", "-restTimerFixture",
+      "-exerciseTimerShortExpiryFixture",
+    ]
+    app.launch()
+
+    app.buttons["start-exercise-timer-Bench Press"].tap()
+    XCTAssertTrue(app.staticTexts["exercise-timer-preroll"].waitForExistence(timeout: 3))
+    let timerText = app.staticTexts["exercise-countdown"]
+    XCTAssertTrue(timerText.waitForExistence(timeout: 8), app.debugDescription)
+    let firstSet = app.buttons["participant-set-Alex-1"]
+    let firstSetCompleted = XCTNSPredicateExpectation(
+      predicate: NSPredicate(format: "label == %@", "Remove completed Bench Press set 1"),
+      object: firstSet)
+    XCTAssertEqual(XCTWaiter.wait(for: [firstSetCompleted], timeout: 8), .completed)
+    XCTAssertEqual(app.buttons["participant-set-Alex-2"].label, "Complete Bench Press set 2")
+    XCTAssertTrue(app.buttons["Skip"].waitForExistence(timeout: 3))
+  }
+
+  func testManualSetCompletionDuringTimerPreRollCancelsTimer() {
+    app.terminate()
+    app.launchArguments = [
+      "-basicWorkoutFixture", "-activeWorkoutFixture", "-activeWorkoutOnePersonFixture",
+      "-activeWorkoutTimedSecondsFixture",
+    ]
+    app.launch()
+
+    app.buttons["start-exercise-timer-Bench Press"].tap()
+    let preRoll = app.staticTexts["exercise-timer-preroll"]
+    XCTAssertTrue(preRoll.waitForExistence(timeout: 3))
+    let firstSet = app.buttons["participant-set-Alex-1"]
+    XCTAssertTrue(firstSet.isHittable)
+    firstSet.tap()
+    XCTAssertTrue(preRoll.waitForNonExistence(timeout: 3))
+    XCTAssertEqual(firstSet.label, "Remove completed Bench Press set 1")
+    XCTAssertEqual(app.buttons["participant-set-Alex-2"].label, "Complete Bench Press set 2")
+    XCTAssertFalse(app.staticTexts["exercise-countdown"].exists)
   }
 
   func testExerciseFilterMenuOrdersCustomAfterAllAndExcludesCatalogExercises() {
@@ -707,7 +755,7 @@ final class WorkoutNavigationUITests: XCTestCase {
     for name in ["Alex", "Jordan", "Owen"] {
       XCTAssertTrue(app.staticTexts[name].exists)
     }
-    XCTAssertFalse(app.buttons["previous-exercise"].exists)
+    XCTAssertTrue(app.buttons["workout-exercise-menu"].exists)
 
     app.buttons["base-reps-plus-Alex"].tap()
     XCTAssertEqual(app.textFields["Base reps for Alex"].value as? String, "9")
@@ -986,7 +1034,7 @@ final class WorkoutNavigationUITests: XCTestCase {
     XCTAssertGreaterThan(alexFirstSet.frame.minY, normalFirstSetMinY)
   }
 
-  func testExerciseArrowNavigationTracksCurrentExercise() {
+  func testExerciseMenuJumpsToAndMarksCurrentExercise() {
     app.terminate()
     app.launchArguments = [
       "-basicWorkoutFixture",
@@ -997,17 +1045,53 @@ final class WorkoutNavigationUITests: XCTestCase {
 
     let benchNext = app.buttons["next-exercise-Bench Press"]
     let squatNext = app.buttons["next-exercise-Barbell Back Squat"]
-    let previous = app.buttons["previous-exercise"]
+    let exerciseMenu = app.buttons["workout-exercise-menu"]
     let alexPicker = app.buttons["participant-picker-Alex"]
 
     XCTAssertTrue(app.navigationBars["Bench Press"].waitForExistence(timeout: 5))
     XCTAssertTrue(waitForHittable(benchNext))
-    XCTAssertFalse(previous.exists)
+    XCTAssertTrue(exerciseMenu.isHittable)
     XCTAssertTrue(alexPicker.isHittable)
+
+    exerciseMenu.tap()
+    let benchItem = app.buttons["workout-exercise-menu-Bench Press"]
+    let squatItem = app.buttons["workout-exercise-menu-Barbell Back Squat"]
+    let customItem = app.buttons["workout-exercise-menu-Fixture Custom Curl"]
+    XCTAssertTrue(benchItem.waitForExistence(timeout: 2))
+    XCTAssertTrue(squatItem.exists)
+    XCTAssertTrue(customItem.exists)
+    XCTAssertTrue(benchItem.label.contains("Current exercise"), benchItem.label)
+    XCTAssertLessThan(benchItem.frame.minY, squatItem.frame.minY)
+    XCTAssertLessThan(squatItem.frame.minY, customItem.frame.minY)
+    let menuScreenshot = XCTAttachment(screenshot: app.screenshot())
+    menuScreenshot.name = "active-workout-exercise-menu-aligned-labels"
+    menuScreenshot.lifetime = .keepAlways
+    add(menuScreenshot)
+    squatItem.tap()
+
+    XCTAssertTrue(app.navigationBars["Barbell Back Squat"].waitForExistence(timeout: 3))
+    XCTAssertTrue(waitForHittable(squatNext))
+    XCTAssertTrue(exerciseMenu.isHittable)
+    exerciseMenu.tap()
+    XCTAssertTrue(
+      app.buttons["workout-exercise-menu-Barbell Back Squat"].label.contains("Current exercise"))
+    app.buttons["workout-exercise-menu-Fixture Custom Curl"].tap()
+    XCTAssertTrue(app.navigationBars["Fixture Custom Curl"].waitForExistence(timeout: 3))
+
+    exerciseMenu.tap()
+    let selectedCustom = app.buttons["workout-exercise-menu-Fixture Custom Curl"]
+    XCTAssertTrue(selectedCustom.label.contains("Current exercise"), selectedCustom.label)
+    selectedCustom.tap()
+    XCTAssertTrue(app.navigationBars["Fixture Custom Curl"].waitForExistence(timeout: 2))
+
+    exerciseMenu.tap()
+    app.buttons["workout-exercise-menu-Bench Press"].tap()
+    XCTAssertTrue(app.navigationBars["Bench Press"].waitForExistence(timeout: 3))
+
+    XCTAssertTrue(waitForHittable(benchNext))
     benchNext.tap()
     XCTAssertTrue(app.navigationBars["Barbell Back Squat"].waitForExistence(timeout: 3))
     XCTAssertTrue(waitForHittable(squatNext))
-    XCTAssertTrue(previous.waitForExistence(timeout: 2))
     XCTAssertTrue(alexPicker.isHittable)
     let alexLoads = app.textFields.matching(
       NSPredicate(format: "label == %@", "Pounds for Alex"))
@@ -1017,20 +1101,8 @@ final class WorkoutNavigationUITests: XCTestCase {
     XCTAssertNotNil(alexLoad)
     XCTAssertLessThan(abs(alexPicker.frame.width - 108), 2)
     XCTAssertLessThan(abs(alexPicker.frame.midX - (alexLoad?.frame.midX ?? 0)), 2)
-
-    previous.tap()
-    XCTAssertTrue(app.navigationBars["Bench Press"].waitForExistence(timeout: 3))
-    XCTAssertTrue(waitForHittable(benchNext))
-    XCTAssertFalse(previous.exists)
-
-    benchNext.tap()
-    XCTAssertTrue(app.navigationBars["Barbell Back Squat"].waitForExistence(timeout: 3))
-    XCTAssertTrue(waitForHittable(squatNext))
     squatNext.tap()
     XCTAssertTrue(app.navigationBars["Fixture Custom Curl"].waitForExistence(timeout: 3))
-
-    previous.tap()
-    XCTAssertTrue(app.navigationBars["Barbell Back Squat"].waitForExistence(timeout: 3))
   }
 
   func testWorkoutReorderScreenSavesAndCancels() {
