@@ -476,18 +476,18 @@ struct ActiveWorkoutView: View {
             Button {
               requestExercise(at: index)
             } label: {
-              Label(
-                exercise.exerciseName,
-                systemImage: isCurrentExercise ? "checkmark" : "circle"
-              )
+              if isCurrentExercise {
+                Label(exercise.exerciseName, systemImage: "checkmark")
+              } else {
+                Text(exercise.exerciseName)
+                  .padding(.leading, 34)
+              }
             }
             .accessibilityLabel(
               isCurrentExercise
                 ? "\(exercise.exerciseName), Current exercise"
                 : exercise.exerciseName
             )
-            .accessibilityValue(isCurrentExercise ? "Current exercise" : "")
-            .accessibilityAddTraits(isCurrentExercise ? .isSelected : [])
             .accessibilityIdentifier("workout-exercise-menu-\(exercise.exerciseName)")
           }
         } label: {
