@@ -510,6 +510,66 @@ final class WorkoutNavigationUITests: XCTestCase {
     add(screenshot)
   }
 
+  func testSideTotalRepReminderTogglesForEveryParticipantWithoutChangingTotal() {
+    app.terminate()
+    app.launchArguments = ["-basicWorkoutFixture", "-sideTotalRepsWorkoutFixture"]
+    app.launch()
+
+    let alexReps = app.textFields["Base total reps for Alex"]
+    let jordanReps = app.textFields["Base total reps for Jordan"]
+    let alexReminder = app.buttons["side-total-reps-reminder-Alex"]
+    let jordanReminder = app.buttons["side-total-reps-reminder-Jordan"]
+    XCTAssertTrue(alexReps.waitForExistence(timeout: 5))
+    XCTAssertEqual(alexReps.value as? String, "24")
+    XCTAssertEqual(jordanReps.value as? String, "24")
+    XCTAssertTrue(alexReminder.label.contains("24 total reps, both sides"))
+
+    alexReminder.tap()
+    XCTAssertTrue(alexReminder.label.contains("12 reps each side"))
+    XCTAssertTrue(jordanReminder.label.contains("12 reps each side"))
+    XCTAssertEqual(alexReps.value as? String, "24")
+    XCTAssertEqual(jordanReps.value as? String, "24")
+
+    jordanReminder.tap()
+    XCTAssertTrue(alexReminder.label.contains("24 total reps, both sides"))
+    XCTAssertTrue(jordanReminder.label.contains("24 total reps, both sides"))
+    XCTAssertEqual(alexReps.value as? String, "24")
+    XCTAssertEqual(jordanReps.value as? String, "24")
+
+    let screenshot = XCTAttachment(screenshot: app.screenshot())
+    screenshot.name = "side-total-reps-reminder-in-simulator"
+    screenshot.lifetime = .keepAlways
+    add(screenshot)
+
+    app.buttons["exercise-details-Cable Russian Twists"].tap()
+    app.buttons["Edit"].tap()
+    let reminderSetting = app.switches["exercise-side-total-reps-reminder-toggle"]
+    XCTAssertTrue(reminderSetting.waitForExistence(timeout: 3))
+    XCTAssertEqual(reminderSetting.value as? String, "1")
+    app.swipeUp()
+    reminderSetting.coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5)).tap()
+    XCTAssertEqual(reminderSetting.value as? String, "0")
+    app.buttons["Save"].tap()
+    app.buttons["Edit"].tap()
+    XCTAssertEqual(
+      app.switches["exercise-side-total-reps-reminder-toggle"].value as? String, "0")
+    app.navigationBars.buttons.element(boundBy: 0).tap()
+    app.navigationBars.buttons.element(boundBy: 0).tap()
+    XCTAssertTrue(app.textFields["Base reps for Alex"].waitForExistence(timeout: 5))
+    XCTAssertFalse(alexReminder.exists)
+
+    app.buttons["exercise-details-Cable Russian Twists"].tap()
+    app.buttons["Edit"].tap()
+    app.swipeUp()
+    app.switches["exercise-side-total-reps-reminder-toggle"]
+      .coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5)).tap()
+    app.buttons["Save"].tap()
+    app.navigationBars.buttons.element(boundBy: 0).tap()
+    XCTAssertTrue(app.textFields["Base total reps for Alex"].waitForExistence(timeout: 5))
+    XCTAssertTrue(alexReminder.waitForExistence(timeout: 3))
+    XCTAssertEqual(alexReps.value as? String, "24")
+  }
+
   private func changeRepCounting(to title: String) {
     let edit = app.buttons["Edit"]
     XCTAssertTrue(edit.waitForExistence(timeout: 3))

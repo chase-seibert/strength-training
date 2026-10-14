@@ -24,6 +24,8 @@ Starting a routine immediately snapshots that graph into a persisted `WorkoutSes
 
 For exercises whose master equipment is `dumbbell`, completed set summaries retain the `per dumbbell` label. A persisted optional reminder setting on the master `Exercise` defaults from dumbbell equipment until explicitly overridden in Edit Exercise. When enabled for a weight-tracked exercise, any participant's active-workout callout can be tapped to switch every participant's display between the entered measurement labeled as the total for both arms and half that value labeled per arm. The tapped display state is transient per exercise card. Neither the setting nor the callout changes base or per-set measurements, history summaries, or training-volume calculations; the active load input uses a neutral accessibility label because the callout offers both interpretations.
 
+Exercises whose sets cover both sides can use a separate master `Exercise` total-reps/per-side reminder. Its optional setting defaults on for the 76 catalog entries already reviewed as per-side, plus Russian Twist because its instructions alternate sides; it can be overridden in Edit Exercise. While enabled, the active reps picker stores total reps across both sides, and every participant's tappable callout switches between that total and an approximate per-side split (odd totals display a range). The display state is shared across participants on the exercise card and resets for a new card. Neither the callout nor its toggle changes any base or per-set rep value. Reminder-enabled logs use total-rep counting so volume is not doubled; legacy `perSide` counting remains available when the reminder is disabled.
+
 Only one session can be open in the app UI. When one is open, the Workout navigation stack pushes its editor over Home and hides the tab bar. Home remains alive beneath that destination but replaces its content with an inert placeholder, preventing hidden timeline, query, and calendar updates during active-workout scrolling. Its activity grid also memoizes personal-record counts by workout-history revision so cell reevaluation never repeatedly traverses the full SwiftData workout relationship graph. Completing a session closes and saves it, snapshots a value-type `WorkoutCelebrationSummary`, and presents the full-screen celebration view before returning to the five resting tabs. The snapshot computes each participant's pounds volume, newly achieved personal records, and four-week workout/volume totals from saved history, so the celebration screen has no live SwiftData query of its own. Completed logs can be inspected from Workout's calendar, while Progress retains the explicit reopen action. The persisted `isActive` and `endedAt` fields remain as presentation and migration plumbing, not as workout completion or timing concepts.
 
 Workout duration is one validated interval: active sessions use `now - startedAt`, completed sessions require `endedAt - startedAt`, and durations must be positive and no longer than 24 hours. The last completed set does not determine session length. Apple Health recording is an opt-in Settings preference, off by default. Enabling it requests workout write authorization only; after a successful local save at the explicit Complete Workout action, an enabled and authorized session with completed sets and valid timing asynchronously writes one traditional strength-training workout. A group session remains one record owned by the device's Health user; local deletion or disabling export does not remove existing Health samples. A Health permission or write failure never rolls back local completion or blocks celebration. Stable HealthKit sync metadata identifies the session for retry replacement.
@@ -42,18 +44,19 @@ The bundled catalog now includes `defaultDurationSeconds` for every seconds-base
 
 `Exercise.repCountingMode` is a typed `standard`/`perSide` value backed by the nullable
 `repCountingModeRaw` SwiftData attribute. Only legacy nil fields receive catalog
-initialization; explicit choices are never overwritten. There is no per-routine or
-per-workout copy. Like units, `ExerciseLog` resolves it from the master model, including
-mid-workout edits and history. Timed and distance exercises ignore this rep-only setting.
+initialization; explicit choices are never overwritten. Exercises with the total-reps/per-side
+reminder use total counting regardless of this legacy field; with that reminder off,
+`ExerciseLog` resolves the chosen mode from the master model, including mid-workout edits
+and history. There is no per-routine or per-workout copy. Timed and distance exercises
+ignore this rep-only setting.
 
-Targets remain the number entered: 7 per side means 7 left + 7 right, with one set
-completion after both sides. Shared pounds-volume calculations multiply per-side reps
-by two; PR values use the recorded load multiplied by the recorded reps without that
-volume multiplier. PRs are derived from completed history rather than persisted, so
-changing the calculation automatically re-evaluates existing logs. This changes the
-interpretation of existing logs, so users should review settings if they previously
-logged total rather than per-side reps. See [the reviewed defaults](rep-counting-defaults.md)
-for the 76 catalog choices and exclusions.
+Legacy `perSide` targets remain the number entered: 7 per side means 7 left + 7 right,
+with one set completion after both sides. Shared pounds-volume calculations multiply
+legacy per-side reps by two. Reminder-enabled targets are already the total across both
+sides, so their volume uses the entered count without a multiplier. PRs are derived from
+completed history rather than persisted, so changing an exercise's counting setting
+re-evaluates existing logs without rewriting saved reps. See
+[the reviewed defaults](rep-counting-defaults.md) for the 77 default-on reminder choices.
 
 `make rep-counting-ui-test` runs live master-edit and disk-persistence checks. A Debug-only
 `-repCountingMigrationFixture` flag opens a separate named store and compares saved IDs,

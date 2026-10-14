@@ -1,0 +1,78 @@
+Exercise,Catalog ID,Equipment,Unit,Default On,Reason
+Band Hip Adductions,Band_Hip_Adductions,bands,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+Barbell Side Split Squat,Barbell_Side_Split_Squat,barbell,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+Bent Over One-Arm Long Bar Row,Bent_Over_One-Arm_Long_Bar_Row,barbell,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+Cable Hip Adduction,Cable_Hip_Adduction,cable,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+Cable Internal Rotation,Cable_Internal_Rotation,cable,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+Cable One Arm Tricep Extension,Cable_One_Arm_Tricep_Extension,cable,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+Cable Russian Twists,Cable_Russian_Twists,cable,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+Dumbbell Lying One-Arm Rear Lateral Raise,Dumbbell_Lying_One-Arm_Rear_Lateral_Raise,dumbbell,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+Dumbbell One-Arm Shoulder Press,Dumbbell_One-Arm_Shoulder_Press,dumbbell,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+Dumbbell One-Arm Triceps Extension,Dumbbell_One-Arm_Triceps_Extension,dumbbell,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+Dumbbell One-Arm Upright Row,Dumbbell_One-Arm_Upright_Row,dumbbell,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+Dumbbell Seated One-Leg Calf Raise,Dumbbell_Seated_One-Leg_Calf_Raise,dumbbell,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+Extended Range One-Arm Kettlebell Floor Press,Extended_Range_One-Arm_Kettlebell_Floor_Press,kettlebells,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+External Rotation,External_Rotation,dumbbell,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+External Rotation with Band,External_Rotation_with_Band,bands,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+External Rotation with Cable,External_Rotation_with_Cable,cable,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+Internal Rotation with Band,Internal_Rotation_with_Band,bands,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+Kettlebell One-Legged Deadlift,Kettlebell_One-Legged_Deadlift,kettlebells,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+Kettlebell Pistol Squat,Kettlebell_Pistol_Squat,kettlebells,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+Kneeling Single-Arm High Pulley Row,Kneeling_Single-Arm_High_Pulley_Row,cable,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+Lying One-Arm Lateral Raise,Lying_One-Arm_Lateral_Raise,dumbbell,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+One Arm Chin-Up,One_Arm_Chin-Up,other,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+One Arm Dumbbell Bench Press,One_Arm_Dumbbell_Bench_Press,dumbbell,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+One Arm Dumbbell Preacher Curl,One_Arm_Dumbbell_Preacher_Curl,dumbbell,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+One Arm Floor Press,One_Arm_Floor_Press,barbell,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+One Arm Lat Pulldown,One_Arm_Lat_Pulldown,cable,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+One Arm Pronated Dumbbell Triceps Extension,One_Arm_Pronated_Dumbbell_Triceps_Extension,dumbbell,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+One Arm Supinated Dumbbell Triceps Extension,One_Arm_Supinated_Dumbbell_Triceps_Extension,dumbbell,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+One Leg Barbell Squat,One_Leg_Barbell_Squat,barbell,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+One-Arm Dumbbell Row,One-Arm_Dumbbell_Row,dumbbell,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+One-Arm Flat Bench Dumbbell Flye,One-Arm_Flat_Bench_Dumbbell_Flye,dumbbell,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+One-Arm High-Pulley Cable Side Bends,One-Arm_High-Pulley_Cable_Side_Bends,cable,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+One-Arm Incline Lateral Raise,One-Arm_Incline_Lateral_Raise,dumbbell,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+One-Arm Kettlebell Clean,One-Arm_Kettlebell_Clean,kettlebells,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+One-Arm Kettlebell Clean and Jerk,One-Arm_Kettlebell_Clean_and_Jerk,kettlebells,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+One-Arm Kettlebell Floor Press,One-Arm_Kettlebell_Floor_Press,kettlebells,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+One-Arm Kettlebell Jerk,One-Arm_Kettlebell_Jerk,kettlebells,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+One-Arm Kettlebell Military Press To The Side,One-Arm_Kettlebell_Military_Press_To_The_Side,kettlebells,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+One-Arm Kettlebell Para Press,One-Arm_Kettlebell_Para_Press,kettlebells,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+One-Arm Kettlebell Push Press,One-Arm_Kettlebell_Push_Press,kettlebells,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+One-Arm Kettlebell Row,One-Arm_Kettlebell_Row,kettlebells,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+One-Arm Kettlebell Snatch,One-Arm_Kettlebell_Snatch,kettlebells,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+One-Arm Kettlebell Split Jerk,One-Arm_Kettlebell_Split_Jerk,kettlebells,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+One-Arm Kettlebell Split Snatch,One-Arm_Kettlebell_Split_Snatch,kettlebells,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+One-Arm Long Bar Row,One-Arm_Long_Bar_Row,barbell,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+One-Arm Medicine Ball Slam,One-Arm_Medicine_Ball_Slam,medicine ball,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+One-Arm Open Palm Kettlebell Clean,One-Arm_Open_Palm_Kettlebell_Clean,kettlebells,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+One-Arm Overhead Kettlebell Squats,One-Arm_Overhead_Kettlebell_Squats,kettlebells,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+One-Arm Side Deadlift,One-Arm_Side_Deadlift,barbell,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+One-Arm Side Laterals,One-Arm_Side_Laterals,dumbbell,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+One-Legged Cable Kickback,One-Legged_Cable_Kickback,cable,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+Pallof Press,Pallof_Press,cable,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+Pallof Press With Rotation,Pallof_Press_With_Rotation,cable,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+Russian Twist,Russian_Twist,body only,repetitions,yes,"Russian Twist instructions alternate left and right turns, so the entered count is a total across both sides."
+Seated Bent-Over One-Arm Dumbbell Triceps Extension,Seated_Bent-Over_One-Arm_Dumbbell_Triceps_Extension,dumbbell,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+Seated One-arm Cable Pulley Rows,Seated_One-arm_Cable_Pulley_Rows,cable,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+Seated One-Arm Dumbbell Palms-Down Wrist Curl,Seated_One-Arm_Dumbbell_Palms-Down_Wrist_Curl,dumbbell,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+Seated One-Arm Dumbbell Palms-Up Wrist Curl,Seated_One-Arm_Dumbbell_Palms-Up_Wrist_Curl,dumbbell,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+Single Leg Glute Bridge,Single_Leg_Glute_Bridge,body only,repetitions,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+Single-Arm Linear Jammer,Single-Arm_Linear_Jammer,barbell,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+Single-Arm Push-Up,Single-Arm_Push-Up,body only,repetitions,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+Single-Leg High Box Squat,Single-Leg_High_Box_Squat,other,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+Single-Leg Leg Extension,Single-Leg_Leg_Extension,machine,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+Smith Machine One-Arm Upright Row,Smith_Machine_One-Arm_Upright_Row,machine,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+Smith Machine Pistol Squat,Smith_Machine_Pistol_Squat,machine,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+Smith Single-Leg Split Squat,Smith_Single-Leg_Split_Squat,machine,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+Split Squat with Dumbbells,Split_Squat_with_Dumbbells,dumbbell,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+Standing Bent-Over One-Arm Dumbbell Triceps Extension,Standing_Bent-Over_One-Arm_Dumbbell_Triceps_Extension,dumbbell,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+Standing Cable Lift,Standing_Cable_Lift,cable,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+Standing Cable Wood Chop,Standing_Cable_Wood_Chop,cable,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+Standing Low-Pulley One-Arm Triceps Extension,Standing_Low-Pulley_One-Arm_Triceps_Extension,cable,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+Standing One-Arm Cable Curl,Standing_One-Arm_Cable_Curl,cable,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+Standing One-Arm Dumbbell Curl Over Incline Bench,Standing_One-Arm_Dumbbell_Curl_Over_Incline_Bench,dumbbell,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+Standing One-Arm Dumbbell Triceps Extension,Standing_One-Arm_Dumbbell_Triceps_Extension,dumbbell,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+Standing Palm-In One-Arm Dumbbell Press,Standing_Palm-In_One-Arm_Dumbbell_Press,dumbbell,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+Suspended Split Squat,Suspended_Split_Squat,other,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.
+Weighted Ball Side Bend,Weighted_Ball_Side_Bend,exercise ball,pounds,yes,Reviewed catalog per-side exercise; default this reminder on and log the entered rep count as the total across both sides.

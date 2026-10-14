@@ -426,6 +426,7 @@ private struct ExerciseEditorSheet: View {
   @State private var unit: TrackingUnit = .pounds
   @State private var repCountingMode: RepCountingMode = .standard
   @State private var dumbbellReminderOverride: Bool?
+  @State private var sideTotalRepsReminderOverride: Bool?
   @State private var instructions = ""
 
   private static let muscles = [
@@ -457,6 +458,8 @@ private struct ExerciseEditorSheet: View {
     _unit = State(initialValue: exercise.unit)
     _repCountingMode = State(initialValue: exercise.repCountingMode)
     _dumbbellReminderOverride = State(initialValue: exercise.dumbbellLoadReminderEnabled)
+    _sideTotalRepsReminderOverride = State(
+      initialValue: exercise.sideTotalRepsReminderEnabled)
     _instructions = State(initialValue: exercise.instructions)
   }
 
@@ -470,6 +473,7 @@ private struct ExerciseEditorSheet: View {
     _unit = State(initialValue: source.unit)
     _repCountingMode = State(initialValue: source.repCountingMode)
     _dumbbellReminderOverride = State(initialValue: source.dumbbellLoadReminderEnabled)
+    _sideTotalRepsReminderOverride = State(initialValue: source.hasSideTotalRepsReminder)
     _instructions = State(initialValue: source.instructions)
   }
 
@@ -513,6 +517,12 @@ private struct ExerciseEditorSheet: View {
         .caseInsensitiveCompare("dumbbell") == .orderedSame)
   }
 
+  private var effectiveSideTotalRepsReminderSetting: Bool {
+    sideTotalRepsReminderOverride
+      ?? SeedData.defaultSideTotalRepsReminderEnabled(
+        sourceID: exercise?.sourceID ?? duplicateSource?.sourceID)
+  }
+
   var body: some View {
     NavigationStack {
       Form {
@@ -536,7 +546,7 @@ private struct ExerciseEditorSheet: View {
             ForEach(TrackingUnit.allCases) { Text(loggingTitle(for: $0)).tag($0) }
           }
           .accessibilityIdentifier("exercise-unit-picker")
-          if unit.usesReps {
+          if unit.usesReps && !effectiveSideTotalRepsReminderSetting {
             Picker("Rep counting", selection: $repCountingMode) {
               ForEach(RepCountingMode.allCases) { Text($0.title).tag($0) }
             }
@@ -555,11 +565,28 @@ private struct ExerciseEditorSheet: View {
               .font(.caption)
               .foregroundStyle(.secondary)
           }
+          if unit.usesReps {
+            Toggle(
+              "Total reps / per-side reminder",
+              isOn: Binding(
+                get: { effectiveSideTotalRepsReminderSetting },
+                set: { sideTotalRepsReminderOverride = $0 }
+              )
+            )
+            .accessibilityIdentifier("exercise-side-total-reps-reminder-toggle")
+            Text(
+              effectiveSideTotalRepsReminderSetting
+                ? "The reps picker stores the total for both sides. Tap the reminder during a workout to see the per-side split."
+                : "Adds a tappable total-reps and per-side reminder during workouts."
+            )
+            .font(.caption)
+            .foregroundStyle(.secondary)
+          }
         } header: {
           Text("Workout logging")
         } footer: {
           Text(trackingExplanation)
-          if unit.usesReps {
+          if unit.usesReps && !effectiveSideTotalRepsReminderSetting {
             Text(
               repCountingMode.explanation
                 + " Applies to every routine and workout, including history.")
@@ -661,7 +688,9 @@ private struct ExerciseEditorSheet: View {
         exercise.equipment = equipment
         exercise.primaryMuscle = muscle
         exercise.unit = unit
-        exercise.repCountingMode = repCountingMode
+        exercise.sideTotalRepsReminderEnabled = sideTotalRepsReminderOverride
+        exercise.repCountingMode =
+          effectiveSideTotalRepsReminderSetting ? .standard : repCountingMode
         exercise.dumbbellLoadReminderEnabled = dumbbellReminderOverride
         exercise.instructions = instructions.trimmingCharacters(in: .whitespacesAndNewlines)
         try updateReferences(to: exercise, previouslyNamed: previousName)
@@ -675,8 +704,9 @@ private struct ExerciseEditorSheet: View {
           equipment: equipment,
           primaryMuscle: muscle,
           unit: unit,
-          repCountingMode: repCountingMode,
+          repCountingMode: effectiveSideTotalRepsReminderSetting ? .standard : repCountingMode,
           dumbbellLoadReminderEnabled: dumbbellReminderOverride,
+          sideTotalRepsReminderEnabled: sideTotalRepsReminderOverride,
           instructions: instructions.trimmingCharacters(in: .whitespacesAndNewlines),
           imagePath: source?.imagePath,
           additionalImagePaths: Array(source?.imagePaths.dropFirst() ?? []),

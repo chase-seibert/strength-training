@@ -32,6 +32,25 @@ enum SeedData {
     }
   }()
 
+  // The catalog's reviewed per-side defaults identify exercises whose repetitions span
+  // both sides. Russian Twist is also included because its instructions alternate sides.
+  // These exercises enter reps as a total and offer a display-only split.
+  private static let sideTotalRepReminderDefaults: Set<String> = {
+    guard let entries = try? catalog.get() else { return [] }
+    return Set(
+      entries.compactMap { entry in
+        guard entry.repCountingMode == .perSide || entry.id == "Russian_Twist",
+          let unit = TrackingUnit(rawValue: entry.unit), unit.usesReps
+        else { return nil }
+        return entry.id
+      })
+  }()
+
+  static func defaultSideTotalRepsReminderEnabled(sourceID: String?) -> Bool {
+    guard let sourceID else { return false }
+    return sideTotalRepReminderDefaults.contains(sourceID)
+  }
+
   static func defaultDurationSeconds(sourceID: String?, originalName: String) -> Int {
     if let sourceID, let seconds = durationDefaults[sourceID] { return seconds }
     // Duplicates retain their original name even after being renamed.

@@ -1,19 +1,26 @@
 # Rep counting defaults
 
-The master Exercise owns `repCountingMode`, with only `standard` and `perSide`.
-For `perSide`, a stored target of 8 means 8 reps on the left and 8 on the right.
-A set is complete after both sides. Odd targets are valid; equal sides do not require
-an even stored number. Standard counts are total reps. Time/distance/steps ignore this setting.
+The master Exercise owns both the legacy `repCountingMode` and the optional
+`sideTotalRepsReminderEnabled` setting. The reminder defaults on for 77 catalog entries:
+the 76 previously reviewed `perSide` choices plus Russian Twist, whose instructions
+alternate sides. With the reminder on,
+the reps picker stores the total across both sides and the active-workout callout can
+show either that total or its per-side split. The callout never changes the stored target.
+With the reminder off, `repCountingMode` retains its legacy `standard` and `perSide`
+behavior. Time/distance/steps ignore both rep settings.
 
 ## Catalog choices — 2026-09-02
 
 These defaults are a conservative interpretation of the bundled catalog's names and
-technique notes, not a runtime name-matching rule. Other exercises remain standard.
-Explicit one-arm/single-leg strength exercises and fixed-side cable work are included.
-Alternating exercises, ordinary Russian/Plate Twists, ambiguous side bends, and
-plyometric drills remain standard. Single-Arm Cable Crossover and Glute Kickback
-explicitly alternate; Tricep Dumbbell Kickback uses both arms together. One-Arm
-Kettlebell Swings has no instructions, so it is left for manual review.
+technique notes, not a runtime name-matching rule. The list is now the default-on set
+for the total-reps/per-side reminder, including single-arm/single-leg movements that
+are normally performed on each side and fixed-side cable work. Users can still override
+each exercise in Edit Exercise. Paired-count movements such as Alternate Heel Touchers,
+ordinary Plate Twists, ambiguous side bends, and plyometric drills stay off unless the
+catalog already marked them `perSide`; these are candidates for future review.
+Single-Arm Cable Crossover and
+Glute Kickback explicitly alternate, Tricep Dumbbell Kickback uses both arms together,
+and One-Arm Kettlebell Swings has no instructions, so each needs manual judgment.
 
 Users can edit any choice in exercise details, including during a workout. Duplicates
 copy the source's current setting and can then be edited independently. Routine and
@@ -21,21 +28,23 @@ workout records do not override it.
 
 ## Existing data
 
-The additive nullable SwiftData field allows lightweight migration. A one-time
-per-record initialization fills only nil values from the catalog (custom exercises
-start standard). Later app launches never overwrite an explicit choice, including
-standard. Renamed catalog records use their stable source ID. Saved numeric targets,
-sets, completions, and relationships are not rewritten.
+The additive nullable SwiftData fields allow lightweight migration. A one-time
+per-record initialization fills only nil `repCountingModeRaw` values from the catalog.
+The reminder's nil value follows the stable source ID's default list; custom exercises
+start with it off, and an explicit true/false choice is never overwritten. Renamed
+catalog records use their stable source ID. Saved numeric targets, sets, completions,
+and relationships are not rewritten.
 
-As with units, the current master setting also labels history. Pounds-volume totals
-count both sides for perSide exercises: 8 × 20 lb × 2 = 320 lb. A past total-reps log
-cannot be distinguished automatically from a past per-side log; review the master
-setting if its prior convention differed. Rep PRs remain per-side targets, not doubled
-numbers; one completed pair still counts as one set.
+When the reminder is enabled, the effective rep-counting mode is total, so an existing
+stored target of 24 is still 24 and volume is not multiplied by two. This deliberately
+changes the interpretation of old catalog-default `perSide` logs without rewriting
+their numeric values. If a user disables the reminder, they can select legacy `perSide`
+again in Edit Exercise; legacy per-side pounds volume multiplies the recorded count by
+two. PRs and set completion continue to use the recorded target and completed set.
 
-## Per-side catalog entries
+## Default-on total-reps/per-side reminder entries
 
-76 of 873 entries:
+77 of 873 entries:
 
 | Exercise | Stable catalog ID |
 | --- | --- |
@@ -92,6 +101,7 @@ numbers; one completed pair still counts as one set.
 | One Leg Barbell Squat | `One_Leg_Barbell_Squat` |
 | Pallof Press | `Pallof_Press` |
 | Pallof Press With Rotation | `Pallof_Press_With_Rotation` |
+| Russian Twist | `Russian_Twist` |
 | Seated Bent-Over One-Arm Dumbbell Triceps Extension | `Seated_Bent-Over_One-Arm_Dumbbell_Triceps_Extension` |
 | Seated One-Arm Dumbbell Palms-Down Wrist Curl | `Seated_One-Arm_Dumbbell_Palms-Down_Wrist_Curl` |
 | Seated One-Arm Dumbbell Palms-Up Wrist Curl | `Seated_One-Arm_Dumbbell_Palms-Up_Wrist_Curl` |

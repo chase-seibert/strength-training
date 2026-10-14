@@ -1390,6 +1390,7 @@ struct ActiveExerciseCard: View {
   @State private var showingHistory = false
   @State private var lastSetEditorParticipant: ParticipantLog?
   @State private var isShowingDumbbellTotal = false
+  @State private var isShowingSideTotalReps = true
 
   private var visibleLogs: [ParticipantLog] {
     visiblePeople.compactMap { name in
@@ -1431,7 +1432,12 @@ struct ActiveExerciseCard: View {
   }
 
   private var repGuidance: String? {
-    guard exercise.unit.usesReps, exercise.repCountingMode == .perSide else { return nil }
+    guard exercise.unit.usesReps else { return nil }
+    if exercise.hasSideTotalRepsReminder {
+      return
+        "Reps are entered as a total for both sides. Tap the reminder to see the per-side split."
+    }
+    guard exercise.repCountingMode == .perSide else { return nil }
     return exercise.repCountingMode.explanation
   }
 
@@ -1640,7 +1646,7 @@ struct ActiveExerciseCard: View {
     for participant: ParticipantLog,
     columnWidth: CGFloat? = activeWorkoutParticipantColumnWidth
   ) -> some View {
-    let participantColor = Color(hex: colors[participant.participantName] ?? "FF5A45")
+    let participantColor = colors[participant.participantName] ?? "FF5A45"
     let isShowingTotal = isShowingDumbbellTotal
     let entry = participant.measurement
     let shownLoad = isShowingTotal ? entry : entry / 2
@@ -1652,48 +1658,15 @@ struct ActiveExerciseCard: View {
       ? "\(entry.tidy) \(exercise.unit.label) total for both arms"
       : "\((entry / 2).tidy) \(exercise.unit.label) per arm"
 
-    return Button {
-      isShowingDumbbellTotal.toggle()
-    } label: {
-      VStack(spacing: 4) {
-        Text(load)
-          .font(.system(size: 13, weight: .bold, design: .rounded))
-          .monospacedDigit()
-          .lineLimit(1)
-          .minimumScaleFactor(0.7)
-          .accessibilityIdentifier("arm-total-load-reminder-value-\(participant.participantName)")
-        Text(shownLabel)
-          .font(.system(size: 8, weight: .heavy))
-          .tracking(0.45)
-          .lineLimit(1)
-          .minimumScaleFactor(0.7)
-          .accessibilityIdentifier("arm-total-load-reminder-label-\(participant.participantName)")
-        Text(nextModeHint.uppercased())
-          .font(.system(size: 8, weight: .semibold))
-          .tracking(0.25)
-          .lineLimit(1)
-          .minimumScaleFactor(0.6)
-      }
-      .foregroundStyle(participantColor)
-      .frame(maxWidth: .infinity)
-      .padding(.horizontal, 5)
-      .padding(.vertical, 8)
-      .background(
-        participantColor.opacity(0.10),
-        in: RoundedRectangle(cornerRadius: 10, style: .continuous)
-      )
-      .overlay {
-        RoundedRectangle(cornerRadius: 10, style: .continuous)
-          .strokeBorder(participantColor.opacity(0.18), lineWidth: 1)
-      }
-    }
-    .buttonStyle(.plain)
-    .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-    .accessibilityElement(children: .combine)
-    .accessibilityLabel(valueDescription)
-    .accessibilityHint("\(nextModeHint); this only changes the reminder")
-    .accessibilityIdentifier("arm-total-load-reminder-\(participant.participantName)")
-    .frame(width: columnWidth)
+    return ExerciseReminderCallout(
+      value: load,
+      title: shownLabel,
+      nextModeHint: nextModeHint,
+      accessibilityLabel: valueDescription,
+      colorHex: participantColor,
+      identifier: "arm-total-load-reminder-\(participant.participantName)",
+      columnWidth: columnWidth,
+      action: { isShowingDumbbellTotal.toggle() })
   }
 
   private func participantLoadControl(for participant: ParticipantLog) -> some View {
@@ -1715,6 +1688,8 @@ struct ActiveExerciseCard: View {
       participant: participant,
       unit: exercise.unit,
       repCountingMode: exercise.repCountingMode,
+      showsSideTotalRepsReminder: exercise.hasSideTotalRepsReminder,
+      isShowingTotalReps: $isShowingSideTotalReps,
       exerciseName: exercise.exerciseName,
       colorHex: colors[participant.participantName] ?? "FF5A45",
       onCustomizeLastSet: { lastSetEditorParticipant = participant },
@@ -1934,11 +1909,63 @@ struct ActiveExerciseCard: View {
   }
 }
 
+private struct ExerciseReminderCallout: View {
+  let value: String
+  let title: String
+  let nextModeHint: String
+  let accessibilityLabel: String
+  let colorHex: String
+  let identifier: String
+  var columnWidth: CGFloat? = nil
+  let action: () -> Void
+
+  var body: some View {
+    let color = Color(hex: colorHex)
+    Button(action: action) {
+      VStack(spacing: 4) {
+        Text(value)
+          .font(.system(size: 13, weight: .bold, design: .rounded))
+          .monospacedDigit()
+          .lineLimit(1)
+          .minimumScaleFactor(0.7)
+        Text(title)
+          .font(.system(size: 8, weight: .heavy))
+          .tracking(0.45)
+          .lineLimit(1)
+          .minimumScaleFactor(0.7)
+        Text(nextModeHint.uppercased())
+          .font(.system(size: 8, weight: .semibold))
+          .tracking(0.25)
+          .lineLimit(1)
+          .minimumScaleFactor(0.6)
+      }
+      .foregroundStyle(color)
+      .frame(maxWidth: .infinity)
+      .padding(.horizontal, 5)
+      .padding(.vertical, 8)
+      .background(color.opacity(0.10), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+      .overlay {
+        RoundedRectangle(cornerRadius: 10, style: .continuous)
+          .strokeBorder(color.opacity(0.18), lineWidth: 1)
+      }
+    }
+    .buttonStyle(.plain)
+    .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+    .accessibilityElement(children: .combine)
+    .accessibilityLabel(accessibilityLabel)
+    .accessibilityHint("\(nextModeHint); this only changes the reminder")
+    .accessibilityIdentifier(identifier)
+    .frame(width: columnWidth)
+  }
+}
+
 struct ParticipantExerciseCell: View {
   @Environment(\.modelContext) private var context
   @Bindable var participant: ParticipantLog
   var unit: TrackingUnit = .repetitions
   var repCountingMode: RepCountingMode = .standard
+  var showsSideTotalRepsReminder = false
+  @Binding var isShowingTotalReps: Bool
   let exerciseName: String
   let colorHex: String
   let onCustomizeLastSet: () -> Void
@@ -1982,10 +2009,16 @@ struct ParticipantExerciseCell: View {
           participant: participant,
           unit: unit,
           repCountingMode: repCountingMode,
+          showsTotalRepsLabel: showsSideTotalRepsReminder,
           baseReps: baseReps,
           colorHex: colorHex
         )
         .frame(maxWidth: .infinity)
+
+        if showsSideTotalRepsReminder {
+          sideTotalRepsReminder
+            .padding(.horizontal, 3)
+        }
 
         if showsSetOptions {
           HStack(spacing: 0) {
@@ -2044,6 +2077,32 @@ struct ParticipantExerciseCell: View {
           : "Last \(skippedSetCount) sets skipped")
     }
     return status.isEmpty ? nil : status.joined(separator: " · ")
+  }
+
+  private var sideTotalRepsReminder: some View {
+    let count = baseReps
+    let lowerSideCount = count / 2
+    let upperSideCount = (count + 1) / 2
+    let eachSideValue =
+      lowerSideCount == upperSideCount
+      ? "\(lowerSideCount) reps"
+      : "\(lowerSideCount)–\(upperSideCount) reps"
+    let totalValue = "\(count) total \(count == 1 ? "rep" : "reps")"
+    let title = isShowingTotalReps ? "BOTH SIDES" : "EACH SIDE"
+    let nextModeHint = isShowingTotalReps ? "Tap for per-side split" : "Tap for total reps"
+    let description =
+      isShowingTotalReps
+      ? "\(totalValue), both sides"
+      : "\(eachSideValue) each side, \(totalValue) total"
+
+    return ExerciseReminderCallout(
+      value: isShowingTotalReps ? totalValue : eachSideValue,
+      title: title,
+      nextModeHint: nextModeHint,
+      accessibilityLabel: description,
+      colorHex: colorHex,
+      identifier: "side-total-reps-reminder-\(participant.participantName)",
+      action: { isShowingTotalReps.toggle() })
   }
 
   private func setStatusText(_ status: String) -> some View {
@@ -2332,6 +2391,7 @@ struct CompactRepsControl: View {
   @Bindable var participant: ParticipantLog
   var unit: TrackingUnit = .repetitions
   var repCountingMode: RepCountingMode = .standard
+  var showsTotalRepsLabel = false
   let baseReps: Int
   let colorHex: String
   @State private var text = ""
@@ -2348,7 +2408,7 @@ struct CompactRepsControl: View {
           textAlignment: .center,
           font: .monospacedDigitSystemFont(ofSize: 17, weight: .bold),
           accessibilityLabel:
-            "Base \(unit.targetLabel(repCountingMode: repCountingMode)) for \(participant.participantName)",
+            "Base \(showsTotalRepsLabel ? "total reps" : unit.targetLabel(repCountingMode: repCountingMode)) for \(participant.participantName)",
           adjustmentPolicy: .additive(step: 1),
           minimumValue: 1
         )
@@ -2363,7 +2423,9 @@ struct CompactRepsControl: View {
       }
       Text(
         unit.usesReps
-          ? (repCountingMode == .perSide ? "Reps/side" : (baseReps == 1 ? "Rep" : "Reps"))
+          ? (showsTotalRepsLabel
+            ? "Total reps"
+            : (repCountingMode == .perSide ? "Reps/side" : (baseReps == 1 ? "Rep" : "Reps")))
           : unit.label
       )
       .font(.system(size: 8, weight: .bold))

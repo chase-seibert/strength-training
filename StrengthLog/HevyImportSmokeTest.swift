@@ -108,6 +108,7 @@
       try verifyMasterUnitPersistence(schema: schema)
       try verifyCatalogDefaultsAndCorrections(schema: schema)
       try verifyRepCountingPersistence(schema: schema)
+      try verifySideTotalRepsReminderDefaults(schema: schema)
       try verifyWorkoutDurations()
       try verifyPerDumbbellLoadSummary()
     }
@@ -268,6 +269,44 @@
         log.exerciseID == exerciseID, log.repCountingMode == .perSide,
         log.completedPoundsVolume() == 640, set.id == setID, set.reps == 7, set.isCompleted,
         log.participants.first?.sets.count == 3
+      else { throw SmokeError.repCounting }
+    }
+
+    private static func verifySideTotalRepsReminderDefaults(schema: Schema) throws {
+      let container = try ModelContainer(
+        for: schema,
+        configurations: [ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)])
+      let context = container.mainContext
+      let cableTwists = Exercise(
+        sourceID: "Cable_Russian_Twists", name: "Cable Russian Twists", category: "strength",
+        equipment: "cable", primaryMuscle: "abdominals", unit: .pounds,
+        repCountingMode: .perSide, instructions: "")
+      let pallof = Exercise(
+        sourceID: "Pallof_Press", name: "Pallof Press", category: "strength",
+        equipment: "cable", primaryMuscle: "abdominals", unit: .pounds,
+        repCountingMode: .perSide, instructions: "")
+      let ordinary = Exercise(
+        name: "Bench Press", category: "strength", equipment: "barbell",
+        primaryMuscle: "chest", unit: .pounds, instructions: "")
+      context.insert(cableTwists)
+      context.insert(pallof)
+      context.insert(ordinary)
+      let set = WorkoutSet(sortOrder: 0, reps: 24, isCompleted: true)
+      let participant = ParticipantLog(participantName: "Tester", measurement: 50, sets: [set])
+      let log = ExerciseLog(
+        exerciseID: cableTwists.id, exerciseName: cableTwists.name, unit: .pounds,
+        sortOrder: 0, participants: [participant])
+      context.insert(log)
+
+      guard cableTwists.hasSideTotalRepsReminder, pallof.hasSideTotalRepsReminder,
+        !ordinary.hasSideTotalRepsReminder, log.hasSideTotalRepsReminder,
+        log.repCountingMode == .standard, log.completedPoundsVolume() == 1_200,
+        set.reps == 24
+      else { throw SmokeError.repCounting }
+
+      cableTwists.sideTotalRepsReminderEnabled = false
+      guard !log.hasSideTotalRepsReminder, log.repCountingMode == .perSide,
+        log.completedPoundsVolume() == 2_400, set.reps == 24
       else { throw SmokeError.repCounting }
     }
 

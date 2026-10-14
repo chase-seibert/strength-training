@@ -255,6 +255,9 @@ final class Exercise {
   // Nil follows equipment metadata; an explicit value lets a user override the default per
   // exercise. Optional for lightweight migration of existing catalog and custom exercises.
   var dumbbellLoadReminderEnabled: Bool?
+  // Nil follows the reviewed per-side catalog defaults. When enabled, the logged rep target
+  // remains the total across both sides and the active-workout reminder only changes wording.
+  var sideTotalRepsReminderEnabled: Bool?
   var instructions: String
   var imagePath: String?
   var additionalImagePathsRaw: String?
@@ -272,6 +275,7 @@ final class Exercise {
     unit: TrackingUnit,
     repCountingMode: RepCountingMode = .standard,
     dumbbellLoadReminderEnabled: Bool? = nil,
+    sideTotalRepsReminderEnabled: Bool? = nil,
     instructions: String,
     imagePath: String? = nil,
     additionalImagePaths: [String] = [],
@@ -290,6 +294,7 @@ final class Exercise {
     unitRaw = unit.rawValue
     repCountingModeRaw = repCountingMode.rawValue
     self.dumbbellLoadReminderEnabled = dumbbellLoadReminderEnabled
+    self.sideTotalRepsReminderEnabled = sideTotalRepsReminderEnabled
     self.instructions = instructions
     self.imagePath = imagePath
     additionalImagePathsRaw =
@@ -312,6 +317,11 @@ final class Exercise {
     dumbbellLoadReminderEnabled
       ?? (equipment.trimmingCharacters(in: .whitespacesAndNewlines)
         .caseInsensitiveCompare("dumbbell") == .orderedSame)
+  }
+
+  var hasSideTotalRepsReminder: Bool {
+    sideTotalRepsReminderEnabled
+      ?? SeedData.defaultSideTotalRepsReminderEnabled(sourceID: sourceID)
   }
 
   var targetLabel: String { unit.targetLabel(repCountingMode: repCountingMode) }
@@ -724,7 +734,15 @@ final class ExerciseLog {
   var defaultTarget: Int { masterExercise?.defaultTarget ?? WorkoutPreferences.defaultReps }
 
   // Master-owned, just like the unit: no routine or workout override/snapshot.
-  var repCountingMode: RepCountingMode { masterExercise?.repCountingMode ?? .standard }
+  var hasSideTotalRepsReminder: Bool {
+    unit.usesReps && (masterExercise?.hasSideTotalRepsReminder ?? false)
+  }
+
+  // Exercises with the side-total reminder always log total reps. The reminder is a
+  // presentation aid and must not double or halve the saved target or completed volume.
+  var repCountingMode: RepCountingMode {
+    hasSideTotalRepsReminder ? .standard : (masterExercise?.repCountingMode ?? .standard)
+  }
   var targetLabel: String { unit.targetLabel(repCountingMode: repCountingMode) }
 
   func completedPoundsVolume(for participantName: String? = nil) -> Double {

@@ -326,13 +326,37 @@
         let twists = Exercise(
           sourceID: "Cable_Russian_Twists", name: "Cable Russian Twists", category: "strength",
           equipment: "cable", primaryMuscle: "abdominals", unit: .pounds,
-          repCountingMode: .perSide, instructions: "Repeat on the opposite side.")
+          repCountingMode: .perSide, sideTotalRepsReminderEnabled: false,
+          instructions: "Repeat on the opposite side.")
         context.insert(twists)
         let routine = Routine(
           name: "Cable Workout", exercises: [RoutineExercise.make(exercise: twists, sortOrder: 0)])
         context.insert(routine)
         _ = WorkoutSessionStarter.start(
           routine: routine, people: [alex, jordan], sessions: [], catalog: [twists], in: context)
+        return
+      }
+
+      if ProcessInfo.processInfo.arguments.contains("-sideTotalRepsWorkoutFixture") {
+        let twists = Exercise(
+          sourceID: "Cable_Russian_Twists", name: "Cable Russian Twists", category: "strength",
+          equipment: "cable", primaryMuscle: "abdominals", unit: .pounds,
+          sideTotalRepsReminderEnabled: true, instructions: "Repeat on the opposite side.")
+        context.insert(twists)
+        let routine = Routine(
+          name: "Cable Workout", exercises: [RoutineExercise.make(exercise: twists, sortOrder: 0)])
+        context.insert(routine)
+        if let session = WorkoutSessionStarter.start(
+          routine: routine, people: [alex, jordan], sessions: [], catalog: [twists], in: context),
+          let log = session.exercises.first
+        {
+          for participant in log.participants {
+            for set in participant.sets {
+              set.setTarget(24, unit: .pounds)
+            }
+          }
+          try? context.save()
+        }
         return
       }
 
