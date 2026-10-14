@@ -647,6 +647,103 @@ final class WorkoutNavigationUITests: XCTestCase {
     XCTAssertTrue(app.buttons["start-routine-Basic Workout"].waitForExistence(timeout: 5))
   }
 
+  func testWorkoutConfettiExpiresAndSummaryRemainsUsable() {
+    showConfettiCelebration(arguments: ["-confettiSnapshotFixture"])
+    keepCelebrationScreenshot(named: "workout-confetti-metal")
+
+    // Capture the same summary after the overlay's finite lifetime, for visual comparison.
+    Thread.sleep(forTimeInterval: 6)
+    keepCelebrationScreenshot(named: "workout-confetti-finished")
+    XCTAssertTrue(app.staticTexts["THIS WORKOUT"].exists)
+    app.buttons["workout-celebration-done"].tap()
+    XCTAssertTrue(app.buttons["start-routine-Basic Workout"].waitForExistence(timeout: 5))
+  }
+
+  func testWorkoutConfettiAllowsImmediateDismissal() {
+    showConfettiCelebration(arguments: ["-confettiSnapshotFixture"])
+    app.buttons["workout-celebration-done"].tap()
+    XCTAssertTrue(app.buttons["start-routine-Basic Workout"].waitForExistence(timeout: 5))
+    XCTAssertFalse(app.staticTexts["Workout complete"].exists)
+  }
+
+  func testWorkoutConfettiRespectsReduceMotion() {
+    showConfettiCelebration(arguments: ["-confettiReduceMotionFixture"])
+    keepCelebrationScreenshot(named: "workout-confetti-reduce-motion")
+    XCTAssertTrue(app.staticTexts["THIS WORKOUT"].exists)
+    app.buttons["workout-celebration-done"].tap()
+    XCTAssertTrue(app.buttons["start-routine-Basic Workout"].waitForExistence(timeout: 5))
+  }
+
+  private func showConfettiCelebration(arguments: [String]) {
+    app.terminate()
+    app.launchArguments = ["-basicWorkoutFixture", "-activeWorkoutFixture"] + arguments
+    app.launch()
+    for name in ["Alex", "Jordan", "Owen"] {
+      let set = app.buttons["participant-set-\(name)-1"]
+      XCTAssertTrue(set.waitForExistence(timeout: 5))
+      set.tap()
+    }
+    app.buttons["Complete Workout"].tap()
+    XCTAssertTrue(app.staticTexts["Workout complete"].waitForExistence(timeout: 5))
+  }
+
+  func testDeveloperMenuReplaysLatestCompletedWorkoutCelebration() {
+    app.terminate()
+    app.launchArguments = [
+      "-basicWorkoutFixture", "-recentCompletedWorkoutFixture", "-confettiSnapshotFixture",
+    ]
+    app.launch()
+    openDeveloperMenu()
+
+    // Reopening the same completed workout should launch a fresh burst each time.
+    for replay in 1...2 {
+      app.buttons["developer-preview-workout-celebration"].tap()
+      XCTAssertTrue(app.staticTexts["Workout complete"].waitForExistence(timeout: 5))
+      XCTAssertTrue(app.staticTexts["Basic Workout"].exists)
+      XCTAssertEqual(app.staticTexts["workout-celebration-stat-total-volume"].label, "760 lb")
+      XCTAssertTrue(app.staticTexts["1 completed set"].exists)
+      keepCelebrationScreenshot(named: "developer-workout-celebration-replay-\(replay)")
+      app.buttons["Back to Developer Menu"].tap()
+      XCTAssertTrue(
+        app.buttons["developer-preview-workout-celebration"].waitForExistence(timeout: 5))
+    }
+  }
+
+  func testDeveloperMenuCelebrationPreviewWithoutCompletedWorkout() {
+    app.terminate()
+    app.launchArguments = ["-basicWorkoutFixture", "-emptyWorkoutHistoryFixture"]
+    app.launch()
+    openDeveloperMenu()
+    app.buttons["developer-preview-workout-celebration"].tap()
+    let notice = app.alerts["Workout Celebration"]
+    XCTAssertTrue(notice.waitForExistence(timeout: 3))
+    XCTAssertTrue(
+      notice.staticTexts["Complete a workout first to preview its celebration."].exists)
+    notice.buttons["OK"].tap()
+    XCTAssertTrue(app.buttons["developer-preview-workout-celebration"].exists)
+    XCTAssertFalse(app.staticTexts["Workout complete"].exists)
+  }
+
+  private func openDeveloperMenu() {
+    app.tabBars.buttons["Settings"].tap()
+    let menu = app.buttons["Developer Menu"]
+    for _ in 0..<5 {
+      if menu.isHittable { break }
+      app.collectionViews.firstMatch.swipeUp()
+    }
+    XCTAssertTrue(menu.isHittable)
+    menu.tap()
+    XCTAssertTrue(
+      app.buttons["developer-preview-workout-celebration"].waitForExistence(timeout: 5))
+  }
+
+  private func keepCelebrationScreenshot(named name: String) {
+    let screenshot = XCTAttachment(screenshot: app.screenshot())
+    screenshot.name = name
+    screenshot.lifetime = .keepAlways
+    add(screenshot)
+  }
+
   func testAddingExerciseToActiveWorkoutUpdatesRoutine() {
     app.terminate()
     app.launchArguments = ["-basicWorkoutFixture", "-activeWorkoutFixture"]

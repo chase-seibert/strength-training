@@ -26,6 +26,7 @@ If the phone is unavailable or locked, or signing prevents deployment, report
 that clearly and state what verification did complete. When the phone is locked,
 ask the user to unlock it before retrying launch and visual inspection.
 
+- `make metal-setup`: install Apple's Metal compiler component if Xcode reports a missing Metal Toolchain.
 - `make setup`: validate the bundled catalog.
 - `make sim-build`: compile for the simulator.
 - `make sim-launch`: build, boot iPhone 17 Pro, install, and launch.
@@ -33,6 +34,7 @@ ask the user to unlock it before retrying launch and visual inspection.
 - `make lint`: validate project/catalog structure and Swift formatting.
 - `make test`: validate the catalog and compile the complete app.
 - `make exercise-unit-ui-test`: verify live unit editing, catalog duration defaults, one-off unit corrections, and on-disk persistence.
+- `make confetti-ui-test`: verify completion summary, finite Metal confetti, immediate dismissal, Reduce Motion, developer-menu replay, and empty history, with retained screenshots.
 - `make exercise-timer-ui-test`: verify manually started seconds/minutes exercise countdowns and stopping.
 - `make rep-counting-ui-test`: verify master rep-counting edits in running/resumed workouts and on-disk defaults, overrides, and volume calculations.
 - `make workout-navigation-ui-test UI_TEST_FILTER=StrengthLogUITests/WorkoutNavigationUITests/testWorkoutReorderScreenSavesAndCancels`: verify compact workout reordering, Save/Cancel, and persistence. Set `UI_DERIVED_DATA=build-reorder-tests` to use a fresh test build directory when discovery is stale; verify a nonzero executed test count.

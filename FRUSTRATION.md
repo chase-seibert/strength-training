@@ -1,5 +1,13 @@
 # Frustration log
 
+## 2026-10-14 — Metal shaders require Xcode's separate compiler component
+
+The first `.metal` build failed with `cannot execute tool 'metal' due to missing
+Metal Toolchain`, even though Swift and asset compilation worked. Install Apple's
+component with `xcodebuild -downloadComponent MetalToolchain`, then rerun the
+Makefile verification. Keep the shader in the app target's Sources phase so Xcode
+compiles and bundles `default.metallib` for both simulator and physical device.
+
 ## 2026-10-07 — Performance metrics and fixture counts can target the wrong work
 
 Default XCTest CPU/memory metrics measure the test runner; use `application: app`.

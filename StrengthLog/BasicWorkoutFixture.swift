@@ -327,6 +327,9 @@
       performanceCatalogFillers.forEach(context.insert)
       context.insert(basicRoutine)
       context.insert(lowerRoutine)
+      if ProcessInfo.processInfo.arguments.contains("-emptyWorkoutHistoryFixture") {
+        workoutHistory = []
+      }
       workoutHistory.forEach(context.insert)
       try? context.save()
 

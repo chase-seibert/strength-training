@@ -142,6 +142,17 @@ struct WorkoutCelebrationSummary: Identifiable {
 struct WorkoutCelebrationView: View {
   let summary: WorkoutCelebrationSummary
   let onDone: () -> Void
+  var doneButtonTitle = "Back to Workout Home"
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
+  @Environment(\.scenePhase) private var scenePhase
+  @State private var confettiFinished = false
+
+  private var shouldReduceMotion: Bool {
+    #if DEBUG
+      if ProcessInfo.processInfo.arguments.contains("-confettiReduceMotionFixture") { return true }
+    #endif
+    return reduceMotion
+  }
 
   var body: some View {
     ZStack {
@@ -160,9 +171,24 @@ struct WorkoutCelebrationView: View {
       }
       .scrollIndicators(.hidden)
     }
+    .overlay {
+      if !confettiFinished && !shouldReduceMotion {
+        WorkoutConfettiView(isActive: scenePhase == .active)
+          .ignoresSafeArea()
+          .allowsHitTesting(false)
+          .accessibilityHidden(true)
+      }
+    }
+    .task {
+      // Do not restart after scrolling, backgrounding, or changing accessibility settings.
+      do {
+        try await Task.sleep(for: .seconds(5))
+        confettiFinished = true
+      } catch {}
+    }
     .safeAreaInset(edge: .bottom) {
       Button(action: onDone) {
-        Text("Back to Workout Home")
+        Text(doneButtonTitle)
           .font(.headline)
           .frame(maxWidth: .infinity)
       }

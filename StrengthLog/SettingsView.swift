@@ -199,6 +199,7 @@ struct SettingsView: View {
 
 #if DEBUG
   struct DeveloperMenuView: View {
+    @Environment(\.modelContext) private var context
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @AppStorage(DeveloperPreferences.activeWorkoutFrameMonitorEnabledKey)
     private var activeWorkoutFrameMonitorEnabled = false
@@ -207,9 +208,24 @@ struct SettingsView: View {
     @State private var cpuLoadEnabled = false
     @State private var memoryLoadEnabled = false
     @State private var diskLoadEnabled = false
+    @State private var celebrationSummary: WorkoutCelebrationSummary?
+    @State private var celebrationPreviewMessage: String?
 
     var body: some View {
       List {
+        Section {
+          Button("Preview Workout Celebration", systemImage: "party.popper.fill") {
+            previewLatestWorkoutCelebration()
+          }
+          .accessibilityIdentifier("developer-preview-workout-celebration")
+        } header: {
+          Text("Workout Celebration")
+        } footer: {
+          Text(
+            "Replays the most recently completed workout with confetti. Workout history stays unchanged."
+          )
+        }
+
         Section {
           Toggle(
             "Active Workout Frame Monitor",
@@ -273,6 +289,22 @@ struct SettingsView: View {
       }
       .navigationTitle("Developer")
       .navigationBarTitleDisplayMode(.inline)
+      .fullScreenCover(item: $celebrationSummary) { summary in
+        WorkoutCelebrationView(
+          summary: summary,
+          onDone: { celebrationSummary = nil },
+          doneButtonTitle: "Back to Developer Menu")
+      }
+      .alert(
+        "Workout Celebration",
+        isPresented: Binding(
+          get: { celebrationPreviewMessage != nil },
+          set: { if !$0 { celebrationPreviewMessage = nil } })
+      ) {
+        Button("OK", role: .cancel) { celebrationPreviewMessage = nil }
+      } message: {
+        Text(celebrationPreviewMessage ?? "")
+      }
       .onChange(of: scenePhase) { _, phase in
         if phase != .active {
           loadHarness.stop()
@@ -280,6 +312,36 @@ struct SettingsView: View {
           memoryLoadEnabled = false
           diskLoadEnabled = false
         }
+      }
+    }
+
+    private func previewLatestWorkoutCelebration() {
+      var latest = FetchDescriptor<WorkoutSession>(
+        predicate: #Predicate<WorkoutSession> {
+          !$0.isActive && $0.deletedAt == nil && $0.endedAt != nil
+        },
+        sortBy: [SortDescriptor(\WorkoutSession.endedAt, order: .reverse)])
+      latest.fetchLimit = 1
+      do {
+        guard let session = try context.fetch(latest).first else {
+          celebrationPreviewMessage = "Complete a workout first to preview its celebration."
+          return
+        }
+        let history = try context.fetch(
+          FetchDescriptor<WorkoutSession>(
+            predicate: #Predicate<WorkoutSession> { $0.deletedAt == nil }))
+        let people = try context.fetch(FetchDescriptor<PersonProfile>())
+        let routines = try context.fetch(FetchDescriptor<Routine>())
+        let routineName =
+          routines.first { $0.id == session.routineID }?.name
+          ?? (session.routineName.isEmpty ? "Workout" : session.routineName)
+        celebrationSummary = WorkoutCelebrationSummary.make(
+          session: session,
+          allSessions: history,
+          routineName: routineName,
+          colorHexByName: Dictionary(uniqueKeysWithValues: people.map { ($0.name, $0.colorHex) }))
+      } catch {
+        celebrationPreviewMessage = "Couldn’t load workout history. Try again."
       }
     }
   }
