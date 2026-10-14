@@ -1050,6 +1050,7 @@ private struct DayWorkoutSummaryView: View {
     _ set: WorkoutSet, participant: ParticipantLog, exercise: ExerciseLog
   ) -> String {
     set.summary(
-      participant: participant, unit: exercise.unit, repCountingMode: exercise.repCountingMode)
+      participant: participant, unit: exercise.unit, repCountingMode: exercise.repCountingMode,
+      usesPerDumbbellLoad: exercise.usesPerDumbbellLoad)
   }
 }

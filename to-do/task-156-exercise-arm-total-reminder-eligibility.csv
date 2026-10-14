@@ -1,0 +1,874 @@
+Exercise,Equipment,Logged unit,Enabled by default,Reason
+3/4 Sit-Up,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+90/90 Hamstring,body only,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Ab Crunch Machine,machine,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Ab Roller,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Adductor,foam roll,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Adductor/Groin,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Advanced Kettlebell Windmill,kettlebells,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Air Bike,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+All Fours Quad Stretch,body only,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Alternate Hammer Curl,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Alternate Heel Touchers,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Alternate Incline Dumbbell Curl,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Alternate Leg Diagonal Bound,other,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Alternating Cable Shoulder Press,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Alternating Deltoid Raise,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Alternating Floor Press,kettlebells,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Alternating Hang Clean,kettlebells,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Alternating Kettlebell Press,kettlebells,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Alternating Kettlebell Row,kettlebells,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Alternating Renegade Row,kettlebells,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Ankle Circles,other,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Ankle On The Knee,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Anterior Tibialis-SMR,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Anti-Gravity Press,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Arm Circles,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Arnold Dumbbell Press,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Around The Worlds,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Atlas Stone Trainer,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Atlas Stones,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Axle Deadlift,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Back Flyes - With Bands,bands,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Backward Drag,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Backward Medicine Ball Throw,medicine ball,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Balance Board,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Ball Leg Curl,exercise ball,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Band Assisted Pull-Up,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Band Good Morning,bands,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Band Good Morning (Pull Through),bands,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Band Hip Adductions,bands,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Band Pull Apart,bands,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Band Skull Crusher,bands,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Barbell Ab Rollout,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Barbell Ab Rollout - On Knees,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Barbell Bench Press - Medium Grip,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Barbell Curl,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Barbell Curls Lying Against An Incline,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Barbell Deadlift,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Barbell Full Squat,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Barbell Glute Bridge,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Barbell Guillotine Bench Press,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Barbell Hack Squat,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Barbell Hip Thrust,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Barbell Incline Bench Press - Medium Grip,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Barbell Incline Shoulder Raise,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Barbell Lunge,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Barbell Rear Delt Row,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Barbell Rollout from Bench,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Barbell Seated Calf Raise,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Barbell Shoulder Press,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Barbell Shrug,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Barbell Shrug Behind The Back,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Barbell Side Bend,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Barbell Side Split Squat,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Barbell Squat,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Barbell Squat To A Bench,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Barbell Step Ups,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Barbell Walking Lunge,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Battling Ropes,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Bear Crawl Sled Drags,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Behind Head Chest Stretch,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Bench Dips,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Bench Jump,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Bench Press - Powerlifting,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Bench Press - With Bands,bands,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Bench Press with Chains,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Bench Sprint,other,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Bent Over Barbell Row,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Bent Over Dumbbell Rear Delt Raise With Head On Bench,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Bent Over Low-Pulley Side Lateral,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Bent Over One-Arm Long Bar Row,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Bent Over Two-Arm Long Bar Row,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Bent Over Two-Dumbbell Row,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Bent Over Two-Dumbbell Row With Palms In,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Bent Press,kettlebells,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Bent-Arm Barbell Pullover,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Bent-Arm Dumbbell Pullover,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Bent-Knee Hip Raise,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Bicycling,other,minutes,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+"Bicycling, Stationary",machine,minutes,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Board Press,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Body Tricep Press,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Body-Up,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Bodyweight Flyes,e-z curl bar,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Bodyweight Mid Row,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Bodyweight Squat,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Bodyweight Walking Lunge,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Bosu Ball Cable Crunch With Side Bends,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Bottoms Up,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Bottoms-Up Clean From The Hang Position,kettlebells,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Box Jump (Multiple Response),other,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Box Skip,other,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Box Squat,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Box Squat with Bands,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Box Squat with Chains,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Brachialis-SMR,foam roll,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Bradford/Rocky Presses,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Butt Lift (Bridge),body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Butt-Ups,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Butterfly,machine,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Cable Chest Press,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Cable Crossover,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Cable Crunch,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Cable Deadlifts,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Cable Hammer Curls - Rope Attachment,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Cable Hip Adduction,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Cable Incline Pushdown,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Cable Incline Triceps Extension,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Cable Internal Rotation,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Cable Iron Cross,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Cable Judo Flip,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Cable Lying Triceps Extension,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Cable One Arm Tricep Extension,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Cable Preacher Curl,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Cable Rear Delt Fly,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Cable Reverse Crunch,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Cable Rope Overhead Triceps Extension,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Cable Rope Rear-Delt Rows,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Cable Russian Twists,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Cable Seated Crunch,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Cable Seated Lateral Raise,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Cable Shoulder Press,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Cable Shrugs,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Cable Wrist Curl,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Calf Press,machine,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Calf Press On The Leg Press Machine,machine,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Calf Raise On A Dumbbell,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Calf Raises - With Bands,bands,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Calf Stretch Elbows Against Wall,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Calf Stretch Hands Against Wall,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Calf-Machine Shoulder Shrug,machine,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Calves-SMR,foam roll,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Car Deadlift,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Car Drivers,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Carioca Quick Step,other,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Cat Stretch,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Catch and Overhead Throw,medicine ball,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Chain Handle Extension,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Chain Press,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Chair Leg Extended Stretch,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Chair Lower Back Stretch,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Chair Squat,machine,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Chair Upper Body Stretch,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Chest And Front Of Shoulder Stretch,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Chest Push (multiple response),medicine ball,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Chest Push (single response),medicine ball,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Chest Push from 3 point stance,medicine ball,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Chest Push with Run Release,medicine ball,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Chest Stretch on Stability Ball,exercise ball,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Child's Pose,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Chin To Chest Stretch,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Chin-Up,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Circus Bell,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Clean,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Clean and Jerk,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Clean and Press,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Clean Deadlift,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Clean from Blocks,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Clean Pull,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Clean Shrug,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Clock Push-Up,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Close-Grip Barbell Bench Press,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Close-Grip Dumbbell Press,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Close-Grip EZ Bar Curl,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Close-Grip EZ-Bar Curl with Band,e-z curl bar,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Close-Grip EZ-Bar Press,e-z curl bar,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Close-Grip Front Lat Pulldown,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Close-Grip Push-Up off of a Dumbbell,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Close-Grip Standing Barbell Curl,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Cocoons,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Conan's Wheel,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Concentration Curls,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Cross Body Hammer Curl,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Cross Over - With Bands,bands,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Cross-Body Crunch,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Crossover Reverse Lunge,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Crucifix,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Crunch - Hands Overhead,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Crunch - Legs On Exercise Ball,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Crunches,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Cuban Press,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Dancer's Stretch,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Dead Bug,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Deadlift with Bands,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Deadlift with Chains,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Decline Barbell Bench Press,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Decline Close-Grip Bench To Skull Crusher,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Decline Crunch,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Decline Dumbbell Bench Press,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Decline Dumbbell Flyes,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Decline Dumbbell Triceps Extension,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Decline EZ Bar Triceps Extension,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Decline Oblique Crunch,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Decline Push-Up,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Decline Reverse Crunch,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Decline Smith Press,machine,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Deficit Deadlift,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Depth Jump Leap,other,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Dip Machine,machine,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Dips - Chest Version,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Dips - Triceps Version,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Donkey Calf Raises,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Double Kettlebell Alternating Hang Clean,kettlebells,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Double Kettlebell Jerk,kettlebells,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Double Kettlebell Push Press,kettlebells,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Double Kettlebell Snatch,kettlebells,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Double Kettlebell Windmill,kettlebells,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Double Leg Butt Kick,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Downward Facing Balance,exercise ball,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Drag Curl,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Drop Push,other,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Dumbbell Alternate Bicep Curl,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Dumbbell Bench Press,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Dumbbell Bench Press with Neutral Grip,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Dumbbell Bicep Curl,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Dumbbell Clean,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Dumbbell Floor Press,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Dumbbell Flyes,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Dumbbell Incline Row,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Dumbbell Incline Shoulder Raise,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Dumbbell Lunges,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Dumbbell Lying One-Arm Rear Lateral Raise,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Dumbbell Lying Pronation,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Dumbbell Lying Rear Lateral Raise,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Dumbbell Lying Supination,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Dumbbell One-Arm Shoulder Press,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Dumbbell One-Arm Triceps Extension,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Dumbbell One-Arm Upright Row,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Dumbbell Prone Incline Curl,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Dumbbell Raise,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Dumbbell Rear Lunge,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Dumbbell Scaption,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Dumbbell Seated Box Jump,dumbbell,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Dumbbell Seated One-Leg Calf Raise,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Dumbbell Shoulder Press,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Dumbbell Shrug,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Dumbbell Side Bend,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Dumbbell Squat,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Dumbbell Squat To A Bench,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Dumbbell Step Ups,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Dumbbell Tricep Extension -Pronated Grip,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Dynamic Back Stretch,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Dynamic Chest Stretch,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Elbow Circles,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Elbow to Knee,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Elbows Back,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Elevated Back Lunge,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Elevated Cable Rows,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Elliptical Trainer,machine,minutes,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Exercise Ball Crunch,exercise ball,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Exercise Ball Pull-In,exercise ball,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Extended Range One-Arm Kettlebell Floor Press,kettlebells,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+External Rotation,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+External Rotation with Band,bands,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+External Rotation with Cable,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+EZ-Bar Curl,e-z curl bar,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+EZ-Bar Skullcrusher,e-z curl bar,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Face Pull,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Farmer's Walk,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Fast Skipping,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Finger Curls,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Flat Bench Cable Flyes,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Flat Bench Leg Pull-In,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Flat Bench Lying Leg Raise,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Flexor Incline Dumbbell Curls,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Floor Glute-Ham Raise,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Floor Press,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Floor Press with Chains,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Flutter Kicks,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Foot-SMR,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Forward Drag with Press,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Frankenstein Squat,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Freehand Jump Squat,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Frog Hops,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Frog Sit-Ups,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Front Barbell Squat,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Front Barbell Squat To A Bench,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Front Box Jump,other,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Front Cable Raise,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Front Cone Hops (or hurdle hops),other,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Front Dumbbell Raise,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Front Incline Dumbbell Raise,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Front Leg Raises,body only,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Front Plate Raise,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Front Raise And Pullover,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Front Squat (Clean Grip),barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Front Squats With Two Kettlebells,kettlebells,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Front Two-Dumbbell Raise,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Full Range-Of-Motion Lat Pulldown,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Gironda Sternum Chins,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Glute Ham Raise,machine,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Glute Kickback,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Goblet Squat,kettlebells,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Good Morning,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Good Morning off Pins,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Gorilla Chin/Crunch,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Groin and Back Stretch,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Groiners,body only,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Hack Squat,machine,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Hammer Curls,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Hammer Grip Incline DB Bench Press,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Hamstring Stretch,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Hamstring-SMR,foam roll,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Handstand Push-Ups,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Hang Clean,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Hang Clean - Below the Knees,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Hang Snatch,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Hang Snatch - Below Knees,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Hanging Bar Good Morning,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Hanging Leg Raise,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Hanging Pike,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Heaving Snatch Balance,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Heavy Bag Thrust,other,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+High Cable Curls,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Hip Circles (prone),body only,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Hip Extension with Bands,bands,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Hip Flexion with Band,bands,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Hip Lift with Band,bands,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Hug A Ball,exercise ball,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Hug Knees To Chest,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Hurdle Hops,other,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Hyperextensions (Back Extensions),other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Hyperextensions With No Hyperextension Bench,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Iliotibial Tract-SMR,foam roll,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Inchworm,body only,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Incline Barbell Triceps Extension,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Incline Bench Pull,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Incline Cable Chest Press,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Incline Cable Flye,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Incline Dumbbell Bench With Palms Facing In,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Incline Dumbbell Curl,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Incline Dumbbell Flyes,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Incline Dumbbell Flyes - With A Twist,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Incline Dumbbell Press,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Incline Hammer Curls,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Incline Inner Biceps Curl,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Incline Push-Up,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Incline Push-Up Close-Grip,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Incline Push-Up Depth Jump,other,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Incline Push-Up Medium,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Incline Push-Up Reverse Grip,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Incline Push-Up Wide,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Intermediate Groin Stretch,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Intermediate Hip Flexor and Quad Stretch,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Internal Rotation with Band,bands,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Inverted Row,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Inverted Row with Straps,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Iron Cross,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Iron Crosses (stretch),other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Isometric Chest Squeezes,body only,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Isometric Neck Exercise - Front And Back,body only,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Isometric Neck Exercise - Sides,body only,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Isometric Wipers,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+IT Band and Glute Stretch,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Jackknife Sit-Up,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Janda Sit-Up,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Jefferson Squats,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Jerk Balance,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Jerk Dip Squat,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+JM Press,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+"Jogging, Treadmill",machine,miles,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Keg Load,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Kettlebell Arnold Press,kettlebells,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Kettlebell Dead Clean,kettlebells,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Kettlebell Figure 8,kettlebells,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Kettlebell Hang Clean,kettlebells,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Kettlebell One-Legged Deadlift,kettlebells,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Kettlebell Pass Between The Legs,kettlebells,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Kettlebell Pirate Ships,kettlebells,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Kettlebell Pistol Squat,kettlebells,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Kettlebell Seated Press,kettlebells,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Kettlebell Seesaw Press,kettlebells,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Kettlebell Sumo High Pull,kettlebells,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Kettlebell Thruster,kettlebells,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Kettlebell Turkish Get-Up (Lunge style),kettlebells,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Kettlebell Turkish Get-Up (Squat style),kettlebells,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Kettlebell Windmill,kettlebells,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Kipping Muscle Up,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Knee Across The Body,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Knee Circles,body only,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Knee Tuck Jump,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Knee/Hip Raise On Parallel Bars,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Kneeling Arm Drill,other,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Kneeling Cable Crunch With Alternating Oblique Twists,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Kneeling Cable Triceps Extension,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Kneeling Forearm Stretch,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Kneeling High Pulley Row,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Kneeling Hip Flexor,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Kneeling Jump Squat,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Kneeling Single-Arm High Pulley Row,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Kneeling Squat,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Landmine 180's,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Landmine Linear Jammer,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Lateral Bound,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Lateral Box Jump,other,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Lateral Cone Hops,other,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Lateral Raise - With Bands,bands,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Latissimus Dorsi-SMR,foam roll,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Leg Extensions,machine,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Leg Lift,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Leg Press,machine,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Leg Pull-In,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Leg-Over Floor Press,kettlebells,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Leg-Up Hamstring Stretch,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Leverage Chest Press,machine,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Leverage Deadlift,machine,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Leverage Decline Chest Press,machine,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Leverage High Row,machine,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Leverage Incline Chest Press,machine,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Leverage Iso Row,machine,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Leverage Shoulder Press,machine,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Leverage Shrug,machine,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Linear 3-Part Start Technique,other,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Linear Acceleration Wall Drill,other,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Linear Depth Jump,other,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Log Lift,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+London Bridges,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Looking At Ceiling,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Low Cable Crossover,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Low Cable Triceps Extension,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Low Pulley Row To Neck,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Lower Back Curl,body only,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Lower Back-SMR,foam roll,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Lunge Pass Through,kettlebells,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Lunge Sprint,machine,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Lying Bent Leg Groin,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Lying Cable Curl,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Lying Cambered Barbell Row,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Lying Close-Grip Bar Curl On High Pulley,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Lying Close-Grip Barbell Triceps Extension Behind The Head,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Lying Close-Grip Barbell Triceps Press To Chin,e-z curl bar,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Lying Crossover,body only,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Lying Dumbbell Tricep Extension,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Lying Face Down Plate Neck Resistance,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Lying Face Up Plate Neck Resistance,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Lying Glute,body only,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Lying Hamstring,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Lying High Bench Barbell Curl,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Lying Leg Curls,machine,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Lying Machine Squat,machine,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Lying One-Arm Lateral Raise,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Lying Prone Quadriceps,body only,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Lying Rear Delt Raise,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Lying Supine Dumbbell Curl,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Lying T-Bar Row,machine,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Lying Triceps Press,e-z curl bar,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Machine Bench Press,machine,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Machine Bicep Curl,machine,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Machine Preacher Curls,machine,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Machine Shoulder (Military) Press,machine,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Machine Triceps Extension,machine,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Medicine Ball Chest Pass,medicine ball,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Medicine Ball Full Twist,medicine ball,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Medicine Ball Scoop Throw,medicine ball,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Middle Back Shrug,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Middle Back Stretch,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Mixed Grip Chin,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Monster Walk,bands,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Mountain Climbers,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Moving Claw Series,other,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Muscle Snatch,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Muscle Up,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Narrow Stance Hack Squats,machine,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Narrow Stance Leg Press,machine,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Narrow Stance Squats,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Natural Glute Ham Raise,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Neck Press,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Neck-SMR,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Oblique Crunches,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Oblique Crunches - On The Floor,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Olympic Squat,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+On Your Side Quad Stretch,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+On-Your-Back Quad Stretch,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+One Arm Against Wall,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+One Arm Chin-Up,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+One Arm Dumbbell Bench Press,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+One Arm Dumbbell Preacher Curl,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+One Arm Floor Press,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+One Arm Lat Pulldown,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+One Arm Pronated Dumbbell Triceps Extension,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+One Arm Supinated Dumbbell Triceps Extension,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+One Half Locust,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+One Handed Hang,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+One Knee To Chest,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+One Leg Barbell Squat,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+One-Arm Dumbbell Row,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+One-Arm Flat Bench Dumbbell Flye,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+One-Arm High-Pulley Cable Side Bends,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+One-Arm Incline Lateral Raise,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+One-Arm Kettlebell Clean,kettlebells,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+One-Arm Kettlebell Clean and Jerk,kettlebells,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+One-Arm Kettlebell Floor Press,kettlebells,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+One-Arm Kettlebell Jerk,kettlebells,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+One-Arm Kettlebell Military Press To The Side,kettlebells,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+One-Arm Kettlebell Para Press,kettlebells,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+One-Arm Kettlebell Push Press,kettlebells,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+One-Arm Kettlebell Row,kettlebells,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+One-Arm Kettlebell Snatch,kettlebells,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+One-Arm Kettlebell Split Jerk,kettlebells,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+One-Arm Kettlebell Split Snatch,kettlebells,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+One-Arm Kettlebell Swings,kettlebells,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+One-Arm Long Bar Row,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+One-Arm Medicine Ball Slam,medicine ball,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+One-Arm Open Palm Kettlebell Clean,kettlebells,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+One-Arm Overhead Kettlebell Squats,kettlebells,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+One-Arm Side Deadlift,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+One-Arm Side Laterals,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+One-Legged Cable Kickback,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Open Palm Kettlebell Clean,kettlebells,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Otis-Up,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Overhead Cable Curl,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Overhead Lat,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Overhead Slam,medicine ball,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Overhead Squat,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Overhead Stretch,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Overhead Triceps,body only,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Pallof Press,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Pallof Press With Rotation,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Palms-Down Dumbbell Wrist Curl Over A Bench,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Palms-Down Wrist Curl Over A Bench,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Palms-Up Barbell Wrist Curl Over A Bench,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Palms-Up Dumbbell Wrist Curl Over A Bench,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Parallel Bar Dip,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Pelvic Tilt Into Bridge,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Peroneals Stretch,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Peroneals-SMR,foam roll,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Physioball Hip Bridge,exercise ball,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Pin Presses,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Piriformis-SMR,foam roll,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Plank,body only,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Plate Pinch,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Plate Twist,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Platform Hamstring Slides,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Plie Dumbbell Squat,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Plyo Kettlebell Pushups,kettlebells,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Plyo Push-up,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Posterior Tibialis Stretch,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Power Clean,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Power Clean from Blocks,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Power Jerk,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Power Partials,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Power Snatch,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Power Snatch from Blocks,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Power Stairs,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Preacher Curl,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Preacher Hammer Dumbbell Curl,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Press Sit-Up,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Prone Manual Hamstring,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Prowler Sprint,other,minutes,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Pull Through,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Pullups,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Push Press,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Push Press - Behind the Neck,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Push Up to Side Plank,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Push-Up Wide,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Push-Ups - Close Triceps Position,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Push-Ups With Feet Elevated,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Push-Ups With Feet On An Exercise Ball,exercise ball,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Pushups,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Pushups (Close and Wide Hand Positions),body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Pyramid,exercise ball,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Quad Stretch,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Quadriceps-SMR,foam roll,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Quick Leap,other,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Rack Delivery,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Rack Pull with Bands,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Rack Pulls,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Rear Leg Raises,body only,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Recumbent Bike,machine,minutes,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Return Push from Stance,medicine ball,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Reverse Band Bench Press,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Reverse Band Box Squat,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Reverse Band Deadlift,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Reverse Band Power Squat,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Reverse Band Sumo Deadlift,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Reverse Barbell Curl,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Reverse Barbell Preacher Curls,e-z curl bar,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Reverse Cable Curl,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Reverse Crunch,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Reverse Flyes,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Reverse Flyes With External Rotation,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Reverse Grip Bent-Over Rows,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Reverse Grip Triceps Pushdown,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Reverse Hyperextension,machine,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Reverse Machine Flyes,machine,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Reverse Plate Curls,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Reverse Triceps Bench Press,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Rhomboids-SMR,foam roll,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Rickshaw Carry,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Rickshaw Deadlift,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Ring Dips,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Rocket Jump,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Rocking Standing Calf Raise,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Rocky Pull-Ups/Pulldowns,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Romanian Deadlift,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Romanian Deadlift from Deficit,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Rope Climb,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Rope Crunch,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Rope Jumping,other,minutes,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Rope Straight-Arm Pulldown,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Round The World Shoulder Stretch,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+"Rowing, Stationary",machine,minutes,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Runner's Stretch,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+"Running, Treadmill",machine,miles,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Russian Twist,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Sandbag Load,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Scapular Pull-Up,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Scissor Kick,body only,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Scissors Jump,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Seated Band Hamstring Curl,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Seated Barbell Military Press,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Seated Barbell Twist,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Seated Bent-Over One-Arm Dumbbell Triceps Extension,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Seated Bent-Over Rear Delt Raise,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Seated Bent-Over Two-Arm Dumbbell Triceps Extension,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Seated Biceps,body only,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Seated Cable Rows,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Seated Cable Shoulder Press,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Seated Calf Raise,machine,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Seated Calf Stretch,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Seated Close-Grip Concentration Barbell Curl,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Seated Dumbbell Curl,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Seated Dumbbell Inner Biceps Curl,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Seated Dumbbell Palms-Down Wrist Curl,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Seated Dumbbell Palms-Up Wrist Curl,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Seated Dumbbell Press,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Seated Flat Bench Leg Pull-In,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Seated Floor Hamstring Stretch,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Seated Front Deltoid,body only,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Seated Glute,body only,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Seated Good Mornings,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Seated Hamstring,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Seated Hamstring and Calf Stretch,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Seated Head Harness Neck Resistance,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Seated Leg Curl,machine,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Seated Leg Tucks,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Seated One-arm Cable Pulley Rows,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Seated One-Arm Dumbbell Palms-Down Wrist Curl,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Seated One-Arm Dumbbell Palms-Up Wrist Curl,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Seated Overhead Stretch,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Seated Palm-Up Barbell Wrist Curl,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Seated Palms-Down Barbell Wrist Curl,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Seated Side Lateral Raise,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Seated Triceps Press,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Seated Two-Arm Palms-Up Low-Pulley Wrist Curl,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+See-Saw Press (Alternating Side Press),dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Shotgun Row,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Shoulder Circles,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Shoulder Press - With Bands,bands,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Shoulder Raise,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Shoulder Stretch,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Side Bridge,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Side Hop-Sprint,other,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Side Jackknife,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Side Lateral Raise,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Side Laterals to Front Raise,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Side Leg Raises,body only,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Side Lying Groin Stretch,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Side Neck Stretch,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Side Standing Long Jump,other,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Side to Side Box Shuffle,other,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Side To Side Chins,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Side Wrist Pull,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Side-Lying Floor Stretch,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Single Dumbbell Raise,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Single Leg Butt Kick,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Single Leg Glute Bridge,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Single Leg Push-off,other,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Single-Arm Cable Crossover,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Single-Arm Linear Jammer,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Single-Arm Push-Up,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Single-Cone Sprint Drill,other,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Single-Leg High Box Squat,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Single-Leg Hop Progression,other,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Single-Leg Lateral Hop,other,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Single-Leg Leg Extension,machine,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Single-Leg Stride Jump,other,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Sit Squats,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Sit-Up,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Skating,other,minutes,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Sled Drag - Harness,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Sled Overhead Backward Walk,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Sled Overhead Triceps Extension,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Sled Push,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Sled Reverse Flye,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Sled Row,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Sledgehammer Swings,other,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Smith Incline Shoulder Raise,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Smith Machine Behind the Back Shrug,machine,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Smith Machine Bench Press,machine,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Smith Machine Bent Over Row,machine,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Smith Machine Calf Raise,machine,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Smith Machine Close-Grip Bench Press,machine,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Smith Machine Decline Press,machine,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Smith Machine Hang Power Clean,machine,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Smith Machine Hip Raise,machine,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Smith Machine Incline Bench Press,machine,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Smith Machine Leg Press,machine,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Smith Machine One-Arm Upright Row,machine,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Smith Machine Overhead Shoulder Press,machine,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Smith Machine Pistol Squat,machine,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Smith Machine Reverse Calf Raises,machine,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Smith Machine Squat,machine,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Smith Machine Stiff-Legged Deadlift,machine,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Smith Machine Upright Row,machine,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Smith Single-Leg Split Squat,machine,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Snatch,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Snatch Balance,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Snatch Deadlift,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Snatch from Blocks,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Snatch Pull,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Snatch Shrug,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Speed Band Overhead Triceps,bands,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Speed Box Squat,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Speed Squats,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Spell Caster,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Spider Crawl,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Spider Curl,e-z curl bar,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Spinal Stretch,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Split Clean,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Split Jerk,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Split Jump,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Split Snatch,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Split Squat with Dumbbells,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Split Squats,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Squat Jerk,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Squat with Bands,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Squat with Chains,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Squat with Plate Movers,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Squats - With Bands,bands,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Stairmaster,machine,steps,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Standing Alternating Dumbbell Press,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Standing Barbell Calf Raise,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Standing Barbell Press Behind Neck,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Standing Bent-Over One-Arm Dumbbell Triceps Extension,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Standing Bent-Over Two-Arm Dumbbell Triceps Extension,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Standing Biceps Cable Curl,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Standing Biceps Stretch,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Standing Bradford Press,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Standing Cable Chest Press,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Standing Cable Lift,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Standing Cable Wood Chop,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Standing Calf Raises,machine,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Standing Concentration Curl,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Standing Dumbbell Calf Raise,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Standing Dumbbell Press,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Standing Dumbbell Reverse Curl,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Standing Dumbbell Straight-Arm Front Delt Raise Above Head,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Standing Dumbbell Triceps Extension,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Standing Dumbbell Upright Row,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Standing Elevated Quad Stretch,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Standing Front Barbell Raise Over Head,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Standing Gastrocnemius Calf Stretch,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Standing Hamstring and Calf Stretch,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Standing Hip Circles,body only,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Standing Hip Flexors,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Standing Inner-Biceps Curl,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Standing Lateral Stretch,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Standing Leg Curl,machine,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Standing Long Jump,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Standing Low-Pulley Deltoid Raise,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Standing Low-Pulley One-Arm Triceps Extension,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Standing Military Press,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Standing Olympic Plate Hand Squeeze,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Standing One-Arm Cable Curl,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Standing One-Arm Dumbbell Curl Over Incline Bench,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Standing One-Arm Dumbbell Triceps Extension,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Standing Overhead Barbell Triceps Extension,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Standing Palm-In One-Arm Dumbbell Press,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Standing Palms-In Dumbbell Press,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Standing Palms-Up Barbell Behind The Back Wrist Curl,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Standing Pelvic Tilt,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Standing Rope Crunch,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Standing Soleus And Achilles Stretch,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Standing Toe Touches,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Standing Towel Triceps Extension,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Standing Two-Arm Overhead Throw,medicine ball,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Star Jump,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Step Mill,machine,steps,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Step-up with Knee Raise,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Stiff Leg Barbell Good Morning,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Stiff-Legged Barbell Deadlift,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Stiff-Legged Dumbbell Deadlift,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Stomach Vacuum,body only,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Straight Bar Bench Mid Rows,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Straight Raises on Incline Bench,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Straight-Arm Dumbbell Pullover,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Straight-Arm Pulldown,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Stride Jump Crossover,other,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Sumo Deadlift,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Sumo Deadlift with Bands,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Sumo Deadlift with Chains,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Superman,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Supine Chest Throw,medicine ball,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Supine One-Arm Overhead Throw,medicine ball,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Supine Two-Arm Overhead Throw,medicine ball,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Suspended Fallout,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Suspended Push-Up,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Suspended Reverse Crunch,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Suspended Row,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Suspended Split Squat,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Svend Press,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+T-Bar Row with Handle,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Tate Press,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+The Straddle,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Thigh Abductor,machine,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Thigh Adductor,machine,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Tire Flip,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Toe Touchers,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Torso Rotation,exercise ball,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Trail Running/Walking,other,miles,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Trap Bar Deadlift,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Tricep Dumbbell Kickback,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Tricep Side Stretch,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Triceps Overhead Extension with Rope,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Triceps Pushdown,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Triceps Pushdown - Rope Attachment,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Triceps Pushdown - V-Bar Attachment,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Triceps Stretch,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Tuck Crunch,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Two-Arm Dumbbell Preacher Curl,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Two-Arm Kettlebell Clean,kettlebells,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Two-Arm Kettlebell Jerk,kettlebells,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Two-Arm Kettlebell Military Press,kettlebells,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Two-Arm Kettlebell Row,kettlebells,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Underhand Cable Pulldowns,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Upper Back Stretch,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Upper Back-Leg Grab,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Upright Barbell Row,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Upright Cable Row,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Upright Row - With Bands,bands,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Upward Stretch,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+V-Bar Pulldown,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+V-Bar Pullup,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Vertical Swing,dumbbell,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+"Walking, Treadmill",machine,miles,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Weighted Ball Hyperextension,exercise ball,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Weighted Ball Side Bend,exercise ball,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Weighted Bench Dip,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Weighted Crunches,medicine ball,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Weighted Jump Squat,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Weighted Pull Ups,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Weighted Sissy Squat,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Weighted Sit-Ups - With Bands,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Weighted Squat,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Wide Stance Barbell Squat,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Wide Stance Stiff Legs,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Wide-Grip Barbell Bench Press,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Wide-Grip Decline Barbell Bench Press,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Wide-Grip Decline Barbell Pullover,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Wide-Grip Lat Pulldown,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Wide-Grip Pulldown Behind The Neck,cable,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Wide-Grip Rear Pull-Up,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Wide-Grip Standing Barbell Curl,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Wind Sprints,body only,repetitions,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Windmills,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+World's Greatest Stretch,other,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Wrist Circles,body only,seconds,no,"No pounds/kilograms load picker, so an arm/total load reminder does not apply."
+Wrist Roller,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Wrist Rotations with Straight Bar,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Yoke Walk,other,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Zercher Squats,barbell,pounds,no,Off by default because the catalog does not identify this exercise as using dumbbells; can be enabled in Edit Exercise.
+Zottman Curl,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.
+Zottman Preacher Curl,dumbbell,pounds,yes,Dumbbell equipment with a weight-based log; user can show half the entered load per arm or the unchanged entered load as total.

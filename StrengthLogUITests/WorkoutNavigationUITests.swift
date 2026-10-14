@@ -530,6 +530,27 @@ final class WorkoutNavigationUITests: XCTestCase {
     XCTAssertTrue(edit.waitForExistence(timeout: 3))
   }
 
+  private func changeDumbbellReminder(to isEnabled: Bool, screenshotName: String? = nil) {
+    let edit = app.buttons["Edit"]
+    XCTAssertTrue(edit.waitForExistence(timeout: 3))
+    edit.tap()
+    let reminderToggle = app.switches["exercise-dumbbell-reminder-toggle"]
+    XCTAssertTrue(reminderToggle.waitForExistence(timeout: 3))
+    let currentValue = reminderToggle.value as? String == "1"
+    if currentValue != isEnabled {
+      reminderToggle.coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5)).tap()
+    }
+    XCTAssertEqual(reminderToggle.value as? String, isEnabled ? "1" : "0")
+    if let screenshotName {
+      let screenshot = XCTAttachment(screenshot: app.screenshot())
+      screenshot.name = screenshotName
+      screenshot.lifetime = .keepAlways
+      add(screenshot)
+    }
+    app.buttons["Save"].tap()
+    XCTAssertTrue(edit.waitForExistence(timeout: 3))
+  }
+
   func testCompletingWorkoutShowsCelebrationSummary() {
     app.terminate()
     app.launchArguments = [
@@ -630,6 +651,133 @@ final class WorkoutNavigationUITests: XCTestCase {
     // 123.5 × 8 + 95.06 × 8 = 1,748.48, displayed rounded to 1,748.5.
     // Reinitialization must preserve both the per-set override and the base precision.
     XCTAssertTrue(app.staticTexts["1,748.5 lb"].firstMatch.waitForExistence(timeout: 5))
+  }
+
+  func testArmTotalReminderTogglesForAllParticipantsAcrossUnits() {
+    app.terminate()
+    app.launchArguments = [
+      "-basicWorkoutFixture", "-activeWorkoutFixture", "-dumbbellLoadFixture",
+      "-measurementOverrideFixture", "-validatePersistenceFixture",
+    ]
+    app.launch()
+
+    let participantLoads = [
+      app.textFields["Pounds for Alex"],
+      app.textFields["Pounds for Jordan"],
+      app.textFields["Pounds for Owen"],
+    ]
+    let alexLoad = participantLoads[0]
+    for load in participantLoads {
+      XCTAssertTrue(load.waitForExistence(timeout: 5))
+    }
+    let originalLoads = participantLoads.map { $0.value as? String }
+    XCTAssertEqual(alexLoad.value as? String, "95.1")
+    XCTAssertFalse(
+      app.descendants(matching: .any).matching(identifier: "dumbbell-arm-count").firstMatch.exists
+    )
+    let alexCallout = app.descendants(matching: .any).matching(
+      identifier: "arm-total-load-reminder-Alex"
+    ).firstMatch
+    let jordanCallout = app.descendants(matching: .any).matching(
+      identifier: "arm-total-load-reminder-Jordan"
+    ).firstMatch
+    let owenCallout = app.descendants(matching: .any).matching(
+      identifier: "arm-total-load-reminder-Owen"
+    ).firstMatch
+    XCTAssertEqual(
+      alexCallout.label,
+      "47.5 lb per arm"
+    )
+    for name in ["Alex", "Jordan", "Owen"] {
+      let callout = app.descendants(matching: .any).matching(
+        identifier: "arm-total-load-reminder-\(name)"
+      ).firstMatch
+      XCTAssertTrue(callout.waitForExistence(timeout: 3))
+      XCTAssertTrue(callout.label.contains("per arm"))
+      let unitLabel = app.staticTexts["measurement-unit-\(name)"]
+      XCTAssertTrue(unitLabel.waitForExistence(timeout: 3))
+      XCTAssertEqual(unitLabel.label, "lb")
+    }
+    alexCallout.tap()
+    XCTAssertEqual(alexLoad.value as? String, "95.1")
+    XCTAssertEqual(
+      alexCallout.label,
+      "95.1 lb total for both arms"
+    )
+    for callout in [alexCallout, jordanCallout, owenCallout] {
+      XCTAssertTrue(callout.label.contains("total for both arms"))
+    }
+    let screenshot = XCTAttachment(screenshot: app.screenshot())
+    screenshot.name = "arm-total-reminders-switch-together"
+    screenshot.lifetime = .keepAlways
+    add(screenshot)
+    for (load, originalLoad) in zip(participantLoads, originalLoads) {
+      XCTAssertEqual(load.value as? String, originalLoad)
+    }
+    jordanCallout.tap()
+    for callout in [alexCallout, jordanCallout, owenCallout] {
+      XCTAssertTrue(callout.label.contains("per arm"))
+    }
+    for (load, originalLoad) in zip(participantLoads, originalLoads) {
+      XCTAssertEqual(load.value as? String, originalLoad)
+    }
+    XCTAssertEqual(
+      alexCallout.label,
+      "47.5 lb per arm"
+    )
+
+    app.terminate()
+    app.launchArguments = [
+      "-basicWorkoutFixture", "-activeWorkoutFixture", "-activeWorkoutOnePersonFixture",
+      "-kilogramDumbbellLoadFixture",
+    ]
+    app.launch()
+    let kilogramLoad = app.textFields["Kilograms for Alex"]
+    XCTAssertTrue(kilogramLoad.waitForExistence(timeout: 5))
+    let kilogramCallout = app.descendants(matching: .any).matching(
+      identifier: "arm-total-load-reminder-Alex"
+    ).firstMatch
+    XCTAssertTrue(kilogramCallout.waitForExistence(timeout: 3))
+    XCTAssertEqual(kilogramCallout.label, "50 kg per arm")
+    kilogramCallout.tap()
+    XCTAssertEqual(kilogramLoad.value as? String, "100")
+    XCTAssertEqual(kilogramCallout.label, "100 kg total for both arms")
+    XCTAssertEqual(app.staticTexts["measurement-unit-Alex"].label, "kg")
+
+    app.terminate()
+    app.launchArguments = ["-basicWorkoutFixture", "-activeWorkoutFixture"]
+    app.launch()
+    XCTAssertTrue(app.textFields["Pounds for Alex"].waitForExistence(timeout: 5))
+    XCTAssertEqual(app.staticTexts["measurement-unit-Alex"].label, "lb")
+    XCTAssertFalse(
+      app.descendants(matching: .any).matching(identifier: "arm-total-load-reminder-Alex")
+        .firstMatch
+        .exists
+    )
+  }
+
+  func testExerciseEditorControlsArmTotalReminderPerExercise() {
+    app.terminate()
+    app.launchArguments = ["-basicWorkoutFixture", "-activeWorkoutFixture"]
+    app.launch()
+
+    let alexLoad = app.textFields["Pounds for Alex"]
+    XCTAssertTrue(alexLoad.waitForExistence(timeout: 5))
+    let originalLoad = alexLoad.value as? String
+    XCTAssertFalse(app.buttons["arm-total-load-reminder-Alex"].exists)
+
+    app.buttons["exercise-details-Bench Press"].tap()
+    changeDumbbellReminder(to: true, screenshotName: "exercise-arm-total-reminder-setting-enabled")
+    app.navigationBars.buttons.element(boundBy: 0).tap()
+    let alexReminder = app.buttons["arm-total-load-reminder-Alex"]
+    XCTAssertTrue(alexReminder.waitForExistence(timeout: 3))
+    XCTAssertEqual(alexLoad.value as? String, originalLoad)
+
+    app.buttons["exercise-details-Bench Press"].tap()
+    changeDumbbellReminder(to: false)
+    app.navigationBars.buttons.element(boundBy: 0).tap()
+    XCTAssertTrue(alexReminder.waitForNonExistence(timeout: 3))
+    XCTAssertEqual(alexLoad.value as? String, originalLoad)
   }
 
   func testActiveWorkoutScrollPerformance() {

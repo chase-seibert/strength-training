@@ -29,13 +29,20 @@
         ? .seconds
         : ProcessInfo.processInfo.arguments.contains("-activeWorkoutTimedMinutesFixture")
           ? .minutes : nil
+      let usesDumbbellLoadFixture = ProcessInfo.processInfo.arguments.contains(
+        "-dumbbellLoadFixture")
+      let usesKilogramDumbbellLoadFixture = ProcessInfo.processInfo.arguments.contains(
+        "-kilogramDumbbellLoadFixture")
       let benchPress = Exercise(
         sourceID: "fixture-bench-press",
-        name: "Bench Press",
+        name: usesDumbbellLoadFixture || usesKilogramDumbbellLoadFixture
+          ? "Dumbbell Bench Press" : "Bench Press",
         category: "strength",
-        equipment: "barbell",
+        equipment: usesDumbbellLoadFixture || usesKilogramDumbbellLoadFixture
+          ? "dumbbell" : "barbell",
         primaryMuscle: "chest",
-        unit: timedFixtureUnit ?? .pounds,
+        unit: timedFixtureUnit
+          ?? (usesKilogramDumbbellLoadFixture ? .kilograms : .pounds),
         instructions: "Lower the bar with control, then press it up.",
         imagePath: "Barbell_Bench_Press_-_Medium_Grip/0.webp",
         additionalImagePaths: ["Barbell_Bench_Press_-_Medium_Grip/1.webp"])

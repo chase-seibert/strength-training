@@ -109,6 +109,26 @@
       try verifyCatalogDefaultsAndCorrections(schema: schema)
       try verifyRepCountingPersistence(schema: schema)
       try verifyWorkoutDurations()
+      try verifyPerDumbbellLoadSummary()
+    }
+
+    private static func verifyPerDumbbellLoadSummary() throws {
+      let participant = ParticipantLog(
+        participantName: "Dumbbell Tester", measurement: 30,
+        sets: [WorkoutSet(sortOrder: 0, reps: 8, measurement: 25)])
+      let defaultLoadSet = WorkoutSet(sortOrder: 1, reps: 8)
+      guard let set = participant.sets.first,
+        set.measurement == 25,
+        set.summary(participant: participant, unit: .pounds, usesPerDumbbellLoad: true)
+          == "25 lb per dumbbell × 8 reps",
+        set.summary(participant: participant, unit: .kilograms, usesPerDumbbellLoad: true)
+          == "25 kg per dumbbell × 8 reps",
+        set.summary(participant: participant, unit: .pounds)
+          == "25 lb × 8 reps",
+        defaultLoadSet.summary(
+          participant: participant, unit: .pounds, usesPerDumbbellLoad: true)
+          == "30 lb per dumbbell × 8 reps"
+      else { throw SmokeError.dumbbellLoadFormatting }
     }
 
     private static func verifyWorkoutDurations() throws {
@@ -517,6 +537,7 @@
     case catalogDefaults
     case exerciseOrder
     case repCounting
+    case dumbbellLoadFormatting
 
     var errorDescription: String? {
       switch self {
@@ -536,6 +557,8 @@
         "Exercise reordering failed to preserve the saved order, exercise logs, or sets."
       case .repCounting:
         "Master rep-counting defaults, live resolution, volume, or disk persistence failed."
+      case .dumbbellLoadFormatting:
+        "Dumbbell load summaries did not preserve per-dumbbell meaning or ordinary load wording."
       }
     }
   }

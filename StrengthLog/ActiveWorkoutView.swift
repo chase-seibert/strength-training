@@ -905,7 +905,7 @@ struct ActiveWorkoutView: View {
     let measurement = set?.measurement ?? participant?.measurement ?? 0
     let effort =
       exercise.unit.usesMeasurement && measurement > 0
-      ? "\(measurement.tidy) \(exercise.unit.label) × \(reps) \(exercise.targetLabel)"
+      ? "\(exercise.unit.loadDescription(measurement, perDumbbell: exercise.usesPerDumbbellLoad)) × \(reps) \(exercise.targetLabel)"
       : "\(reps) \(exercise.targetLabel)"
     return (
       exerciseName: exercise.exerciseName,
@@ -1389,6 +1389,7 @@ struct ActiveExerciseCard: View {
   @State private var showingImages = false
   @State private var showingHistory = false
   @State private var lastSetEditorParticipant: ParticipantLog?
+  @State private var isShowingDumbbellTotal = false
 
   private var visibleLogs: [ParticipantLog] {
     visiblePeople.compactMap { name in
@@ -1487,6 +1488,10 @@ struct ActiveExerciseCard: View {
 
       if usesSinglePersonHorizontalLayout, let participant = visibleLogs.first {
         singlePersonMeasurementControls(for: participant)
+        if exercise.hasDumbbellArmTotalReminder {
+          armTotalLoadReminder(for: participant, columnWidth: nil)
+            .frame(maxWidth: .infinity)
+        }
 
         Divider()
 
@@ -1507,6 +1512,9 @@ struct ActiveExerciseCard: View {
       } else {
         if exercise.unit.usesMeasurement {
           participantLoadControls
+          if exercise.hasDumbbellArmTotalReminder {
+            participantArmTotalReminders
+          }
           Divider()
         }
 
@@ -1608,6 +1616,84 @@ struct ActiveExerciseCard: View {
       }
     }
     .frame(maxWidth: .infinity, alignment: .leading)
+  }
+
+  private var participantArmTotalReminders: some View {
+    HStack(alignment: .top, spacing: usesTwoPersonParticipantColumns ? 0 : 6) {
+      if usesTwoPersonParticipantColumns {
+        ForEach(visibleLogs) { participant in
+          Spacer(minLength: 0)
+          armTotalLoadReminder(for: participant)
+            .frame(width: activeWorkoutParticipantColumnWidth)
+        }
+        Spacer(minLength: 0)
+      } else {
+        ForEach(visibleLogs) { participant in
+          armTotalLoadReminder(for: participant)
+        }
+      }
+    }
+    .frame(maxWidth: .infinity, alignment: .leading)
+  }
+
+  private func armTotalLoadReminder(
+    for participant: ParticipantLog,
+    columnWidth: CGFloat? = activeWorkoutParticipantColumnWidth
+  ) -> some View {
+    let participantColor = Color(hex: colors[participant.participantName] ?? "FF5A45")
+    let isShowingTotal = isShowingDumbbellTotal
+    let entry = participant.measurement
+    let shownLoad = isShowingTotal ? entry : entry / 2
+    let shownLabel = isShowingTotal ? "TOTAL BOTH ARMS" : "PER ARM"
+    let nextModeHint = isShowingTotal ? "Tap for per arm" : "Tap for both arms total"
+    let load = "\(shownLoad.tidy) \(exercise.unit.label)"
+    let valueDescription =
+      isShowingTotal
+      ? "\(entry.tidy) \(exercise.unit.label) total for both arms"
+      : "\((entry / 2).tidy) \(exercise.unit.label) per arm"
+
+    return Button {
+      isShowingDumbbellTotal.toggle()
+    } label: {
+      VStack(spacing: 4) {
+        Text(load)
+          .font(.system(size: 13, weight: .bold, design: .rounded))
+          .monospacedDigit()
+          .lineLimit(1)
+          .minimumScaleFactor(0.7)
+          .accessibilityIdentifier("arm-total-load-reminder-value-\(participant.participantName)")
+        Text(shownLabel)
+          .font(.system(size: 8, weight: .heavy))
+          .tracking(0.45)
+          .lineLimit(1)
+          .minimumScaleFactor(0.7)
+          .accessibilityIdentifier("arm-total-load-reminder-label-\(participant.participantName)")
+        Text(nextModeHint.uppercased())
+          .font(.system(size: 8, weight: .semibold))
+          .tracking(0.25)
+          .lineLimit(1)
+          .minimumScaleFactor(0.6)
+      }
+      .foregroundStyle(participantColor)
+      .frame(maxWidth: .infinity)
+      .padding(.horizontal, 5)
+      .padding(.vertical, 8)
+      .background(
+        participantColor.opacity(0.10),
+        in: RoundedRectangle(cornerRadius: 10, style: .continuous)
+      )
+      .overlay {
+        RoundedRectangle(cornerRadius: 10, style: .continuous)
+          .strokeBorder(participantColor.opacity(0.18), lineWidth: 1)
+      }
+    }
+    .buttonStyle(.plain)
+    .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+    .accessibilityElement(children: .combine)
+    .accessibilityLabel(valueDescription)
+    .accessibilityHint("\(nextModeHint); this only changes the reminder")
+    .accessibilityIdentifier("arm-total-load-reminder-\(participant.participantName)")
+    .frame(width: columnWidth)
   }
 
   private func participantLoadControl(for participant: ParticipantLog) -> some View {
@@ -2465,6 +2551,7 @@ struct MeasurementStepper: View {
       Text(unit.label)
         .font(.system(size: 8, weight: .bold))
         .foregroundStyle(.secondary)
+        .accessibilityIdentifier("measurement-unit-\(participant.participantName)")
     }
     .foregroundStyle(Color(hex: colorHex))
     .onAppear { text = participant.measurement.tidy }

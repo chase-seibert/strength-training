@@ -343,7 +343,8 @@ struct SessionDetailView: View {
     -> String
   {
     set.summary(
-      participant: participant, unit: exercise.unit, repCountingMode: exercise.repCountingMode)
+      participant: participant, unit: exercise.unit, repCountingMode: exercise.repCountingMode,
+      usesPerDumbbellLoad: exercise.usesPerDumbbellLoad)
       + (set.isCompleted ? " ✓" : " ○")
   }
 }

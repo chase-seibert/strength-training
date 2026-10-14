@@ -227,6 +227,10 @@ enum RepCountingMode: String, Codable, CaseIterable, Identifiable {
 }
 
 extension TrackingUnit {
+  func loadDescription(_ value: Double, perDumbbell: Bool) -> String {
+    "\(value.tidy) \(label)\(perDumbbell ? " per dumbbell" : "")"
+  }
+
   func targetLabel(repCountingMode: RepCountingMode) -> String {
     usesReps && repCountingMode == .perSide ? "reps/side" : targetLabel
   }
@@ -248,6 +252,9 @@ final class Exercise {
   // Nil identifies pre-feature records for a one-time catalog backfill. Optional so existing
   // SwiftData stores can migrate without rewriting or dropping workout history.
   var repCountingModeRaw: String?
+  // Nil follows equipment metadata; an explicit value lets a user override the default per
+  // exercise. Optional for lightweight migration of existing catalog and custom exercises.
+  var dumbbellLoadReminderEnabled: Bool?
   var instructions: String
   var imagePath: String?
   var additionalImagePathsRaw: String?
@@ -264,6 +271,7 @@ final class Exercise {
     primaryMuscle: String,
     unit: TrackingUnit,
     repCountingMode: RepCountingMode = .standard,
+    dumbbellLoadReminderEnabled: Bool? = nil,
     instructions: String,
     imagePath: String? = nil,
     additionalImagePaths: [String] = [],
@@ -281,6 +289,7 @@ final class Exercise {
     self.primaryMuscle = primaryMuscle
     unitRaw = unit.rawValue
     repCountingModeRaw = repCountingMode.rawValue
+    self.dumbbellLoadReminderEnabled = dumbbellLoadReminderEnabled
     self.instructions = instructions
     self.imagePath = imagePath
     additionalImagePathsRaw =
@@ -297,6 +306,12 @@ final class Exercise {
   var repCountingMode: RepCountingMode {
     get { repCountingModeRaw.flatMap(RepCountingMode.init(rawValue:)) ?? .standard }
     set { repCountingModeRaw = newValue.rawValue }
+  }
+
+  var hasDumbbellArmTotalReminder: Bool {
+    dumbbellLoadReminderEnabled
+      ?? (equipment.trimmingCharacters(in: .whitespacesAndNewlines)
+        .caseInsensitiveCompare("dumbbell") == .orderedSame)
   }
 
   var targetLabel: String { unit.targetLabel(repCountingMode: repCountingMode) }
@@ -648,6 +663,9 @@ final class ExerciseLog {
   var unitRaw: String
   var sortOrder: Int
   var isBilateral: Bool = false
+  // Retained for lightweight migration from earlier builds; the tappable callout no longer reads
+  // or writes an arm count, and its display mode is transient view state.
+  var dumbbellArmCount: Int?
   @Transient private var cachedMasterExercise: Exercise? = nil
   @Relationship(deleteRule: .cascade) var participants: [ParticipantLog]
 
@@ -691,6 +709,16 @@ final class ExerciseLog {
 
   var unit: TrackingUnit {
     masterExercise?.unit ?? TrackingUnit(rawValue: unitRaw) ?? .pounds
+  }
+
+  var usesPerDumbbellLoad: Bool {
+    masterExercise?.equipment.trimmingCharacters(in: .whitespacesAndNewlines)
+      .caseInsensitiveCompare("dumbbell") == .orderedSame
+  }
+
+  var hasDumbbellArmTotalReminder: Bool {
+    guard unit == .pounds || unit == .kilograms else { return false }
+    return masterExercise?.hasDumbbellArmTotalReminder ?? false
   }
 
   var defaultTarget: Int { masterExercise?.defaultTarget ?? WorkoutPreferences.defaultReps }
@@ -881,12 +909,15 @@ final class WorkoutSet {
   }
 
   func summary(
-    participant: ParticipantLog, unit: TrackingUnit, repCountingMode: RepCountingMode = .standard
+    participant: ParticipantLog, unit: TrackingUnit, repCountingMode: RepCountingMode = .standard,
+    usesPerDumbbellLoad: Bool = false
   ) -> String {
     var parts: [String] = []
     if unit.isWeight {
       let load = measurement ?? participant.measurement
-      if load > 0 { parts.append("\(load.tidy) \(unit.label)") }
+      if load > 0 {
+        parts.append(unit.loadDescription(load, perDumbbell: usesPerDumbbellLoad))
+      }
       parts.append("\(reps) \(unit.targetLabel(repCountingMode: repCountingMode))")
     } else if unit == .seconds || unit == .minutes {
       let value = durationSeconds.map { $0 / (unit == .minutes ? 60 : 1) } ?? Double(reps)

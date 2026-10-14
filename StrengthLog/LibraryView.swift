@@ -425,6 +425,7 @@ private struct ExerciseEditorSheet: View {
   @State private var muscle = "other"
   @State private var unit: TrackingUnit = .pounds
   @State private var repCountingMode: RepCountingMode = .standard
+  @State private var dumbbellReminderOverride: Bool?
   @State private var instructions = ""
 
   private static let muscles = [
@@ -455,6 +456,7 @@ private struct ExerciseEditorSheet: View {
     _muscle = State(initialValue: exercise.primaryMuscle)
     _unit = State(initialValue: exercise.unit)
     _repCountingMode = State(initialValue: exercise.repCountingMode)
+    _dumbbellReminderOverride = State(initialValue: exercise.dumbbellLoadReminderEnabled)
     _instructions = State(initialValue: exercise.instructions)
   }
 
@@ -467,6 +469,7 @@ private struct ExerciseEditorSheet: View {
     _muscle = State(initialValue: source.primaryMuscle)
     _unit = State(initialValue: source.unit)
     _repCountingMode = State(initialValue: source.repCountingMode)
+    _dumbbellReminderOverride = State(initialValue: source.dumbbellLoadReminderEnabled)
     _instructions = State(initialValue: source.instructions)
   }
 
@@ -500,6 +503,16 @@ private struct ExerciseEditorSheet: View {
     }
   }
 
+  private var showsDumbbellReminderSetting: Bool {
+    unit == .pounds || unit == .kilograms
+  }
+
+  private var effectiveDumbbellReminderSetting: Bool {
+    dumbbellReminderOverride
+      ?? (equipment.trimmingCharacters(in: .whitespacesAndNewlines)
+        .caseInsensitiveCompare("dumbbell") == .orderedSame)
+  }
+
   var body: some View {
     NavigationStack {
       Form {
@@ -528,6 +541,19 @@ private struct ExerciseEditorSheet: View {
               ForEach(RepCountingMode.allCases) { Text($0.title).tag($0) }
             }
             .accessibilityIdentifier("exercise-rep-counting-picker")
+          }
+          if showsDumbbellReminderSetting {
+            Toggle(
+              "Per-arm / total reminder",
+              isOn: Binding(
+                get: { effectiveDumbbellReminderSetting },
+                set: { dumbbellReminderOverride = $0 }
+              )
+            )
+            .accessibilityIdentifier("exercise-dumbbell-reminder-toggle")
+            Text("Adds a tappable per-arm and both-arms total reminder during workouts.")
+              .font(.caption)
+              .foregroundStyle(.secondary)
           }
         } header: {
           Text("Workout logging")
@@ -636,6 +662,7 @@ private struct ExerciseEditorSheet: View {
         exercise.primaryMuscle = muscle
         exercise.unit = unit
         exercise.repCountingMode = repCountingMode
+        exercise.dumbbellLoadReminderEnabled = dumbbellReminderOverride
         exercise.instructions = instructions.trimmingCharacters(in: .whitespacesAndNewlines)
         try updateReferences(to: exercise, previouslyNamed: previousName)
       } else {
@@ -649,6 +676,7 @@ private struct ExerciseEditorSheet: View {
           primaryMuscle: muscle,
           unit: unit,
           repCountingMode: repCountingMode,
+          dumbbellLoadReminderEnabled: dumbbellReminderOverride,
           instructions: instructions.trimmingCharacters(in: .whitespacesAndNewlines),
           imagePath: source?.imagePath,
           additionalImagePaths: Array(source?.imagePaths.dropFirst() ?? []),
