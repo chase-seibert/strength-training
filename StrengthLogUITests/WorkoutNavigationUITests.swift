@@ -1316,8 +1316,8 @@ final class WorkoutNavigationUITests: XCTestCase {
   func testWorkoutReorderScreenSavesAndCancels() {
     app.terminate()
     app.launchArguments = [
-      "-basicWorkoutFixture", "-activeWorkoutFixture", "-activeWorkoutNavigationFixture",
-      "-validatePersistenceFixture",
+      "-basicWorkoutFixture", "-activeWorkoutFixture", "-activeWorkoutReorderFixture",
+      "-validatePersistenceFixture", "-validateCoordinatedExerciseOrderOnly",
     ]
     app.launch()
 
@@ -1359,6 +1359,10 @@ final class WorkoutNavigationUITests: XCTestCase {
     }
     XCTAssertFalse(app.textFields["Pounds for Alex"].exists)
     XCTAssertFalse(app.scrollViews["sticky-participant-picker"].exists)
+    XCTAssertTrue(
+      app.staticTexts[
+        "Saved order applies to this workout and future workouts from this routine."
+      ].exists)
     let screenshot = XCTAttachment(screenshot: app.screenshot())
     screenshot.name = "compact-workout-reorder"
     screenshot.lifetime = .keepAlways
@@ -1366,6 +1370,9 @@ final class WorkoutNavigationUITests: XCTestCase {
     moveCurlToTop()
     app.buttons["cancel-workout-reorder"].tap()
 
+    openReorder()
+    XCTAssertEqual(row("Bench Press").value as? String, "Position 1 of 3")
+    app.buttons["save-workout-reorder"].tap()
     openReorder()
     XCTAssertEqual(row("Bench Press").value as? String, "Position 1 of 3")
     moveCurlToTop()
@@ -1383,6 +1390,22 @@ final class WorkoutNavigationUITests: XCTestCase {
         "Remove completed Bench Press set 1")
     ).firstMatch
     XCTAssertTrue(preservedSet.waitForExistence(timeout: 3))
+
+    let completeWorkout = app.buttons["Complete Workout"]
+    for _ in 0..<8 {
+      if completeWorkout.isHittable { break }
+      app.collectionViews.firstMatch.swipeUp()
+    }
+    XCTAssertTrue(completeWorkout.isHittable)
+    completeWorkout.tap()
+    XCTAssertTrue(app.staticTexts["Workout complete"].waitForExistence(timeout: 5))
+    app.buttons["workout-celebration-done"].tap()
+    let startRoutine = app.buttons["start-routine-Basic Workout"]
+    XCTAssertTrue(startRoutine.waitForExistence(timeout: 5))
+    startRoutine.tap()
+    XCTAssertTrue(app.otherElements["active-workout-screen"].waitForExistence(timeout: 5))
+    XCTAssertTrue(app.navigationBars["Fixture Custom Curl"].waitForExistence(timeout: 5))
+    XCTAssertTrue(app.buttons["next-exercise-Bench Press"].waitForExistence(timeout: 3))
   }
 
   func testCalendarOpensEveryWorkoutForSelectedDay() {

@@ -149,6 +149,14 @@
                   sets: (0..<5).map { SetTemplate(sortOrder: $0, reps: 8) })
               })
           })
+      let usesActiveWorkoutReorderFixture = ProcessInfo.processInfo.arguments.contains(
+        "-activeWorkoutReorderFixture")
+      if usesActiveWorkoutReorderFixture {
+        basicRoutine.exercises.append(
+          RoutineExercise.make(exercise: squat, sortOrder: basicRoutine.exercises.count))
+        basicRoutine.exercises.append(
+          RoutineExercise.make(exercise: customExercise, sortOrder: basicRoutine.exercises.count))
+      }
       if ProcessInfo.processInfo.arguments.contains("-restTimerFixture") {
         basicRoutine.restDurationSeconds = 60
       }

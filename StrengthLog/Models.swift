@@ -579,11 +579,102 @@ final class WorkoutSession {
     }
   }
 
+  /// Saves an active session's order to both its independent logs and the owning routine.
+  /// Baseline child identities reject drafts that became stale while the reorder screen was open.
+  func saveExerciseOrder(
+    _ exerciseIDs: [UUID],
+    to routine: Routine,
+    expectedSessionOrder: [UUID],
+    expectedRoutineOrder: [UUID],
+    in context: ModelContext,
+    saveOperation: (() throws -> Void)? = nil
+  ) throws {
+    let sessionByID = Dictionary(
+      exercises.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+    guard exerciseIDs.count == sessionByID.count,
+      Set(exerciseIDs).count == exerciseIDs.count,
+      Set(exerciseIDs) == Set(sessionByID.keys)
+    else { throw ExerciseOrderError.exercisesChanged }
+
+    // A Save with no movement must not overwrite a routine changed elsewhere.
+    if exerciseIDs == expectedSessionOrder { return }
+
+    guard routine.modelContext === context,
+      routine.deletedAt == nil,
+      routine.id == self.routineID
+    else { throw ExerciseOrderError.routineUnavailable }
+
+    let currentSessionOrder = exercises.sorted { $0.sortOrder < $1.sortOrder }.map(\.id)
+    let routineEntries = routine.exercises.sorted { $0.sortOrder < $1.sortOrder }
+    let currentRoutineOrder = routineEntries.map(\.id)
+    guard currentSessionOrder == expectedSessionOrder,
+      currentRoutineOrder == expectedRoutineOrder,
+      Set(expectedSessionOrder).count == expectedSessionOrder.count,
+      Set(expectedRoutineOrder).count == expectedRoutineOrder.count
+    else { throw ExerciseOrderError.exercisesChanged }
+
+    guard routineEntries.count == exercises.count else {
+      throw ExerciseOrderError.routineMembershipChanged
+    }
+
+    let routineByLogID = try Self.uniqueRoutineMapping(
+      logs: exercises, entries: routineEntries)
+    let originalSessionOrder = exercises.map { ($0, $0.sortOrder) }
+    let originalRoutineOrder = routineEntries.map { ($0, $0.sortOrder) }
+    for (index, id) in exerciseIDs.enumerated() {
+      sessionByID[id]?.sortOrder = index
+      routineByLogID[id]?.sortOrder = index
+    }
+    do {
+      if let saveOperation {
+        try saveOperation()
+      } else {
+        try context.save()
+      }
+    } catch {
+      for (log, sortOrder) in originalSessionOrder { log.sortOrder = sortOrder }
+      for (entry, sortOrder) in originalRoutineOrder { entry.sortOrder = sortOrder }
+      throw error
+    }
+  }
+
+  private static func uniqueRoutineMapping(
+    logs: [ExerciseLog], entries: [RoutineExercise]
+  ) throws -> [UUID: RoutineExercise] {
+    var mapping: [UUID: RoutineExercise] = [:]
+    var matchedEntries = Set<UUID>()
+    for log in logs {
+      let candidates = entries.filter { entry in
+        if let logID = log.exerciseID, let entryID = entry.exerciseID {
+          return logID == entryID
+        }
+        return log.exerciseName.caseInsensitiveCompare(entry.exerciseName) == .orderedSame
+      }
+      guard candidates.count == 1, let entry = candidates.first,
+        matchedEntries.insert(entry.id).inserted
+      else { throw ExerciseOrderError.routineMembershipChanged }
+      mapping[log.id] = entry
+    }
+    guard matchedEntries.count == entries.count else {
+      throw ExerciseOrderError.routineMembershipChanged
+    }
+    return mapping
+  }
+
   private enum ExerciseOrderError: LocalizedError {
     case exercisesChanged
+    case routineUnavailable
+    case routineMembershipChanged
 
     var errorDescription: String? {
-      "The exercises in this workout changed. Cancel and reopen Reorder to try again."
+      switch self {
+      case .exercisesChanged:
+        "The exercises changed while Reorder was open. Cancel and reopen it to try again."
+      case .routineUnavailable:
+        "This routine is no longer available. Reopen the workout before saving its order."
+      case .routineMembershipChanged:
+        "This workout and routine no longer contain the same exercises. Update the routine, then reopen Reorder."
+      }
     }
   }
 

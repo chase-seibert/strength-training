@@ -105,8 +105,13 @@
       guard routineNames == Set(["Core", "Core (2)", "Core (3)"]) else {
         throw SmokeError.routineCollision
       }
+      if ProcessInfo.processInfo.arguments.contains("-validateCoordinatedExerciseOrderOnly") {
+        try verifyCoordinatedExerciseOrderPersistence(schema: schema)
+        return
+      }
       try verifyMasterUnitPersistence(schema: schema)
       try verifyCatalogDefaultsAndCorrections(schema: schema)
+      try verifyCoordinatedExerciseOrderPersistence(schema: schema)
       try verifyRepCountingPersistence(schema: schema)
       try verifySideTotalRepsReminderDefaults(schema: schema)
       try verifyWorkoutDurations()
@@ -487,6 +492,138 @@
         guard let log = reordered.exercises.first(where: { $0.exerciseID == exerciseID }),
           let set = log.participants.first?.sets.first,
           set.id == setIDs[index], set.reps == 17, set.measurement == 42, set.isCompleted
+        else { throw SmokeError.exerciseOrder }
+      }
+    }
+
+    private static func verifyCoordinatedExerciseOrderPersistence(schema: Schema) throws {
+      let directory = FileManager.default.temporaryDirectory.appendingPathComponent(
+        UUID().uuidString)
+      try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+      defer { try? FileManager.default.removeItem(at: directory) }
+      let configuration = ModelConfiguration(
+        schema: schema, url: directory.appendingPathComponent("order.store"),
+        cloudKitDatabase: .none)
+      let routineID = UUID()
+      let sessionID = UUID()
+      let exerciseIDs = [UUID(), UUID(), UUID()]
+      let logIDs = [UUID(), UUID(), UUID()]
+      let entryIDs = [UUID(), UUID(), UUID()]
+      let setIDs = [UUID(), UUID(), UUID()]
+      let originalSessionOrder = logIDs
+      let newSessionOrder = [logIDs[2], logIDs[0], logIDs[1]]
+      let originalRoutineOrder = entryIDs
+
+      do {
+        let container = try ModelContainer(for: schema, configurations: [configuration])
+        let context = container.mainContext
+        let exercises = (0..<3).map { index in
+          Exercise(
+            name: "Order Exercise \(index)", category: "strength", equipment: "barbell",
+            primaryMuscle: "other", unit: .pounds, instructions: "")
+        }
+        for (index, exercise) in exercises.enumerated() { exercise.id = exerciseIDs[index] }
+        let entries = exercises.enumerated().map { index, exercise in
+          let entry = RoutineExercise.make(exercise: exercise, sortOrder: index)
+          entry.id = entryIDs[index]
+          return entry
+        }
+        let routine = Routine(name: "Order Test", exercises: entries)
+        routine.id = routineID
+        let logs = exercises.enumerated().map { index, exercise in
+          let set = WorkoutSet(
+            sortOrder: 0, reps: 8 + index, isCompleted: index == 0,
+            measurement: Double(100 + index))
+          set.id = setIDs[index]
+          let log = ExerciseLog(
+            exerciseID: exercise.id, exerciseName: exercise.name, unit: .pounds,
+            sortOrder: index,
+            participants: [ParticipantLog(participantName: "Tester", measurement: 100, sets: [set])]
+          )
+          log.id = logIDs[index]
+          return log
+        }
+        let session = WorkoutSession(
+          routineID: routine.id, participantNames: ["Tester"], exercises: logs)
+        session.id = sessionID
+        context.insert(routine)
+        context.insert(session)
+        for exercise in exercises { context.insert(exercise) }
+        let otherRoutine = Routine(
+          name: "Other Order Test",
+          exercises: exercises.enumerated().map {
+            RoutineExercise.make(exercise: $0.element, sortOrder: $0.offset)
+          })
+        context.insert(otherRoutine)
+        try context.save()
+
+        let baselineRoutineOrder = entries.sorted { $0.sortOrder < $1.sortOrder }.map(\.id)
+        let firstSet = logs[0].participants[0].sets[0]
+        firstSet.reps = 19
+        var rejectedPersistence = false
+        do {
+          try session.saveExerciseOrder(
+            newSessionOrder, to: routine, expectedSessionOrder: originalSessionOrder,
+            expectedRoutineOrder: baselineRoutineOrder, in: context,
+            saveOperation: { throw SmokeError.exerciseOrder })
+        } catch {
+          rejectedPersistence = true
+        }
+        guard rejectedPersistence,
+          session.exercises.sorted(by: { $0.sortOrder < $1.sortOrder }).map(\.id)
+            == originalSessionOrder,
+          routine.exercises.sorted(by: { $0.sortOrder < $1.sortOrder }).map(\.id)
+            == originalRoutineOrder,
+          firstSet.reps == 19
+        else { throw SmokeError.exerciseOrder }
+        firstSet.reps = 8
+        try context.save()
+
+        entries[0].sortOrder = 1
+        entries[1].sortOrder = 0
+        var rejectedStaleDraft = false
+        do {
+          try session.saveExerciseOrder(
+            newSessionOrder, to: routine, expectedSessionOrder: originalSessionOrder,
+            expectedRoutineOrder: baselineRoutineOrder, in: context)
+        } catch {
+          rejectedStaleDraft = true
+        }
+        guard rejectedStaleDraft else { throw SmokeError.exerciseOrder }
+        entries[0].sortOrder = 0
+        entries[1].sortOrder = 1
+        try context.save()
+        try session.saveExerciseOrder(
+          newSessionOrder, to: routine, expectedSessionOrder: originalSessionOrder,
+          expectedRoutineOrder: baselineRoutineOrder, in: context)
+        guard
+          session.exercises.sorted(by: { $0.sortOrder < $1.sortOrder }).map(\.id)
+            == newSessionOrder,
+          routine.exercises.sorted(by: { $0.sortOrder < $1.sortOrder }).map(\.id)
+            == [entryIDs[2], entryIDs[0], entryIDs[1]]
+        else { throw SmokeError.exerciseOrder }
+      }
+
+      let reopened = try ModelContainer(for: schema, configurations: [configuration])
+      let context = reopened.mainContext
+      let sessions = try context.fetch(FetchDescriptor<WorkoutSession>())
+      let routines = try context.fetch(FetchDescriptor<Routine>())
+      guard let session = sessions.first(where: { $0.id == sessionID }),
+        let routine = routines.first(where: { $0.id == routineID }),
+        session.exercises.sorted(by: { $0.sortOrder < $1.sortOrder }).map(\.id)
+          == newSessionOrder,
+        routine.exercises.sorted(by: { $0.sortOrder < $1.sortOrder }).map(\.id)
+          == [entryIDs[2], entryIDs[0], entryIDs[1]],
+        let otherRoutine = routines.first(where: { $0.name == "Other Order Test" }),
+        otherRoutine.exercises.sorted(by: { $0.sortOrder < $1.sortOrder })
+          .compactMap(\.exerciseID) == exerciseIDs
+      else { throw SmokeError.exerciseOrder }
+      for index in exerciseIDs.indices {
+        guard let log = session.exercises.first(where: { $0.id == logIDs[index] }),
+          log.exerciseID == exerciseIDs[index],
+          let set = log.participants.first?.sets.first,
+          set.id == setIDs[index], set.reps == 8 + index,
+          set.measurement == Double(100 + index), set.isCompleted == (index == 0)
         else { throw SmokeError.exerciseOrder }
       }
     }

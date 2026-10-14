@@ -543,7 +543,7 @@ struct ActiveWorkoutView: View {
       if let detailExercise { ExerciseDetailView(exercise: detailExercise) }
     }
     .navigationDestination(isPresented: $showingReorder) {
-      WorkoutExerciseReorderView(session: session)
+      WorkoutExerciseReorderView(session: session, routine: activeRoutine)
     }
     .environment(\.scheduleWorkoutSave, scheduleSave)
     .onAppear {
@@ -1238,14 +1238,21 @@ private struct WorkoutExerciseReorderView: View {
   @Environment(\.dismiss) private var dismiss
   @Environment(\.modelContext) private var context
   let session: WorkoutSession
+  let routine: Routine?
+  private let initialSessionOrder: [UUID]
+  private let initialRoutineOrder: [UUID]
   @State private var rows: [Row]
   @State private var saveError: String?
 
-  init(session: WorkoutSession) {
+  init(session: WorkoutSession, routine: Routine?) {
     self.session = session
+    self.routine = routine
+    initialSessionOrder = session.exercises.sorted { $0.sortOrder < $1.sortOrder }.map(\.id)
+    initialRoutineOrder = routine?.exercises.sorted { $0.sortOrder < $1.sortOrder }.map(\.id) ?? []
     _rows = State(
-      initialValue: session.exercises.sorted { $0.sortOrder < $1.sortOrder }
-        .map { Row(id: $0.id, name: $0.exerciseName) })
+      initialValue: session.exercises.sorted { $0.sortOrder < $1.sortOrder }.map {
+        Row(id: $0.id, name: $0.exerciseName)
+      })
   }
 
   var body: some View {
@@ -1276,7 +1283,7 @@ private struct WorkoutExerciseReorderView: View {
         Text("\(rows.count) exercises · Drag handles to reorder")
           .textCase(nil)
       } footer: {
-        Text("Changes apply only to this workout.")
+        Text("Saved order applies to this workout and future workouts from this routine.")
       }
     }
     .listStyle(.plain)
@@ -1308,8 +1315,23 @@ private struct WorkoutExerciseReorderView: View {
   }
 
   private func save() {
+    let order = rows.map(\.id)
+    guard order != initialSessionOrder else {
+      dismiss()
+      return
+    }
     do {
-      try session.saveExerciseOrder(rows.map(\.id), in: context)
+      guard let routine else {
+        throw NSError(
+          domain: "WorkoutExerciseReorder", code: 1,
+          userInfo: [
+            NSLocalizedDescriptionKey:
+              "This routine is no longer available. Reopen the workout before saving its order."
+          ])
+      }
+      try session.saveExerciseOrder(
+        order, to: routine, expectedSessionOrder: initialSessionOrder,
+        expectedRoutineOrder: initialRoutineOrder, in: context)
       dismiss()
     } catch {
       saveError = error.localizedDescription
