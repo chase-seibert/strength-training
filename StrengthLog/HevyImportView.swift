@@ -799,7 +799,9 @@ enum HevyImporter {
         unit: localExercise.unit,
         sortOrder: exerciseIndex,
         participants: [
-          ParticipantLog(participantName: person.name, measurement: measurement, sets: sets)
+          ParticipantLog(
+            participantName: person.name, measurement: measurement, sets: sets,
+            personID: person.id)
         ],
         notes: sourceExercise.notes,
         supersetID: sourceExercise.supersetID)

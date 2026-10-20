@@ -570,6 +570,7 @@ struct ActiveWorkoutView: View {
         isExerciseTimerRunning || exerciseTimerPreRollEndDate != nil
       loadSupportingDataIfNeeded()
       syncLiveActivity()
+      publishKidsWatchSnapshot()
     }
     .onDisappear {
       #if DEBUG
@@ -588,6 +589,27 @@ struct ActiveWorkoutView: View {
     }
     .onChange(of: session.exercises.map(\.id)) { _, _ in
       loadRelevantCatalogExercises()
+    }
+    .onChange(of: currentExerciseID) { _, _ in
+      publishKidsWatchSnapshot()
+    }
+    .onChange(of: session.exerciseTimerEndDate) { _, _ in
+      publishKidsWatchSnapshot()
+    }
+    .onReceive(NotificationCenter.default.publisher(for: .pairedWatchSetCompletionRequested)) {
+      note in
+      guard let message = note.object as? [String: Any],
+        let sessionID = (message["sessionID"] as? String).flatMap(UUID.init(uuidString:)),
+        let exerciseID = (message["exerciseID"] as? String).flatMap(UUID.init(uuidString:)),
+        let setNumber = message["setNumber"] as? Int
+      else { return }
+      completeSetForEveryoneFromWatch(
+        sessionID: sessionID,
+        exerciseID: exerciseID,
+        setNumber: setNumber)
+    }
+    .onChange(of: session.isActive) { _, isActive in
+      if isActive { publishKidsWatchSnapshot() } else { clearKidsWatchSnapshot() }
     }
     .onChange(of: session.exercises.map { $0.unit.rawValue + $0.repCountingMode.rawValue }) {
       _, _ in
@@ -1141,12 +1163,16 @@ struct ActiveWorkoutView: View {
         let setCount =
           exercise.participants.map(\.sets.count).max()
           ?? WorkoutPreferences.defaultSets
+        let matchingProfiles = people.filter {
+          $0.name.caseInsensitiveCompare(name) == .orderedSame
+        }
         exercise.participants.append(
           ParticipantLog(
             participantName: name, measurement: 0,
             sets: (0..<setCount).map {
               WorkoutSet(sortOrder: $0, reps: exercise.defaultTarget)
-            }))
+            },
+            personID: matchingProfiles.count == 1 ? matchingProfiles.first?.id : nil))
       }
       saveNow()
     }
@@ -1204,6 +1230,98 @@ struct ActiveWorkoutView: View {
     }
   }
 
+  private var kidsWatchExercise: ExerciseLog? {
+    if let currentExerciseID,
+      let selected = orderedExercises.first(where: { $0.id == currentExerciseID })
+    {
+      return selected
+    }
+    return orderedExercises.first
+  }
+
+  private func publishKidsWatchSnapshot() {
+    guard session.isActive, let exercise = kidsWatchExercise else { return }
+    if KidsWatchSnapshot.bindUnambiguousLegacyPeople(in: session, people: people) {
+      do {
+        try context.save()
+        ProgressWidgetPublication.schedule()
+      } catch {
+        return
+      }
+    }
+    let history = recentKidsWatchHistory()
+    let snapshot = KidsWatchSnapshot.make(
+      session: session,
+      exercise: exercise,
+      people: people,
+      history: history,
+      routines: routines)
+    PairedWatchWorkoutSync.update(snapshot)
+    Task {
+      for person in people {
+        guard let personalSnapshot = snapshot.forPerson(person.id) else {
+          try? await KidsWatchCloudStore.clear(personID: person.id)
+          continue
+        }
+        try? await KidsWatchCloudStore.publish(personalSnapshot, for: person.id)
+      }
+    }
+  }
+
+  private func completeSetForEveryoneFromWatch(
+    sessionID: UUID,
+    exerciseID: UUID,
+    setNumber: Int
+  ) {
+    guard session.isActive,
+      session.id == sessionID,
+      setNumber > 0,
+      let exercise = kidsWatchExercise,
+      exercise.id == exerciseID
+    else { return }
+
+    var didChange = false
+    for participantName in session.participantNames {
+      guard
+        let participant = exercise.participants.first(where: {
+          $0.participantName.caseInsensitiveCompare(participantName) == .orderedSame
+        }),
+        let set = participant.orderedSets.first(where: { $0.sortOrder == setNumber - 1 }),
+        !set.isSkipped,
+        !set.isCompleted
+      else { continue }
+      set.isCompleted = true
+      set.isLeftCompleted = true
+      set.isRightCompleted = true
+      set.completedAt = .now
+      didChange = true
+    }
+    if didChange {
+      scheduleSave()
+      saveNow()
+    }
+  }
+
+  private func clearKidsWatchSnapshot() {
+    let progress = KidsWatchSnapshot.makeProgressSummary(
+      history: recentKidsWatchHistory(), people: people, routines: routines)
+    PairedWatchWorkoutSync.update(nil, progress: progress)
+    Task {
+      for person in people {
+        try? await KidsWatchCloudStore.clear(
+          personID: person.id, progress: progress.forPerson(person.id))
+      }
+    }
+  }
+
+  private func recentKidsWatchHistory() -> [WorkoutSession] {
+    let cutoff = Calendar.current.date(byAdding: .weekOfYear, value: -12, to: .now) ?? .distantPast
+    let descriptor = FetchDescriptor<WorkoutSession>(
+      predicate: #Predicate { $0.deletedAt == nil && $0.startedAt >= cutoff },
+      sortBy: [SortDescriptor(\.startedAt, order: .reverse)])
+    return (try? context.fetch(descriptor)) ?? []
+  }
+
   private func scheduleSave() {
     if !hasPendingSave { hasPendingSave = true }
   }
@@ -1223,6 +1341,7 @@ struct ActiveWorkoutView: View {
       #endif
       ProgressWidgetPublication.schedule()
       hasPendingSave = false
+      publishKidsWatchSnapshot()
     } catch {
       hasPendingSave = true
     }

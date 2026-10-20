@@ -844,6 +844,7 @@ enum WorkoutSessionStarter {
 
     let knownNames = orderedKnownNames(
       history: routineHistory, routine: routine, orderedPeople: orderedPeople)
+    let profilesByName = Dictionary(grouping: orderedPeople, by: { $0.name.lowercased() })
     let logs = routine.exercises.sorted(by: { $0.sortOrder < $1.sortOrder }).map { item in
       let master =
         catalog.first(where: { $0.id == item.exerciseID })
@@ -861,7 +862,9 @@ enum WorkoutSessionStarter {
       let participantLogs = knownNames.map {
         participantLog(
           for: $0, exercise: item, history: exerciseHistory,
-          defaultTarget: master?.defaultTarget ?? WorkoutPreferences.defaultReps)
+          defaultTarget: master?.defaultTarget ?? WorkoutPreferences.defaultReps,
+          personID: profilesByName[$0.lowercased()]?.count == 1
+            ? profilesByName[$0.lowercased()]?.first?.id : nil)
       }
       equalizeSetCounts(participantLogs)
       return ExerciseLog(
@@ -909,7 +912,8 @@ enum WorkoutSessionStarter {
   }
 
   private static func participantLog(
-    for name: String, exercise: RoutineExercise, history: [WorkoutSession], defaultTarget: Int
+    for name: String, exercise: RoutineExercise, history: [WorkoutSession], defaultTarget: Int,
+    personID: UUID?
   ) -> ParticipantLog {
     let previous = history.lazy
       .flatMap(\.exercises)
@@ -936,7 +940,8 @@ enum WorkoutSessionStarter {
               distanceMiles: set.distanceMiles, durationSeconds: set.durationSeconds, rpe: set.rpe,
               setType: set.setTypeRaw, leftReps: set.leftReps, rightReps: set.rightReps,
               isLeftCompleted: false, isRightCompleted: false)
-          })
+          },
+        personID: previous.personID ?? personID)
     }
     if let legacy = exercise.prescriptions.first(where: {
       $0.participantName.caseInsensitiveCompare(name) == .orderedSame
@@ -946,13 +951,15 @@ enum WorkoutSessionStarter {
         measurement: legacy.measurement,
         sets: legacy.sets.sorted(by: { $0.sortOrder < $1.sortOrder }).map {
           WorkoutSet(sortOrder: $0.sortOrder, reps: $0.reps)
-        })
+        },
+        personID: personID)
     }
     return ParticipantLog(
       participantName: name, measurement: 0,
       sets: (0..<WorkoutPreferences.defaultSets).map {
         WorkoutSet(sortOrder: $0, reps: defaultTarget)
-      })
+      },
+      personID: personID)
   }
 
   private static func matches(_ log: ExerciseLog, _ exercise: RoutineExercise) -> Bool {

@@ -1,3 +1,4 @@
+import CloudKit
 import HealthKit
 import SwiftData
 import SwiftUI
@@ -448,6 +449,9 @@ struct SettingsView: View {
 struct PersonEditor: View {
   @Environment(\.dismiss) private var dismiss
   @Bindable var person: PersonProfile
+  @State private var kidsWatchShare: CKShare?
+  @State private var isPreparingKidsWatchShare = false
+  @State private var kidsWatchShareError: String?
   private let colors = ["FF5A45", "59A8FA", "45D1A8", "A778F5", "F5B942", "E96BA8"]
 
   var body: some View {
@@ -471,6 +475,25 @@ struct PersonEditor: View {
         }
       }
       Section {
+        Button {
+          prepareKidsWatchShare()
+        } label: {
+          if isPreparingKidsWatchShare {
+            SwiftUI.ProgressView("Preparing link…")
+          } else {
+            Label("Share with Kids Watch", systemImage: "applewatch")
+          }
+        }
+        .disabled(isPreparingKidsWatchShare)
+        Text(
+          "Create one private link for \(person.name). Their watch shows this person’s current exercise and set details whenever they’re active in a workout."
+        )
+        .font(.footnote)
+        .foregroundStyle(.secondary)
+      } header: {
+        Text("Kids Watch")
+      }
+      Section {
         Button("Archive person", role: .destructive) {
           person.isArchived = true
           dismiss()
@@ -479,6 +502,39 @@ struct PersonEditor: View {
     }
     .navigationTitle(person.name)
     .navigationBarTitleDisplayMode(.inline)
+    .sheet(
+      isPresented: Binding(
+        get: { kidsWatchShare != nil },
+        set: { if !$0 { kidsWatchShare = nil } }
+      )
+    ) {
+      if let kidsWatchShare {
+        KidsWatchShareSheet(share: kidsWatchShare)
+      }
+    }
+    .alert(
+      "Kids Watch Sharing",
+      isPresented: Binding(
+        get: { kidsWatchShareError != nil },
+        set: { if !$0 { kidsWatchShareError = nil } }
+      )
+    ) {
+      Button("OK", role: .cancel) { kidsWatchShareError = nil }
+    } message: {
+      Text(kidsWatchShareError ?? "")
+    }
+  }
+
+  private func prepareKidsWatchShare() {
+    isPreparingKidsWatchShare = true
+    Task {
+      defer { isPreparingKidsWatchShare = false }
+      do {
+        kidsWatchShare = try await KidsWatchCloudStore.share(for: person.id, name: person.name)
+      } catch {
+        kidsWatchShareError = error.localizedDescription
+      }
+    }
   }
 }
 

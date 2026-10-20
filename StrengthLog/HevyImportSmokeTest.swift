@@ -18,7 +18,8 @@
         WorkoutSet.self,
         ExternalExerciseMapping.self,
       ])
-      let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+      let configuration = ModelConfiguration(
+        schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
       let container = try ModelContainer(for: schema, configurations: [configuration])
       let context = container.mainContext
       let person = PersonProfile(name: "Import Tester", colorHex: "FF5A45")
@@ -280,7 +281,9 @@
     private static func verifySideTotalRepsReminderDefaults(schema: Schema) throws {
       let container = try ModelContainer(
         for: schema,
-        configurations: [ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)])
+        configurations: [
+          ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
+        ])
       let context = container.mainContext
       let cableTwists = Exercise(
         sourceID: "Cable_Russian_Twists", name: "Cable Russian Twists", category: "strength",

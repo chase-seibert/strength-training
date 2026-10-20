@@ -7,14 +7,16 @@ BUNDLE_ID := com.cseibert.StrengthLog
 
 SIM_DEVICE_NAME ?= iPhone 17 Pro
 SIM_DESTINATION ?= platform=iOS Simulator,name=$(SIM_DEVICE_NAME)
+SIMULATOR_APP ?= $(shell xcode-select -p)/Applications/Simulator.app
 UI_TEST_FILTER ?= StrengthLogUITests
 UI_DERIVED_DATA ?= build-ui-tests
 GENERIC_SIM_DESTINATION := generic/platform=iOS Simulator
 
 DEVICE_ID ?= 00008150-000E41422E40401C
+WATCH_DEVICE_ID := 00008310-000A18983C40E01E
 DEVELOPMENT_TEAM ?= 96NAC4VTEN
 
-.PHONY: metal-setup confetti-ui-test workout-profile workout-profile-graph rep-counting-ui-test exercise-unit-ui-test exercise-timer-ui-test cross-routine-history-ui-test pr-sticker-ui-test progress-widget-check setup build run format lint test catalog-check exercise-images-check bundle-exercise-images hevy-import-check sim-build sim-launch workout-navigation-ui-test active-workout-regression-ui-test active-workout-performance-ui-test phone-build phone-install phone-launch phone-deploy clean
+.PHONY: metal-setup watch-build watch-deploy confetti-ui-test workout-profile workout-profile-graph rep-counting-ui-test exercise-unit-ui-test exercise-timer-ui-test cross-routine-history-ui-test pr-sticker-ui-test progress-widget-check setup build run format lint test catalog-check exercise-images-check bundle-exercise-images hevy-import-check sim-build sim-launch workout-navigation-ui-test active-workout-regression-ui-test active-workout-performance-ui-test phone-build phone-install phone-launch phone-deploy clean
 
 setup: catalog-check exercise-images-check
 
@@ -26,11 +28,11 @@ build: sim-build
 run: sim-launch
 
 format:
-	xcrun swift-format format --in-place --recursive StrengthLog StrengthLogUITests
+	xcrun swift-format format --in-place --recursive StrengthLog StrengthLogUITests KidsWatch
 
 lint: catalog-check exercise-images-check hevy-import-check
 	plutil -lint $(PROJECT)/project.pbxproj
-	xcrun swift-format lint --recursive StrengthLog StrengthLogUITests
+	xcrun swift-format lint --recursive StrengthLog StrengthLogUITests KidsWatch
 
 test: catalog-check exercise-images-check progress-widget-check sim-build
 
@@ -66,8 +68,31 @@ sim-build:
 	  -configuration $(CONFIGURATION) \
 	  -destination '$(GENERIC_SIM_DESTINATION)' \
 	  -derivedDataPath $(DERIVED_DATA) \
-	  CODE_SIGNING_ALLOWED=NO \
 	  build
+
+watch-build:
+	xcodebuild \
+	  -project $(PROJECT) \
+	  -scheme KidsWatch \
+	  -configuration $(CONFIGURATION) \
+	  -destination 'generic/platform=watchOS Simulator' \
+	  -derivedDataPath $(DERIVED_DATA) \
+	  build
+
+watch-deploy:
+	xcodebuild \
+	  -project $(PROJECT) \
+	  -scheme KidsWatch \
+	  -configuration $(CONFIGURATION) \
+	  -destination 'platform=watchOS,id=$(WATCH_DEVICE_ID)' \
+	  -derivedDataPath $(DERIVED_DATA) \
+	  CODE_SIGN_STYLE=Automatic \
+	  DEVELOPMENT_TEAM=$(DEVELOPMENT_TEAM) \
+	  -allowProvisioningUpdates \
+	  -allowProvisioningDeviceRegistration \
+	  build
+	xcrun devicectl device install app --device $(WATCH_DEVICE_ID) "$(DERIVED_DATA)/Build/Products/Debug-watchos/KidsWatch.app"
+	xcrun devicectl device process launch --device $(WATCH_DEVICE_ID) com.cseibert.StrengthLog.KidsWatch
 
 sim-launch: sim-build
 	@set -eu; \
@@ -79,8 +104,12 @@ sim-launch: sim-build
 	fi; \
 	xcrun simctl boot "$$UDID" >/dev/null 2>&1 || true; \
 	xcrun simctl bootstatus "$$UDID" -b; \
-	open -a Simulator --args -CurrentDeviceUDID "$$UDID"; \
-	xcrun simctl install "$$UDID" "$(DERIVED_DATA)/Build/Products/Debug-iphonesimulator/$(APP_NAME).app"; \
+	  if [ -d "$(SIMULATOR_APP)" ]; then \
+	    open -a "$(SIMULATOR_APP)" --args -CurrentDeviceUDID "$$UDID"; \
+	  else \
+	    echo "Simulator.app is not installed in this Xcode; continuing with simctl."; \
+	  fi; \
+	  xcrun simctl install "$$UDID" "$(DERIVED_DATA)/Build/Products/Debug-iphonesimulator/$(APP_NAME).app"; \
 	xcrun simctl launch "$$UDID" $(BUNDLE_ID)
 
 rep-counting-ui-test:

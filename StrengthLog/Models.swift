@@ -857,12 +857,16 @@ final class ExerciseLog {
 final class ParticipantLog {
   var id: UUID
   var participantName: String
+  // Stable link to PersonProfile when the participant was created from a unique profile.
+  // Optional so existing workout stores remain lightweight-migration safe.
+  var personID: UUID?
   var measurement: Double
   @Relationship(deleteRule: .cascade) var sets: [WorkoutSet]
 
-  init(participantName: String, measurement: Double, sets: [WorkoutSet]) {
+  init(participantName: String, measurement: Double, sets: [WorkoutSet], personID: UUID? = nil) {
     id = UUID()
     self.participantName = participantName
+    self.personID = personID
     self.measurement = measurement
     self.sets = sets
   }

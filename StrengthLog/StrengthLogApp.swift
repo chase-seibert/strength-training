@@ -99,6 +99,7 @@ enum HealthKitWorkoutRecorder {
 
 @main
 struct StrengthLogApp: App {
+  @UIApplicationDelegateAdaptor(KidsWatchShareApplicationDelegate.self) private var appDelegate
   @State private var importCoordinator = HevyImportCoordinator()
   @State private var storageError: String?
   @State private var widgetError: String?
@@ -125,7 +126,8 @@ struct StrengthLogApp: App {
       let usesBasicWorkoutFixture = false
     #endif
     var configuration = ModelConfiguration(
-      schema: schema, isStoredInMemoryOnly: usesBasicWorkoutFixture, groupContainer: .none)
+      schema: schema, isStoredInMemoryOnly: usesBasicWorkoutFixture, groupContainer: .none,
+      cloudKitDatabase: .none)
     #if DEBUG
       if ProcessInfo.processInfo.arguments.contains("-diskWorkoutPerformanceFixture") {
         // Fresh disposable SQLite store per launch, separate from all user data.
@@ -137,7 +139,7 @@ struct StrengthLogApp: App {
         } catch { fatalError("Unable to create performance store: \(error)") }
         configuration = ModelConfiguration(
           "WorkoutPerformance", schema: schema,
-          url: directory.appendingPathComponent("workout.sqlite"))
+          url: directory.appendingPathComponent("workout.sqlite"), cloudKitDatabase: .none)
       }
       if ProcessInfo.processInfo.arguments.contains("-repCountingMigrationFixture") {
         // A separate disposable store, never the user's normal workout database.
@@ -376,10 +378,31 @@ struct RootView: View {
         onDone: { celebrationSummary = nil })
     }
     .onAppear {
+      PairedWatchWorkoutSync.activate()
+      if activeSessions.isEmpty { publishKidsWatchProgress() }
       guard !didRestoreActiveWorkout else { return }
       didRestoreActiveWorkout = true
       if let activeSession = activeSessions.first {
         presentActiveWorkout(activeSession)
+      }
+    }
+    .onChange(of: activeSessions.count) { _, count in
+      if count == 0 { publishKidsWatchProgress() }
+    }
+  }
+
+  private func publishKidsWatchProgress() {
+    let cutoff = Calendar.current.date(byAdding: .weekOfYear, value: -12, to: .now) ?? .distantPast
+    let descriptor = FetchDescriptor<WorkoutSession>(
+      predicate: #Predicate { $0.deletedAt == nil && $0.startedAt >= cutoff },
+      sortBy: [SortDescriptor(\.startedAt, order: .reverse)])
+    let history = (try? context.fetch(descriptor)) ?? []
+    let progress = KidsWatchSnapshot.makeProgressSummary(
+      history: history, people: people, routines: routines)
+    PairedWatchWorkoutSync.update(nil, progress: progress)
+    Task {
+      for person in people {
+        try? await KidsWatchCloudStore.publish(progress.forPerson(person.id), for: person.id)
       }
     }
   }

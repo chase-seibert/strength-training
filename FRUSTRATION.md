@@ -1,5 +1,17 @@
 # Frustration log
 
+## 2026-10-20 — Simulator builds need host access and simulator entitlements
+
+In the restricted Codex shell, `make sim-build` falsely reported a missing Metal
+Toolchain and CoreSimulator connection errors. The same unchanged command passed
+with full host access, and Xcode reported Build Succeeded. Run Xcode build tasks
+with host access before changing project settings. Also, simulator builds for
+CloudKit/WatchConnectivity must retain Xcode's simulator signing: forcing
+`CODE_SIGNING_ALLOWED=NO` strips the CloudKit entitlement. Some Xcode installs
+also lack `Simulator.app` even though `simctl` works; `make sim-launch` skips
+opening the GUI in that case and still installs and launches the app through
+`simctl`.
+
 ## 2026-10-14 — Metal shaders require Xcode's separate compiler component
 
 The first `.metal` build failed with `cannot execute tool 'metal' due to missing
