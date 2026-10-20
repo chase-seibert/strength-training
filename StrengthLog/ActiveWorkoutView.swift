@@ -107,18 +107,43 @@ extension Int {
   }
 }
 
+@MainActor
+private final class ActiveWorkoutVisibilityState {
+  var candidateExerciseID: UUID?
+}
+
 private struct ExerciseVisibilityTracker: ViewModifier {
   let exerciseID: UUID
   let isProgrammaticScrollPending: Bool
-  @Binding var currentExerciseID: UUID?
+  let visibilityState: ActiveWorkoutVisibilityState
 
   @ViewBuilder
   func body(content: Content) -> some View {
     if #available(iOS 18.0, *) {
       content.onScrollVisibilityChange(threshold: 0.75) { isVisible in
         guard isVisible, !isProgrammaticScrollPending else { return }
-        guard currentExerciseID != exerciseID else { return }
-        currentExerciseID = exerciseID
+        visibilityState.candidateExerciseID = exerciseID
+      }
+    } else {
+      content
+    }
+  }
+}
+
+private struct ActiveWorkoutScrollSelection: ViewModifier {
+  let visibilityState: ActiveWorkoutVisibilityState
+  let isProgrammaticScrollPending: Bool
+  @Binding var currentExerciseID: UUID?
+
+  @ViewBuilder
+  func body(content: Content) -> some View {
+    if #available(iOS 18.0, *) {
+      content.onScrollPhaseChange { _, phase in
+        guard phase == .idle, !isProgrammaticScrollPending,
+          let candidate = visibilityState.candidateExerciseID,
+          currentExerciseID != candidate
+        else { return }
+        currentExerciseID = candidate
       }
     } else {
       content
@@ -308,6 +333,7 @@ struct ActiveWorkoutView: View {
   @State private var showingDeleteConfirmation = false
   @State private var didRestoreScrollPosition = false
   @State private var currentExerciseID: UUID?
+  @State private var visibilityState = ActiveWorkoutVisibilityState()
   @State private var requestedExerciseID: UUID?
   @State private var catalogByID: [UUID: Exercise] = [:]
   @State private var catalogByName: [String: Exercise] = [:]
@@ -395,6 +421,13 @@ struct ActiveWorkoutView: View {
       .scrollDismissesKeyboard(.interactively)
       .background(Color(.systemGroupedBackground))
       .background(DismissKeyboardOnTap())
+      .modifier(
+        ActiveWorkoutScrollSelection(
+          visibilityState: visibilityState,
+          isProgrammaticScrollPending: requestedExerciseID != nil,
+          currentExerciseID: $currentExerciseID
+        )
+      )
       .safeAreaInset(edge: .top, spacing: 0) {
         VStack(spacing: 0) {
           participantPills
@@ -1053,7 +1086,7 @@ struct ActiveWorkoutView: View {
       ExerciseVisibilityTracker(
         exerciseID: exercise.id,
         isProgrammaticScrollPending: requestedExerciseID != nil,
-        currentExerciseID: $currentExerciseID
+        visibilityState: visibilityState
       )
     )
   }

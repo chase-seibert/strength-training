@@ -53,6 +53,26 @@ The Debug-only harness is bounded to one CPU worker at about 40% duty cycle, a 6
 
 Simulator CPU/memory tools and Simulator device controls apply to the Mac-hosted simulator. They cannot create actual CPU, memory, storage, or display pressure on the iPhone. The in-app harness adds app-local work on the phone, but cannot force pressure from unrelated processes or prove how the entire device behaves under system-wide contention. Treat simulator metrics as regression proxies and use physical-device frame logs plus Instruments for phone conclusions.
 
+## SwiftUI scrolling regression guardrails
+
+Treat scroll visibility and geometry callbacks as observation points, not as a place to continuously update state owned by the view that contains a large scrolling hierarchy. A callback that writes a parent `@State` or `@Binding` can invalidate that parent and cause SwiftUI to revisit the list and its expensive rows while a finger or deceleration is moving the content. Visibility callbacks may fire less often than per-frame geometry readers, but each threshold crossing can still trigger costly work during motion.
+
+For active-workout exercise selection and similar scroll-driven UI:
+
+- Keep callback work bounded: identify the candidate row and store only the latest candidate in state that does not invalidate the list-owning view.
+- Coalesce updates while scrolling. Commit parent-visible selection when the scroll phase becomes idle, rather than for each row crossing a visibility threshold.
+- Keep programmatic scrolling semantics explicit. A visibility event during a requested jump must not replace the requested selection; retain a navigation test for menu jumps and current-exercise selection.
+- Keep expensive lookup, formatting, persistence, and relationship traversal out of visibility/geometry callbacks. Cache or derive that data when its inputs change.
+- When a callback must update parent state during motion, profile that exact path and document why the invalidation is bounded.
+
+For a scroll-state change, run the same `make workout-profile` scenario before and after with matching history, timer, build configuration, simulator, and source revision metadata. Repeat captures and compare motion callback FPS, callback-gap counts, and excess-gap ratio; inspect raw samples as well as aggregates. Keep very long gaps visible and investigate them separately because XCTest, automation, and video capture can pause sampling, while a real app freeze can also produce a long gap. Do not silently count these as ordinary frame hitches or discard them without checking the trace. Simulator callback metrics are a regression signal, not rendered-frame or GPU hitch counts. Use the physical-device frame monitor and Instruments when making claims about actual dropped frames.
+
+### October 2026 scroll-selection case study
+
+The active-workout list's exercise visibility tracker wrote `currentExerciseID` through a binding as each exercise crossed the visibility threshold. Since `ActiveWorkoutView` owns the list and its exercise cards, these selection changes could invalidate the list-owning view during scrolling. The tracker now records a candidate in non-observable state and commits the selection once the scroll phase is idle; programmatic selection remains guarded.
+
+In the matched iPhone 17 Pro simulator profile, the motion callback FPS proxy changed from 36.52 before the adjustment to 47.94 and 47.27 in two after runs. The callback hitch proxy count changed from 22 to 14 and 12. Those runs support the hypothesis that coalescing parent updates helps, but the remaining long sampling gaps and the lack of rendered-frame metrics mean they do not prove an improvement in actual device frame hitches. See [the retained run history](performance/history.html) and the raw summaries for `20261020T190245Z`, `20261020T190712Z`, and `20261020T191037Z`.
+
 ## Build and live frame capture
 
 Build, install, and launch the Debug app using the supported project workflow:
