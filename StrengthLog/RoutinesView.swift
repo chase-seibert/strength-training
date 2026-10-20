@@ -82,7 +82,7 @@ struct RoutinesView: View {
                   in: RoundedRectangle(cornerRadius: 13))
               VStack(alignment: .leading, spacing: 4) {
                 Text(routine.name).font(.headline)
-                Text(exerciseCountText(routine.exercises.count))
+                Text(exerciseCountText(routine.visibleExercises.count))
                   .font(.subheadline).foregroundStyle(.secondary)
               }
             }
@@ -467,6 +467,7 @@ struct RoutineDetailView: View {
   @Bindable var routine: Routine
   let onOpenWorkout: (WorkoutSession) -> Void
   @State private var showingExercisePicker = false
+  @State private var showingManageExercises = false
   @State private var showingDeleteConfirmation = false
   @State private var showingAppearanceEditor = false
   @State private var editMode: EditMode = .inactive
@@ -490,7 +491,7 @@ struct RoutineDetailView: View {
 
   private var displayedExercises: [RoutineExercise] {
     editMode.isEditing
-      ? draftExercises : routine.exercises.sorted(by: { $0.sortOrder < $1.sortOrder })
+      ? draftExercises : routine.visibleExercises.sorted(by: { $0.sortOrder < $1.sortOrder })
   }
 
   var body: some View {
@@ -564,7 +565,6 @@ struct RoutineDetailView: View {
           .padding(.vertical, 3)
         }
         .onDelete(perform: deleteExercises)
-        .onMove(perform: moveExercises)
         .deleteDisabled(!editMode.isEditing)
 
         Button("Add exercise", systemImage: "plus.circle.fill") { showingExercisePicker = true }
@@ -573,9 +573,24 @@ struct RoutineDetailView: View {
       } footer: {
         Text(
           editMode.isEditing
-            ? "Exercise additions, deletions, and ordering changes are applied only when you tap Save."
+            ? "Exercise additions and deletions are applied only when you tap Save."
             : "Exercises define what each set records. Each person's weights, reps, and completed sets are saved with the workout."
         )
+      }
+
+      Section("Manage Routine") {
+        Button {
+          showingManageExercises = true
+        } label: {
+          Label("Manage Exercises", systemImage: "line.3.horizontal.decrease")
+        }
+        .accessibilityIdentifier("manage-routine-exercises")
+
+        Button(role: .destructive) {
+          showingDeleteConfirmation = true
+        } label: {
+          Label("Delete Routine", systemImage: "trash")
+        }
       }
     }
     .navigationTitle(routine.name)
@@ -596,18 +611,7 @@ struct RoutineDetailView: View {
     }
     .safeAreaInset(edge: .bottom) {
       if editMode.isEditing {
-        Button(role: .destructive) {
-          showingDeleteConfirmation = true
-        } label: {
-          Label("Delete Routine", systemImage: "trash")
-            .font(.headline)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 14)
-        }
-        .buttonStyle(.bordered)
-        .tint(.red)
-        .padding()
-        .background(.bar)
+        EmptyView()
       } else {
         Button {
           if let session = WorkoutSessionStarter.start(
@@ -625,7 +629,7 @@ struct RoutineDetailView: View {
         .tint(Theme.coral)
         .padding()
         .background(.bar)
-        .disabled(routine.exercises.isEmpty)
+        .disabled(routine.visibleExercises.isEmpty)
         .accessibilityIdentifier("start-routine-detail")
       }
     }
@@ -636,6 +640,11 @@ struct RoutineDetailView: View {
         onAdd: addExercise
       )
       .environment(\.editMode, .constant(.inactive))
+    }
+    .sheet(isPresented: $showingManageExercises) {
+      NavigationStack {
+        ManageRoutineExercisesView(routine: routine)
+      }
     }
     .sheet(isPresented: $showingAppearanceEditor) {
       NavigationStack {
@@ -688,11 +697,6 @@ struct RoutineDetailView: View {
       ?? item.legacyUnit
   }
 
-  private func moveExercises(from source: IndexSet, to destination: Int) {
-    guard editMode.isEditing else { return }
-    draftExercises.move(fromOffsets: source, toOffset: destination)
-  }
-
   private func deleteExercises(at offsets: IndexSet) {
     guard editMode.isEditing else { return }
     draftExercises.remove(atOffsets: offsets)
@@ -707,8 +711,11 @@ struct RoutineDetailView: View {
               && $0.exerciseName.caseInsensitiveCompare(exercise.name) == .orderedSame)
         })
       else { return }
+      let lastSortOrder =
+        (routine.exercises.map(\.sortOrder) + draftExercises.map(\.sortOrder)).max() ?? -1
       draftExercises.append(
-        RoutineExercise.make(exercise: exercise, sortOrder: draftExercises.count))
+        RoutineExercise.make(
+          exercise: exercise, sortOrder: lastSortOrder + 1))
     } else if routine.add(exercise) {
       _ = saveAndRefreshProgressWidget(context)
     }
@@ -719,7 +726,7 @@ struct RoutineDetailView: View {
     draftSymbol = routine.symbol
     draftColorHex = routine.colorHex
     draftRestDurationSeconds = routine.restDurationSeconds ?? 0
-    draftExercises = routine.exercises.sorted(by: { $0.sortOrder < $1.sortOrder })
+    draftExercises = routine.visibleExercises.sorted(by: { $0.sortOrder < $1.sortOrder })
     editMode = .active
   }
 
@@ -732,13 +739,13 @@ struct RoutineDetailView: View {
     let trimmedName = draftName.trimmingCharacters(in: .whitespacesAndNewlines)
     guard !trimmedName.isEmpty else { return }
     let keptIDs = Set(draftExercises.map(\.id))
-    let deleted = routine.exercises.filter { !keptIDs.contains($0.id) }
+    let deleted = routine.visibleExercises.filter { !keptIDs.contains($0.id) }
     routine.name = trimmedName
     routine.symbol = draftSymbol
     routine.colorHex = draftColorHex
     routine.restDurationSeconds = max(0, draftRestDurationSeconds)
-    routine.exercises = draftExercises
-    for (index, exercise) in draftExercises.enumerated() { exercise.sortOrder = index }
+    routine.exercises = (routine.exercises.filter(\.isHiddenFromRoutine) + draftExercises)
+      .sorted(by: { $0.sortOrder < $1.sortOrder })
     deleted.forEach(context.delete)
     _ = saveAndRefreshProgressWidget(context)
     draftExercises = []
@@ -757,6 +764,91 @@ struct RoutineDetailView: View {
         + session.participantNames.reduce(0) {
           $0 + exercise.completedPoundsVolume(for: $1)
         }
+    }
+  }
+}
+
+private struct ManagedRoutineExercise: Identifiable {
+  let id: UUID
+  let name: String
+  var isHidden: Bool
+
+  init(entry: RoutineExercise) {
+    id = entry.id
+    name = entry.exerciseName
+    isHidden = entry.isHiddenFromRoutine
+  }
+}
+
+struct ManageRoutineExercisesView: View {
+  @Environment(\.dismiss) private var dismiss
+  @Environment(\.modelContext) private var context
+  let routine: Routine
+  @State private var draftExercises: [ManagedRoutineExercise]
+
+  init(routine: Routine) {
+    self.routine = routine
+    _draftExercises = State(
+      initialValue: routine.exercises.sorted(by: { $0.sortOrder < $1.sortOrder })
+        .map(ManagedRoutineExercise.init(entry:)))
+  }
+
+  var body: some View {
+    List {
+      Section {
+        ForEach(Array(draftExercises.enumerated()), id: \.element.id) { index, item in
+          HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+              Text(item.name)
+                .font(.headline)
+              if item.isHidden {
+                Label("Hidden from new workouts", systemImage: "eye.slash")
+                  .font(.caption)
+                  .foregroundStyle(.secondary)
+              }
+            }
+            Spacer(minLength: 8)
+            Button(item.isHidden ? "Unhide" : "Hide") {
+              draftExercises[index].isHidden.toggle()
+            }
+            .buttonStyle(.bordered)
+            .accessibilityIdentifier(
+              "toggle-routine-exercise-\(item.name)")
+          }
+          .padding(.vertical, 3)
+        }
+        .onMove { source, destination in
+          draftExercises.move(fromOffsets: source, toOffset: destination)
+        }
+      } footer: {
+        Text(
+          "Hidden exercises stay in this routine and its history. They are omitted from new workouts. Drag to reorder, then save your changes."
+        )
+      }
+    }
+    .navigationTitle("Manage Exercises")
+    .navigationBarTitleDisplayMode(.inline)
+    .toolbar {
+      ToolbarItem(placement: .cancellationAction) {
+        Button("Cancel") { dismiss() }
+          .accessibilityIdentifier("cancel-manage-routine-exercises")
+      }
+      ToolbarItem(placement: .confirmationAction) {
+        Button("Save", action: save)
+          .accessibilityIdentifier("save-manage-routine-exercises")
+      }
+    }
+    .environment(\.editMode, .constant(.active))
+  }
+
+  private func save() {
+    for (index, item) in draftExercises.enumerated() {
+      guard let entry = routine.exercises.first(where: { $0.id == item.id }) else { continue }
+      entry.isHidden = item.isHidden
+      entry.sortOrder = index
+    }
+    if saveAndRefreshProgressWidget(context) {
+      dismiss()
     }
   }
 }
@@ -842,10 +934,13 @@ enum WorkoutSessionStarter {
     let participantNames = selectedNames.isEmpty ? orderedPeople.map(\.name) : selectedNames
     guard !participantNames.isEmpty else { return nil }
 
+    let routineExercises = routine.visibleExercises.sorted(by: { $0.sortOrder < $1.sortOrder })
+    guard !routineExercises.isEmpty else { return nil }
+
     let knownNames = orderedKnownNames(
       history: routineHistory, routine: routine, orderedPeople: orderedPeople)
     let profilesByName = Dictionary(grouping: orderedPeople, by: { $0.name.lowercased() })
-    let logs = routine.exercises.sorted(by: { $0.sortOrder < $1.sortOrder }).map { item in
+    let logs = routineExercises.map { item in
       let master =
         catalog.first(where: { $0.id == item.exerciseID })
         ?? (item.exerciseID == nil

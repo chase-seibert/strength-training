@@ -370,7 +370,7 @@ struct AddExerciseFromLibrarySheet: View {
                     .frame(width: 32)
                   VStack(alignment: .leading, spacing: 3) {
                     Text(routine.name).foregroundStyle(.primary)
-                    Text(exerciseCountText(routine.exercises.count))
+                    Text(exerciseCountText(routine.visibleExercises.count))
                       .font(.caption).foregroundStyle(.secondary)
                   }
                   Spacer()

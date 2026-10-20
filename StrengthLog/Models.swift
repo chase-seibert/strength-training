@@ -385,6 +385,10 @@ final class Routine {
   var participantNames: [String] = []
   @Relationship(deleteRule: .cascade) var exercises: [RoutineExercise]
 
+  var visibleExercises: [RoutineExercise] {
+    exercises.filter { !$0.isHiddenFromRoutine }
+  }
+
   init(
     name: String, symbol: String = "dumbbell.fill", colorHex: String = "FF5A45",
     exercises: [RoutineExercise] = [],
@@ -444,6 +448,8 @@ final class RoutineExercise {
   var exerciseName: String
   var notes: String?
   var supersetID: String?
+  // Optional so existing SwiftData stores treat entries without this field as visible.
+  var isHidden: Bool?
   // Legacy cached unit retained for older stores; UI and new sessions resolve Exercise.unit.
   var unitRaw: String
   var sortOrder: Int
@@ -453,19 +459,22 @@ final class RoutineExercise {
   init(
     exerciseName: String, unit: TrackingUnit, sortOrder: Int,
     exerciseID: UUID? = nil,
-    prescriptions: [Prescription] = [], notes: String? = nil, supersetID: String? = nil
+    prescriptions: [Prescription] = [], notes: String? = nil, supersetID: String? = nil,
+    isHidden: Bool = false
   ) {
     id = UUID()
     self.exerciseID = exerciseID
     self.exerciseName = exerciseName
     self.notes = notes
     self.supersetID = supersetID
+    self.isHidden = isHidden
     unitRaw = unit.rawValue
     self.sortOrder = sortOrder
     self.prescriptions = prescriptions
   }
 
   var legacyUnit: TrackingUnit { TrackingUnit(rawValue: unitRaw) ?? .pounds }
+  var isHiddenFromRoutine: Bool { isHidden ?? false }
 
   static func make(exercise: Exercise, sortOrder: Int) -> RoutineExercise {
     return RoutineExercise(

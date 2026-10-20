@@ -207,7 +207,7 @@ struct HomeView: View {
                 )
               VStack(alignment: .leading, spacing: 4) {
                 Text(routine.name).font(.headline).foregroundStyle(.primary)
-                Text(exerciseCountText(routine.exercises.count))
+                Text(exerciseCountText(routine.visibleExercises.count))
                   .font(.subheadline).foregroundStyle(.secondary)
               }
               Spacer()
@@ -220,6 +220,7 @@ struct HomeView: View {
             .background(.background, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
           }
           .buttonStyle(.plain)
+          .disabled(routine.visibleExercises.isEmpty)
           .accessibilityIdentifier("start-routine-\(routine.name)")
         }
       }

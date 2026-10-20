@@ -1827,6 +1827,69 @@ final class WorkoutNavigationUITests: XCTestCase {
     return load.frame
   }
 
+  func testRoutineExerciseVisibilitySavesCancelsAndRestores() {
+    app.terminate()
+    app.launchArguments = ["-basicWorkoutFixture", "-activeWorkoutReorderFixture"]
+    app.launch()
+    app.tabBars.buttons["Routines"].tap()
+    app.staticTexts["Basic Workout"].tap()
+
+    let manage = app.descendants(matching: .any)
+      .matching(identifier: "manage-routine-exercises").firstMatch
+    scrollToHittable(manage)
+    manage.tap()
+    XCTAssertTrue(app.navigationBars["Manage Exercises"].waitForExistence(timeout: 3))
+    let curlToggle = app.buttons["toggle-routine-exercise-Fixture Custom Curl"]
+    XCTAssertTrue(curlToggle.waitForExistence(timeout: 3))
+    XCTAssertEqual(curlToggle.label, "Hide")
+    app.buttons["cancel-manage-routine-exercises"].tap()
+    XCTAssertTrue(app.staticTexts["Fixture Custom Curl"].waitForExistence(timeout: 3))
+
+    scrollToHittable(manage)
+    manage.tap()
+    app.buttons["toggle-routine-exercise-Fixture Custom Curl"].tap()
+    app.buttons["save-manage-routine-exercises"].tap()
+    XCTAssertTrue(app.navigationBars["Basic Workout"].waitForExistence(timeout: 3))
+    XCTAssertFalse(app.staticTexts["Fixture Custom Curl"].exists)
+
+    app.buttons["start-routine-detail"].tap()
+    XCTAssertTrue(app.navigationBars["Bench Press"].waitForExistence(timeout: 5))
+    let menu = app.buttons["workout-exercise-menu"]
+    XCTAssertTrue(menu.waitForExistence(timeout: 3))
+    menu.tap()
+    XCTAssertTrue(app.buttons["workout-exercise-menu-Barbell Back Squat"].exists)
+    XCTAssertFalse(app.buttons["workout-exercise-menu-Fixture Custom Curl"].exists)
+  }
+
+  func testHidingEveryRoutineExerciseKeepsUnhideAvailableAndDisablesStart() {
+    app.terminate()
+    app.launchArguments = ["-basicWorkoutFixture", "-activeWorkoutReorderFixture"]
+    app.launch()
+    app.tabBars.buttons["Routines"].tap()
+    app.staticTexts["Basic Workout"].tap()
+    let manage = app.descendants(matching: .any)
+      .matching(identifier: "manage-routine-exercises").firstMatch
+    scrollToHittable(manage)
+    manage.tap()
+
+    for name in ["Bench Press", "Barbell Back Squat", "Fixture Custom Curl"] {
+      app.buttons["toggle-routine-exercise-\(name)"].tap()
+    }
+    app.buttons["save-manage-routine-exercises"].tap()
+
+    XCTAssertFalse(app.staticTexts["Bench Press"].exists)
+    XCTAssertFalse(app.buttons["start-routine-detail"].isEnabled)
+    scrollToHittable(manage)
+    manage.tap()
+    for name in ["Bench Press", "Barbell Back Squat", "Fixture Custom Curl"] {
+      XCTAssertEqual(app.buttons["toggle-routine-exercise-\(name)"].label, "Unhide")
+    }
+    app.buttons["toggle-routine-exercise-Bench Press"].tap()
+    app.buttons["save-manage-routine-exercises"].tap()
+    XCTAssertTrue(app.staticTexts["Bench Press"].waitForExistence(timeout: 3))
+    XCTAssertTrue(app.buttons["start-routine-detail"].isEnabled)
+  }
+
   private func scrollToHittable(_ element: XCUIElement) {
     for _ in 0..<8 where !element.isHittable || element.frame.midY > app.frame.height * 0.72 {
       app.swipeUp()
