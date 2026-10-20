@@ -225,6 +225,37 @@
           routine: basicRoutine, daysAgo: 29, hour: 17,
           efforts: [(alex.name, benchPress.name, 90, [10, 10, 10])]),
       ]
+      if ProcessInfo.processInfo.arguments.contains("-weightedHistoryCompetitionFixture") {
+        for session in workoutHistory {
+          guard
+            let exercise = session.exercises.first(where: {
+              $0.exerciseName == benchPress.name
+            }),
+            let participant = exercise.participants.first(where: { $0.participantName == alex.name }
+            )
+          else { continue }
+          for set in participant.sets { set.measurement = 5 }
+        }
+        if let session = workoutHistory.first(where: {
+          Calendar.current.dateComponents(
+            [.day], from: $0.startedAt.startOfDay, to: Date.now.startOfDay
+          ).day == 18
+        }),
+          let exercise = session.exercises.first(where: { $0.exerciseName == benchPress.name }),
+          let participant = exercise.participants.first(where: { $0.participantName == alex.name }),
+          participant.sets.count >= 3
+        {
+          participant.sets[0].measurement = 15
+          participant.sets[0].reps = 12
+          participant.sets[1].measurement = 20
+          participant.sets[1].reps = 7
+          participant.sets[2].measurement = 1_000
+          participant.sets[2].reps = 100
+          participant.sets[2].isSkipped = true
+          participant.sets.append(
+            WorkoutSet(sortOrder: 3, reps: 1_000, isCompleted: false, measurement: 10_000))
+        }
+      }
       if ProcessInfo.processInfo.arguments.contains("-recentCompletedWorkoutFixture") {
         workoutHistory.append(
           makeRecentCompletedWorkout(

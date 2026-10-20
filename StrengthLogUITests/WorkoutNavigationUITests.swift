@@ -1633,6 +1633,53 @@ final class WorkoutNavigationUITests: XCTestCase {
     XCTAssertFalse(app.staticTexts["Routine"].exists)
   }
 
+  func testActiveWorkoutWeightedHistoryUsesPRScoreAndShowsSelectedSet() {
+    app.terminate()
+    app.launchArguments = [
+      "-basicWorkoutFixture", "-weightedHistoryCompetitionFixture", "-activeWorkoutFixture",
+      "-activeWorkoutOnePersonFixture",
+    ]
+    app.launch()
+
+    let historyButton = app.buttons["exercise-history-Bench Press"]
+    XCTAssertTrue(historyButton.waitForExistence(timeout: 8))
+    historyButton.tap()
+
+    let chartTitle = app.staticTexts["lb·reps"]
+    XCTAssertTrue(chartTitle.waitForExistence(timeout: 5))
+    XCTAssertFalse(app.staticTexts["Pounds"].exists)
+    XCTAssertFalse(app.staticTexts["Best reps"].exists)
+    let chart = app.descendants(matching: .any)["exercise-history-chart-lb·reps"].firstMatch
+    XCTAssertTrue(chart.waitForExistence(timeout: 3), app.debugDescription)
+    XCTAssertTrue(chart.isHittable)
+    let chartScreenshot = XCTAttachment(screenshot: app.screenshot())
+    chartScreenshot.name = "active-workout-weighted-history-chart"
+    chartScreenshot.lifetime = .keepAlways
+    add(chartScreenshot)
+    chart.coordinate(withNormalizedOffset: CGVector(dx: 0.49, dy: 0.15)).tap()
+
+    let selectedPoint = app.staticTexts["exercise-history-selected-point"]
+    XCTAssertTrue(selectedPoint.waitForExistence(timeout: 3), app.debugDescription)
+    XCTAssertTrue(
+      selectedPoint.label.contains("15 pounds, 12 reps"), selectedPoint.debugDescription)
+    XCTAssertNotNil(
+      selectedPoint.label.range(
+        of: #"[A-Z][a-z]{2} \d{1,2}, \d{4}"#, options: .regularExpression),
+      selectedPoint.debugDescription)
+
+    let screenshot = XCTAttachment(screenshot: app.screenshot())
+    screenshot.name = "active-workout-weighted-history-selected-point"
+    screenshot.lifetime = .keepAlways
+    add(screenshot)
+
+    let initialSelection = selectedPoint.label
+    let start = chart.coordinate(withNormalizedOffset: CGVector(dx: 0.49, dy: 0.15))
+    let end = chart.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.15))
+    start.press(forDuration: 0.1, thenDragTo: end)
+    XCTAssertNotEqual(selectedPoint.label, initialSelection)
+    XCTAssertTrue(selectedPoint.label.contains("5 pounds, 8 reps"), selectedPoint.debugDescription)
+  }
+
   func testPhoneHistoryFixtureCalendarPRBadgeAndDetails() {
     app.terminate()
     app.launchArguments = ["-basicWorkoutFixture", "-prStickerPhoneFixture"]

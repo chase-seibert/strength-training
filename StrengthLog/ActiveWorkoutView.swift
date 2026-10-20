@@ -2843,6 +2843,7 @@ private struct ExerciseHistoryPoint: Identifiable {
   let date: Date
   let measurement: Double
   let reps: Int
+  let value: Double
   let isPR: Bool
 }
 
@@ -2858,6 +2859,11 @@ struct ExerciseGroupHistoryView: View {
   let colors: [String: String]
   let unit: TrackingUnit
   var repCountingMode: RepCountingMode = .standard
+  @State private var selectedPointID: String?
+
+  private var usesWeightedPR: Bool {
+    unit == .pounds || unit == .kilograms
+  }
 
   private var points: [ExerciseHistoryPoint] {
     let achievements = PersonalRecords.achievements(in: sessions)
@@ -2876,10 +2882,33 @@ struct ExerciseGroupHistoryView: View {
             $0.participantName.caseInsensitiveCompare(personName) == .orderedSame
           })
         else { return nil }
-        let completed = participant.sets.filter(\.isCompleted)
+        let completed = participant.sets.filter { $0.isCompleted && !$0.isSkipped }
         guard !completed.isEmpty else { return nil }
-        let measurement = completed.map { $0.measurement ?? participant.measurement }.max() ?? 0
-        let reps = completed.map { $0.target(for: unit) }.max() ?? 0
+        let selectedSet: WorkoutSet
+        if usesWeightedPR {
+          guard
+            let bestSet = completed.max(by: { lhs, rhs in
+              (PersonalRecords.value(for: lhs, participant: participant, unit: unit) ?? 0)
+                < (PersonalRecords.value(for: rhs, participant: participant, unit: unit) ?? 0)
+            })
+          else { return nil }
+          selectedSet = bestSet
+        } else {
+          selectedSet =
+            completed.max { $0.target(for: unit) < $1.target(for: unit) } ?? completed[0]
+        }
+        let measurement =
+          usesWeightedPR
+          ? (selectedSet.measurement ?? participant.measurement)
+          : (completed.map { $0.measurement ?? participant.measurement }.max() ?? 0)
+        let reps =
+          usesWeightedPR
+          ? selectedSet.target(for: unit)
+          : (completed.map { $0.target(for: unit) }.max() ?? 0)
+        let value =
+          usesWeightedPR
+          ? (PersonalRecords.value(for: selectedSet, participant: participant, unit: unit) ?? 0)
+          : Double(reps)
         let exerciseKey = PersonalRecords.key(for: exercise)
         let isPR = achievements.contains {
           $0.sessionID == session.id
@@ -2893,6 +2922,7 @@ struct ExerciseGroupHistoryView: View {
           date: session.startedAt,
           measurement: measurement,
           reps: reps,
+          value: value,
           isPR: isPR)
       }
     }
@@ -2928,15 +2958,25 @@ struct ExerciseGroupHistoryView: View {
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(Theme.coral)
               }
-              if unit.usesMeasurement {
+              if usesWeightedPR {
+                historyChart(
+                  title: unit == .kilograms ? "kg·reps" : "lb·reps",
+                  value: { $0.value },
+                  showsSelection: true)
+              } else if unit.usesMeasurement {
                 historyChart(
                   title: unit.title,
                   value: { $0.measurement })
+                historyChart(
+                  title: unit.usesReps
+                    ? "Best \(unit.targetLabel(repCountingMode: repCountingMode))" : unit.title,
+                  value: { Double($0.reps) })
+              } else {
+                historyChart(
+                  title: unit.usesReps
+                    ? "Best \(unit.targetLabel(repCountingMode: repCountingMode))" : unit.title,
+                  value: { Double($0.reps) })
               }
-              historyChart(
-                title: unit.usesReps
-                  ? "Best \(unit.targetLabel(repCountingMode: repCountingMode))" : unit.title,
-                value: { Double($0.reps) })
             }
             .padding()
           }
@@ -2953,38 +2993,94 @@ struct ExerciseGroupHistoryView: View {
 
   private func historyChart(
     title: String,
-    value: @escaping (ExerciseHistoryPoint) -> Double
+    value: @escaping (ExerciseHistoryPoint) -> Double,
+    showsSelection: Bool = false
   ) -> some View {
     VStack(alignment: .leading, spacing: 8) {
       Text(title).font(.headline)
-      Chart(points) { point in
-        LineMark(
-          x: .value("Date", point.date),
-          y: .value(title, value(point)),
-          series: .value("Person", point.personName)
+      if showsSelection, let selectedPoint = points.first(where: { $0.id == selectedPointID }) {
+        Text(
+          "\(selectedPoint.date.formatted(.dateTime.month(.abbreviated).day().year())) · \(selectedPoint.measurement.tidy) \(unit == .kilograms ? "kg" : "lb") × \(selectedPoint.reps) reps · \(selectedPoint.personName)"
         )
-        .foregroundStyle(Color(hex: colors[point.personName] ?? "FF5A45"))
-        PointMark(
-          x: .value("Date", point.date),
-          y: .value(title, value(point))
+        .font(.subheadline.weight(.semibold).monospacedDigit())
+        .accessibilityIdentifier("exercise-history-selected-point")
+        .accessibilityLabel(
+          "Selected point: \(selectedPoint.date.formatted(.dateTime.month(.abbreviated).day().year())), \(selectedPoint.measurement.tidy) \(unit == .kilograms ? "kilograms" : "pounds"), \(selectedPoint.reps) reps, \(selectedPoint.personName)"
         )
-        .foregroundStyle(Color(hex: colors[point.personName] ?? "FF5A45"))
-        if point.isPR {
+      }
+      Chart {
+        if showsSelection, let selectedPoint = points.first(where: { $0.id == selectedPointID }) {
+          RuleMark(x: .value("Selected date", selectedPoint.date))
+            .foregroundStyle(.secondary.opacity(0.55))
+            .lineStyle(StrokeStyle(lineWidth: 1.25, dash: [3, 3]))
+            .accessibilityLabel(
+              "Selected date \(selectedPoint.date.formatted(.dateTime.month(.abbreviated).day().year()))"
+            )
+        }
+        ForEach(points) { point in
+          LineMark(
+            x: .value("Date", point.date),
+            y: .value(title, value(point)),
+            series: .value("Person", point.personName)
+          )
+          .foregroundStyle(Color(hex: colors[point.personName] ?? "FF5A45"))
+          .accessibilityLabel(
+            "\(point.personName), \(point.measurement.tidy) \(unit == .kilograms ? "kilograms" : "pounds"), \(point.reps) reps"
+          )
+          .accessibilityValue("\(point.value.tidy) \(title)")
           PointMark(
             x: .value("Date", point.date),
             y: .value(title, value(point))
           )
-          .foregroundStyle(Theme.prYellow)
-          .symbolSize(28)
-          .annotation(position: .top, spacing: 2) {
-            Image(systemName: "trophy.fill")
-              .font(.caption2)
-              .foregroundStyle(Theme.prYellow)
-              .accessibilityLabel("Personal record")
+          .foregroundStyle(Color(hex: colors[point.personName] ?? "FF5A45"))
+          if point.isPR {
+            PointMark(
+              x: .value("Date", point.date),
+              y: .value(title, value(point))
+            )
+            .foregroundStyle(Theme.prYellow)
+            .symbolSize(28)
+            .annotation(position: .top, spacing: 2) {
+              Image(systemName: "trophy.fill")
+                .font(.caption2)
+                .foregroundStyle(Theme.prYellow)
+                .accessibilityLabel("Personal record")
+            }
           }
         }
       }
       .frame(height: 150)
+      .accessibilityIdentifier("exercise-history-chart-\(title)")
+      .chartOverlay { proxy in
+        if showsSelection {
+          GeometryReader { geometry in
+            Rectangle()
+              .fill(.clear)
+              .contentShape(Rectangle())
+              .gesture(
+                DragGesture(minimumDistance: 0).onChanged { drag in
+                  guard let plotFrame = proxy.plotFrame else { return }
+                  let plotRect = geometry[plotFrame]
+                  let x = drag.location.x - plotRect.minX
+                  let y = drag.location.y - plotRect.minY
+                  guard proxy.value(atX: x, as: Date.self) != nil else { return }
+                  let tappedY = proxy.value(atY: y, as: Double.self)
+                  selectedPointID =
+                    points.min(by: { lhs, rhs in
+                      let leftDistance =
+                        abs((proxy.position(forX: lhs.date) ?? 0) - x) * 1_000
+                        + abs((proxy.position(forY: value(lhs)) ?? 0) - (tappedY ?? 0))
+                      let rightDistance =
+                        abs((proxy.position(forX: rhs.date) ?? 0) - x) * 1_000
+                        + abs((proxy.position(forY: value(rhs)) ?? 0) - (tappedY ?? 0))
+                      return leftDistance < rightDistance
+                    })?.id
+                })
+          }
+        }
+      }
+      .accessibilityLabel("\(title) history chart")
+      .accessibilityHint(showsSelection ? "Tap near a plotted point to see its load and reps." : "")
     }
   }
 }
