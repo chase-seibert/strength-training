@@ -810,6 +810,29 @@ final class WorkoutNavigationUITests: XCTestCase {
     XCTAssertTrue(app.staticTexts["1,748.5 lb"].firstMatch.waitForExistence(timeout: 5))
   }
 
+  func testCommittedBaseWeightClearsSetOverrides() {
+    app.terminate()
+    app.launchArguments = [
+      "-basicWorkoutFixture", "-activeWorkoutFixture", "-measurementOverrideFixture",
+    ]
+    app.launch()
+
+    let weight = app.textFields["Pounds for Alex"]
+    XCTAssertTrue(weight.waitForExistence(timeout: 5))
+    XCTAssertEqual(weight.value as? String, "95.1")
+
+    weight.tap()
+    weight.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 5) + "120")
+    XCTAssertEqual(weight.value as? String, "120")
+    app.buttons["Hide keyboard"].tap()
+
+    app.buttons["participant-set-Alex-1"].tap()
+    app.buttons["participant-set-Alex-2"].tap()
+    app.buttons["Complete Workout"].tap()
+    XCTAssertTrue(app.staticTexts["Workout complete"].waitForExistence(timeout: 5))
+    XCTAssertTrue(app.staticTexts["1,920 lb"].firstMatch.waitForExistence(timeout: 5))
+  }
+
   func testArmTotalReminderTogglesForAllParticipantsAcrossUnits() {
     app.terminate()
     app.launchArguments = [

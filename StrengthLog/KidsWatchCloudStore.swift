@@ -8,6 +8,15 @@ enum KidsWatchCloudStore {
   private static let zoneID = CKRecordZone.ID(
     zoneName: "StrengthLogKidsWatch", ownerName: CKCurrentUserDefaultName)
 
+  /// Simulator builds do not carry the app's iCloud container entitlement.
+  static var isAvailable: Bool {
+    #if targetEnvironment(simulator)
+      false
+    #else
+      true
+    #endif
+  }
+
   static var container: CKContainer { CKContainer(identifier: containerIdentifier) }
   static var privateDatabase: CKDatabase { container.privateCloudDatabase }
 
@@ -25,6 +34,7 @@ enum KidsWatchCloudStore {
 
   /// Saves only this person's card in the shared, stable person record.
   static func publish(_ snapshot: KidsWatchSnapshot, for personID: UUID) async throws {
+    guard isAvailable else { return }
     try await ensureZone()
     let database = privateDatabase
     let record = try await personRecord(for: personID)
@@ -45,6 +55,7 @@ enum KidsWatchCloudStore {
   }
 
   static func publish(_ progress: KidsWatchProgressSnapshot, for personID: UUID) async throws {
+    guard isAvailable else { return }
     try await ensureZone()
     let database = privateDatabase
     let record = try await personRecord(for: personID)
@@ -59,6 +70,7 @@ enum KidsWatchCloudStore {
 
   /// Clears current workout data but preserves the share so it works for future workouts.
   static func clear(personID: UUID, progress: KidsWatchProgressSnapshot? = nil) async throws {
+    guard isAvailable else { return }
     let record = try await privateDatabase.record(for: recordID(for: personID))
     record["sessionID"] = nil
     record["exerciseID"] = nil
@@ -70,6 +82,14 @@ enum KidsWatchCloudStore {
 
   /// Creates or returns a stable private share attached to the person's record.
   static func share(for personID: UUID, name: String) async throws -> CKShare {
+    guard isAvailable else {
+      throw NSError(
+        domain: "KidsWatchCloudStore",
+        code: 2,
+        userInfo: [
+          NSLocalizedDescriptionKey: "Kids Watch sharing is available in a signed device build."
+        ])
+    }
     try await ensureZone()
     let database = privateDatabase
     let root = try await personRecord(for: personID)

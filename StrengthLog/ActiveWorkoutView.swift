@@ -2739,7 +2739,8 @@ struct MeasurementStepper: View {
           font: .monospacedDigitSystemFont(ofSize: 16, weight: .bold),
           accessibilityLabel: "\(unit.title) for \(participant.participantName)",
           adjustmentPolicy: adjustmentPolicy,
-          minimumValue: 0
+          minimumValue: 0,
+          onCommit: commitMeasurement
         )
         .frame(maxWidth: .infinity, minHeight: 36)
         .overlay(alignment: .bottom) {
@@ -2758,18 +2759,8 @@ struct MeasurementStepper: View {
     }
     .foregroundStyle(Color(hex: colorHex))
     .onAppear { text = participant.measurement.tidy }
-    .onChange(of: text) { _, newValue in
-      // Display initialization and refresh must not write models or clear set overrides.
-      // tidy rounds for presentation; comparing the text also preserves stored precision.
-      guard newValue != participant.measurement.tidy,
-        let value = Double(newValue), value >= 0, value != participant.measurement
-      else { return }
-      participant.measurement = value
-      for set in participant.sets { set.measurement = nil }
-      scheduleWorkoutSave()
-    }
     .onChange(of: isFocused) { _, focused in
-      if !focused, text.isEmpty { text = participant.measurement.tidy }
+      if !focused { commitMeasurement(text) }
     }
   }
 
@@ -2795,7 +2786,20 @@ struct MeasurementStepper: View {
     guard let value = Double(text.isEmpty ? participant.measurement.tidy : text),
       let adjusted = adjustmentPolicy.adjusted(value, direction: direction, minimum: 0)
     else { return }
-    text = numericText(adjusted)
+    let adjustedText = numericText(adjusted)
+    text = adjustedText
+    commitMeasurement(adjustedText)
+  }
+
+  private func commitMeasurement(_ draft: String) {
+    guard let value = Double(draft), value.isFinite, value >= 0 else {
+      text = participant.measurement.tidy
+      return
+    }
+    guard value != participant.measurement else { return }
+    participant.measurement = value
+    for set in participant.sets { set.measurement = nil }
+    scheduleWorkoutSave()
   }
 }
 

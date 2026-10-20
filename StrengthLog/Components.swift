@@ -95,6 +95,7 @@ struct SelectAllTextField: UIViewRepresentable {
   let accessibilityLabel: String
   let adjustmentPolicy: NumericAdjustmentPolicy
   let minimumValue: Double
+  var onCommit: (String) -> Void = { _ in }
 
   func makeCoordinator() -> Coordinator {
     Coordinator(self)
@@ -108,7 +109,10 @@ struct SelectAllTextField: UIViewRepresentable {
     textField.font = font
     textField.accessibilityLabel = accessibilityLabel
     textField.inputAccessoryView = KeyboardAccessoryToolbar(
-      textField: textField, adjustmentPolicy: adjustmentPolicy, minimumValue: minimumValue)
+      textField: textField,
+      adjustmentPolicy: adjustmentPolicy,
+      minimumValue: minimumValue,
+      onCommit: onCommit)
     textField.addTarget(
       context.coordinator, action: #selector(Coordinator.textDidChange(_:)),
       for: .editingChanged)
@@ -120,7 +124,10 @@ struct SelectAllTextField: UIViewRepresentable {
     textField.accessibilityLabel = accessibilityLabel
     textField.keyboardType = keyboardType
     if let toolbar = textField.inputAccessoryView as? KeyboardAccessoryToolbar {
-      toolbar.update(adjustmentPolicy: adjustmentPolicy, minimumValue: minimumValue)
+      toolbar.update(
+        adjustmentPolicy: adjustmentPolicy,
+        minimumValue: minimumValue,
+        onCommit: onCommit)
     }
     if textField.text != text {
       textField.text = text
@@ -179,6 +186,7 @@ struct SelectAllTextField: UIViewRepresentable {
     }
 
     func textFieldDidEndEditing(_ textField: UITextField) {
+      parent.onCommit(textField.text ?? "")
       parent.isFocused = false
     }
 
@@ -200,11 +208,18 @@ private final class KeyboardAccessoryToolbar: UIToolbar {
   private weak var textField: UITextField?
   private var adjustmentPolicy: NumericAdjustmentPolicy
   private var minimumValue: Double
+  private var onCommit: (String) -> Void
 
-  init(textField: UITextField, adjustmentPolicy: NumericAdjustmentPolicy, minimumValue: Double) {
+  init(
+    textField: UITextField,
+    adjustmentPolicy: NumericAdjustmentPolicy,
+    minimumValue: Double,
+    onCommit: @escaping (String) -> Void
+  ) {
     self.textField = textField
     self.adjustmentPolicy = adjustmentPolicy
     self.minimumValue = minimumValue
+    self.onCommit = onCommit
     super.init(frame: .zero)
 
     let decrease = UIBarButtonItem(
@@ -243,9 +258,14 @@ private final class KeyboardAccessoryToolbar: UIToolbar {
     fatalError("init(coder:) has not been implemented")
   }
 
-  func update(adjustmentPolicy: NumericAdjustmentPolicy, minimumValue: Double) {
+  func update(
+    adjustmentPolicy: NumericAdjustmentPolicy,
+    minimumValue: Double,
+    onCommit: @escaping (String) -> Void
+  ) {
     self.adjustmentPolicy = adjustmentPolicy
     self.minimumValue = minimumValue
+    self.onCommit = onCommit
   }
 
   @objc private func hideKeyboard() {
@@ -268,6 +288,7 @@ private final class KeyboardAccessoryToolbar: UIToolbar {
     else { return }
     textField.text = numericText(adjustedValue)
     textField.sendActions(for: .editingChanged)
+    onCommit(textField.text ?? "")
   }
 }
 

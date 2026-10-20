@@ -41,6 +41,7 @@ final class KidsWatchShareSceneDelegate: UIResponder, UIWindowSceneDelegate {
   }
 
   private func accept(_ metadata: CKShare.Metadata) {
+    guard KidsWatchCloudStore.isAvailable else { return }
     Task {
       do {
         _ = try await KidsWatchCloudStore.container.accept(metadata)
