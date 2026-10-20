@@ -1380,6 +1380,10 @@ final class WorkoutNavigationUITests: XCTestCase {
     XCTAssertTrue(waitForHittable(benchNext))
     XCTAssertTrue(exerciseMenu.isHittable)
     XCTAssertTrue(alexPicker.isHittable)
+    let initialCurrentExerciseScreenshot = XCTAttachment(screenshot: app.screenshot())
+    initialCurrentExerciseScreenshot.name = "active-workout-current-exercise-bench-press"
+    initialCurrentExerciseScreenshot.lifetime = .keepAlways
+    add(initialCurrentExerciseScreenshot)
 
     exerciseMenu.tap()
     let benchItem = app.buttons["workout-exercise-menu-Bench Press"]
@@ -1399,12 +1403,17 @@ final class WorkoutNavigationUITests: XCTestCase {
 
     XCTAssertTrue(app.navigationBars["Barbell Back Squat"].waitForExistence(timeout: 3))
     XCTAssertTrue(waitForHittable(squatNext))
+    let changedCurrentExerciseScreenshot = XCTAttachment(screenshot: app.screenshot())
+    changedCurrentExerciseScreenshot.name = "active-workout-current-exercise-barbell-back-squat"
+    changedCurrentExerciseScreenshot.lifetime = .keepAlways
+    add(changedCurrentExerciseScreenshot)
     XCTAssertTrue(exerciseMenu.isHittable)
     exerciseMenu.tap()
     XCTAssertTrue(
       app.buttons["workout-exercise-menu-Barbell Back Squat"].label.contains("Current exercise"))
     app.buttons["workout-exercise-menu-Fixture Custom Curl"].tap()
     XCTAssertTrue(app.navigationBars["Fixture Custom Curl"].waitForExistence(timeout: 3))
+    XCTAssertTrue(waitForHittable(app.buttons["exercise-details-Fixture Custom Curl"]))
 
     exerciseMenu.tap()
     let selectedCustom = app.buttons["workout-exercise-menu-Fixture Custom Curl"]

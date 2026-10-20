@@ -1068,6 +1068,7 @@ struct ActiveWorkoutView: View {
       colors: participantColors,
       position: index + 1,
       total: orderedExercises.count,
+      isCurrentExercise: currentExerciseLog?.id == exercise.id,
       usesSinglePersonHorizontalLayout: visiblePeople.count == 1,
       onAdvance: { jumpExercise(after: exercise, by: 1) },
       onOpenExercise: {
@@ -1552,6 +1553,7 @@ struct ActiveExerciseCard: View {
   let colors: [String: String]
   let position: Int
   let total: Int
+  let isCurrentExercise: Bool
   let usesSinglePersonHorizontalLayout: Bool
   let onAdvance: () -> Void
   let onOpenExercise: () -> Void
@@ -1755,6 +1757,12 @@ struct ActiveExerciseCard: View {
       Color(.systemBackground),
       in: RoundedRectangle(cornerRadius: 20, style: .continuous)
     )
+    .overlay {
+      if isCurrentExercise {
+        RoundedRectangle(cornerRadius: 20, style: .continuous)
+          .strokeBorder(Theme.coral, lineWidth: 1)
+      }
+    }
     .onAppear(perform: equalizeSetCounts)
     .onChange(of: visiblePeople) { _, _ in equalizeSetCounts() }
     .sheet(isPresented: $showingImages) {
