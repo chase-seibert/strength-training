@@ -968,6 +968,7 @@ enum WorkoutSessionStarter {
         unit: unit(for: item, catalog: catalog),
         sortOrder: item.sortOrder,
         participants: participantLogs,
+        notes: item.notes,
         isBilateral: previousExercise?.isBilateral ?? false)
     }
 

@@ -198,6 +198,15 @@ struct ExerciseDetailView: View {
         .padding()
         .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 18))
 
+        if let note = exercise.note, !note.isEmpty {
+          VStack(alignment: .leading, spacing: 10) {
+            Text("Exercise note").font(.headline)
+            Text(note)
+              .font(.body)
+              .foregroundStyle(.secondary)
+          }
+        }
+
         if !exercise.instructions.isEmpty {
           VStack(alignment: .leading, spacing: 10) {
             Text("Technique notes").font(.headline)
@@ -427,6 +436,7 @@ private struct ExerciseEditorSheet: View {
   @State private var repCountingMode: RepCountingMode = .standard
   @State private var dumbbellReminderOverride: Bool?
   @State private var sideTotalRepsReminderOverride: Bool?
+  @State private var note = ""
   @State private var instructions = ""
 
   private static let muscles = [
@@ -460,6 +470,7 @@ private struct ExerciseEditorSheet: View {
     _dumbbellReminderOverride = State(initialValue: exercise.dumbbellLoadReminderEnabled)
     _sideTotalRepsReminderOverride = State(
       initialValue: exercise.sideTotalRepsReminderEnabled)
+    _note = State(initialValue: exercise.note ?? "")
     _instructions = State(initialValue: exercise.instructions)
   }
 
@@ -474,11 +485,17 @@ private struct ExerciseEditorSheet: View {
     _repCountingMode = State(initialValue: source.repCountingMode)
     _dumbbellReminderOverride = State(initialValue: source.dumbbellLoadReminderEnabled)
     _sideTotalRepsReminderOverride = State(initialValue: source.hasSideTotalRepsReminder)
+    _note = State(initialValue: source.note ?? "")
     _instructions = State(initialValue: source.instructions)
   }
 
   private var trimmedName: String {
     name.trimmingCharacters(in: .whitespacesAndNewlines)
+  }
+
+  private var trimmedNote: String? {
+    let value = note.trimmingCharacters(in: .whitespacesAndNewlines)
+    return value.isEmpty ? nil : value
   }
 
   private var hasNameConflict: Bool {
@@ -620,6 +637,16 @@ private struct ExerciseEditorSheet: View {
         }
 
         Section {
+          TextField("e.g. Seat at setting 4", text: $note, axis: .vertical)
+            .lineLimit(2...4)
+            .accessibilityIdentifier("exercise-note-field")
+        } header: {
+          Text("Exercise note")
+        } footer: {
+          Text("Shown beneath the exercise name during a workout.")
+        }
+
+        Section {
           TextField("e.g. Keep your chest up", text: $instructions, axis: .vertical)
             .lineLimit(4...8)
         } header: {
@@ -692,6 +719,7 @@ private struct ExerciseEditorSheet: View {
         exercise.repCountingMode =
           effectiveSideTotalRepsReminderSetting ? .standard : repCountingMode
         exercise.dumbbellLoadReminderEnabled = dumbbellReminderOverride
+        exercise.note = trimmedNote
         exercise.instructions = instructions.trimmingCharacters(in: .whitespacesAndNewlines)
         try updateReferences(to: exercise, previouslyNamed: previousName)
       } else {
@@ -707,6 +735,7 @@ private struct ExerciseEditorSheet: View {
           repCountingMode: effectiveSideTotalRepsReminderSetting ? .standard : repCountingMode,
           dumbbellLoadReminderEnabled: dumbbellReminderOverride,
           sideTotalRepsReminderEnabled: sideTotalRepsReminderOverride,
+          note: trimmedNote,
           instructions: instructions.trimmingCharacters(in: .whitespacesAndNewlines),
           imagePath: source?.imagePath,
           additionalImagePaths: Array(source?.imagePaths.dropFirst() ?? []),

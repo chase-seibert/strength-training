@@ -1636,6 +1636,13 @@ struct ActiveExerciseCard: View {
     return exercise.repCountingMode.explanation
   }
 
+  private var exerciseNote: String? {
+    let masterNote = catalogExercise?.note?.trimmingCharacters(in: .whitespacesAndNewlines)
+    if let masterNote, !masterNote.isEmpty { return masterNote }
+    let workoutNote = exercise.notes?.trimmingCharacters(in: .whitespacesAndNewlines)
+    return workoutNote?.isEmpty == false ? workoutNote : nil
+  }
+
   var body: some View {
     VStack(spacing: 12) {
       HStack(alignment: .top, spacing: 10) {
@@ -1666,6 +1673,13 @@ struct ActiveExerciseCard: View {
           Text("\(position) of \(total) · \(exercise.unit.title)")
             .font(.caption.weight(.semibold))
             .foregroundStyle(.secondary)
+          if let exerciseNote {
+            Text(exerciseNote)
+              .font(.caption2)
+              .foregroundStyle(.secondary)
+              .fixedSize(horizontal: false, vertical: true)
+              .accessibilityIdentifier("exercise-note-\(exercise.exerciseName)")
+          }
           if let repGuidance {
             Text(repGuidance)
               .font(.caption2)
