@@ -335,6 +335,7 @@ struct ActiveWorkoutView: View {
   @State private var currentExerciseID: UUID?
   @State private var visibilityState = ActiveWorkoutVisibilityState()
   @State private var requestedExerciseID: UUID?
+  @State private var valueBaselinesByExerciseID: [UUID: [String: ExerciseValueBaseline]] = [:]
   @State private var catalogByID: [UUID: Exercise] = [:]
   @State private var catalogByName: [String: Exercise] = [:]
   @State private var hasPendingSave = false
@@ -622,6 +623,7 @@ struct ActiveWorkoutView: View {
     }
     .onChange(of: session.exercises.map(\.id)) { _, _ in
       loadRelevantCatalogExercises()
+      loadExerciseValueBaselines()
     }
     .onChange(of: currentExerciseID) { _, _ in
       publishKidsWatchSnapshot()
@@ -1062,6 +1064,7 @@ struct ActiveWorkoutView: View {
   ) -> some View {
     ActiveExerciseCard(
       exercise: exercise,
+      valueBaselines: valueBaselinesByExerciseID[exercise.id] ?? [:],
       catalogExercise: exercise.exerciseID.flatMap { catalogByID[$0] }
         ?? catalogByName[exercise.exerciseName],
       visiblePeople: visiblePeople,
@@ -1249,6 +1252,21 @@ struct ActiveWorkoutView: View {
     guard !didLoadSupportingData else { return }
     didLoadSupportingData = true
     loadRelevantCatalogExercises()
+    loadExerciseValueBaselines()
+  }
+
+  private func loadExerciseValueBaselines() {
+    let descriptor = FetchDescriptor<WorkoutSession>(
+      sortBy: [SortDescriptor(\WorkoutSession.startedAt, order: .reverse)])
+    guard let history = try? context.fetch(descriptor) else { return }
+    valueBaselinesByExerciseID = Dictionary(
+      uniqueKeysWithValues: session.exercises.map { exercise in
+        (
+          exercise.id,
+          WorkoutExerciseHistory.valueBaselines(
+            for: exercise, in: session, history: history)
+        )
+      })
   }
 
   private func loadRelevantCatalogExercises() {
@@ -1548,6 +1566,7 @@ struct ActiveExerciseCard: View {
   @Environment(\.modelContext) private var context
   @Environment(\.scheduleWorkoutSave) private var scheduleWorkoutSave
   @Bindable var exercise: ExerciseLog
+  let valueBaselines: [String: ExerciseValueBaseline]
   let catalogExercise: Exercise?
   let visiblePeople: [String]
   let colors: [String: String]
@@ -1852,10 +1871,16 @@ struct ActiveExerciseCard: View {
   }
 
   private func participantLoadControl(for participant: ParticipantLog) -> some View {
-    MeasurementStepper(
+    let baseline = valueBaselines[participant.participantName.lowercased()]
+    let isValueChanged =
+      exercise.unit.isWeight
+      && baseline?.unit == exercise.unit
+      && baseline.map { abs($0.measurement - participant.measurement) > 0.000_001 } == true
+    return MeasurementStepper(
       participant: participant,
       unit: exercise.unit,
-      colorHex: colors[participant.participantName] ?? "FF5A45"
+      colorHex: colors[participant.participantName] ?? "FF5A45",
+      isValueChanged: isValueChanged
     )
     .fixedSize(horizontal: false, vertical: true)
     .frame(width: activeWorkoutParticipantColumnWidth)
@@ -1872,6 +1897,7 @@ struct ActiveExerciseCard: View {
       repCountingMode: exercise.repCountingMode,
       showsSideTotalRepsReminder: exercise.hasSideTotalRepsReminder,
       isShowingTotalReps: $isShowingSideTotalReps,
+      previousValues: valueBaselines[participant.participantName.lowercased()],
       exerciseName: exercise.exerciseName,
       colorHex: colors[participant.participantName] ?? "FF5A45",
       onCustomizeLastSet: { lastSetEditorParticipant = participant },
@@ -2148,6 +2174,7 @@ struct ParticipantExerciseCell: View {
   var repCountingMode: RepCountingMode = .standard
   var showsSideTotalRepsReminder = false
   @Binding var isShowingTotalReps: Bool
+  var previousValues: ExerciseValueBaseline? = nil
   let exerciseName: String
   let colorHex: String
   let onCustomizeLastSet: () -> Void
@@ -2184,6 +2211,13 @@ struct ParticipantExerciseCell: View {
     return last.target(for: unit)
   }
 
+  private var isBaseRepsChanged: Bool {
+    guard unit.usesReps, let previousValues, previousValues.unit.usesReps,
+      let previousBaseReps = previousValues.setTargets.first
+    else { return false }
+    return previousBaseReps != baseReps
+  }
+
   var body: some View {
     VStack(spacing: 6) {
       VStack(spacing: 0) {
@@ -2193,7 +2227,8 @@ struct ParticipantExerciseCell: View {
           repCountingMode: repCountingMode,
           showsTotalRepsLabel: showsSideTotalRepsReminder,
           baseReps: baseReps,
-          colorHex: colorHex
+          colorHex: colorHex,
+          isValueChanged: isBaseRepsChanged
         )
         .frame(maxWidth: .infinity)
 
@@ -2576,6 +2611,7 @@ struct CompactRepsControl: View {
   var showsTotalRepsLabel = false
   let baseReps: Int
   let colorHex: String
+  var isValueChanged = false
   @State private var text = ""
   @State private var isFocused = false
 
@@ -2592,7 +2628,11 @@ struct CompactRepsControl: View {
           accessibilityLabel:
             "Base \(showsTotalRepsLabel ? "total reps" : unit.targetLabel(repCountingMode: repCountingMode)) for \(participant.participantName)",
           adjustmentPolicy: .additive(step: 1),
-          minimumValue: 1
+          minimumValue: 1,
+          textColor: isValueChanged ? UIColor(Theme.coral) : nil,
+          accessibilityHint: isValueChanged ? "Updated since last time" : nil,
+          accessibilityIdentifier:
+            "base-reps-value-\(participant.participantName)\(isValueChanged ? "-updated" : "")"
         )
         .frame(maxWidth: .infinity, minHeight: 36)
         .overlay(alignment: .bottom) {
@@ -2761,6 +2801,7 @@ struct MeasurementStepper: View {
   @Bindable var participant: ParticipantLog
   let unit: TrackingUnit
   let colorHex: String
+  var isValueChanged = false
   @State private var text = ""
   @State private var isFocused = false
 
@@ -2781,6 +2822,10 @@ struct MeasurementStepper: View {
           accessibilityLabel: "\(unit.title) for \(participant.participantName)",
           adjustmentPolicy: adjustmentPolicy,
           minimumValue: 0,
+          textColor: isValueChanged ? UIColor(Theme.coral) : nil,
+          accessibilityHint: isValueChanged ? "Updated since last time" : nil,
+          accessibilityIdentifier:
+            "measurement-value-\(participant.participantName)\(isValueChanged ? "-updated" : "")",
           onCommit: commitMeasurement
         )
         .frame(maxWidth: .infinity, minHeight: 36)

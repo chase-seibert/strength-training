@@ -206,6 +206,7 @@ cross-routine-history-ui-test:
 	  CODE_SIGNING_ALLOWED=NO \
 	  -parallel-testing-enabled NO \
 	  -only-testing:StrengthLogUITests/WorkoutNavigationUITests/testSameExerciseHistorySeedsAcrossRoutinesPerPerson \
+	  -only-testing:StrengthLogUITests/WorkoutNavigationUITests/testLoadAndRepValuesHighlightWhenChangedFromLatestExerciseHistory \
 	  -only-testing:StrengthLogUITests/WorkoutNavigationUITests/testLegacyIDLessExerciseHistorySeedsAcrossRoutines \
 	  -only-testing:StrengthLogUITests/WorkoutNavigationUITests/testCrossRoutineHistoryWithoutCompletedSetsUsesDefaults \
 	  test

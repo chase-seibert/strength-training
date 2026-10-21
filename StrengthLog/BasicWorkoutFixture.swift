@@ -345,6 +345,12 @@
             crossRoutineSession(
               exerciseID: UUID(), name: benchPress.name, startedAt: now,
               alexMeasurement: 999, alexReps: [1], jordanMeasurement: 999, jordanReps: [1]))
+          var deletedSession = crossRoutineSession(
+            exerciseID: benchPress.id, name: benchPress.name,
+            startedAt: now.addingTimeInterval(-1), alexMeasurement: 999,
+            alexReps: [1], jordanMeasurement: 999, jordanReps: [1])
+          deletedSession.deletedAt = now
+          workoutHistory.append(deletedSession)
         }
       }
 

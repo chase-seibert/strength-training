@@ -1088,6 +1088,66 @@ final class WorkoutSet {
   }
 }
 
+struct ExerciseValueBaseline {
+  let unit: TrackingUnit
+  let measurement: Double
+  let setTargets: [Int]
+}
+
+enum WorkoutExerciseHistory {
+  static func valueBaselines(
+    for exercise: ExerciseLog, in currentSession: WorkoutSession,
+    history: [WorkoutSession]
+  ) -> [String: ExerciseValueBaseline] {
+    let priorSessions =
+      history
+      .filter {
+        $0.id != currentSession.id && $0.deletedAt == nil && !$0.isActive
+          && $0.startedAt <= currentSession.startedAt
+      }
+      .sorted { lhs, rhs in
+        if lhs.startedAt != rhs.startedAt { return lhs.startedAt > rhs.startedAt }
+        return lhs.id.uuidString > rhs.id.uuidString
+      }
+
+    var result: [String: ExerciseValueBaseline] = [:]
+    for participant in exercise.participants {
+      let key = participant.participantName.lowercased()
+      guard result[key] == nil,
+        let baseline = priorSessions.lazy.compactMap({ session -> ExerciseValueBaseline? in
+          guard
+            session.isParticipantActive(participant.participantName),
+            let previousExercise = session.exercises.first(where: {
+              matches(exercise, $0)
+            }),
+            let previousParticipant = previousExercise.participants.first(where: {
+              $0.participantName.caseInsensitiveCompare(participant.participantName) == .orderedSame
+            })
+          else { return nil }
+
+          let completedSets = previousParticipant.orderedSets.filter {
+            $0.isCompleted && !$0.isSkipped
+          }
+          guard !completedSets.isEmpty else { return nil }
+          return ExerciseValueBaseline(
+            unit: previousExercise.unit,
+            measurement: previousParticipant.measurement,
+            setTargets: completedSets.map { $0.target(for: previousExercise.unit) })
+        }).first
+      else { continue }
+      result[key] = baseline
+    }
+    return result
+  }
+
+  private static func matches(_ current: ExerciseLog, _ previous: ExerciseLog) -> Bool {
+    if let currentID = current.exerciseID, let previousID = previous.exerciseID {
+      return currentID == previousID
+    }
+    return current.exerciseName.caseInsensitiveCompare(previous.exerciseName) == .orderedSame
+  }
+}
+
 enum WorkoutSide: String, CaseIterable, Identifiable {
   case left = "L"
   case right = "R"

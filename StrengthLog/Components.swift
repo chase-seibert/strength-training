@@ -95,6 +95,9 @@ struct SelectAllTextField: UIViewRepresentable {
   let accessibilityLabel: String
   let adjustmentPolicy: NumericAdjustmentPolicy
   let minimumValue: Double
+  var textColor: UIColor? = nil
+  var accessibilityHint: String? = nil
+  var accessibilityIdentifier: String? = nil
   var onCommit: (String) -> Void = { _ in }
 
   func makeCoordinator() -> Coordinator {
@@ -108,6 +111,9 @@ struct SelectAllTextField: UIViewRepresentable {
     textField.textAlignment = textAlignment
     textField.font = font
     textField.accessibilityLabel = accessibilityLabel
+    textField.textColor = textColor ?? .label
+    textField.accessibilityHint = accessibilityHint
+    textField.accessibilityIdentifier = accessibilityIdentifier
     textField.inputAccessoryView = KeyboardAccessoryToolbar(
       textField: textField,
       adjustmentPolicy: adjustmentPolicy,
@@ -122,6 +128,9 @@ struct SelectAllTextField: UIViewRepresentable {
   func updateUIView(_ textField: UITextField, context: Context) {
     context.coordinator.update(self)
     textField.accessibilityLabel = accessibilityLabel
+    textField.textColor = textColor ?? .label
+    textField.accessibilityHint = accessibilityHint
+    textField.accessibilityIdentifier = accessibilityIdentifier
     textField.keyboardType = keyboardType
     if let toolbar = textField.inputAccessoryView as? KeyboardAccessoryToolbar {
       toolbar.update(

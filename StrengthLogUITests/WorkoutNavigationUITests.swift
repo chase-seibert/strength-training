@@ -307,6 +307,9 @@ final class WorkoutNavigationUITests: XCTestCase {
     let jordanWeight = app.textFields["Pounds for Jordan"]
     let jordanReps = app.textFields["Base reps for Jordan"]
     XCTAssertTrue(alexWeight.waitForExistence(timeout: 5))
+    XCTAssertTrue(alexReps.exists)
+    XCTAssertTrue(jordanWeight.exists)
+    XCTAssertTrue(jordanReps.exists)
     XCTAssertEqual(alexWeight.value as? String, "140")
     XCTAssertEqual(alexReps.value as? String, "6")
     XCTAssertEqual(jordanWeight.value as? String, "80")
@@ -315,6 +318,51 @@ final class WorkoutNavigationUITests: XCTestCase {
     XCTAssertTrue(app.buttons["participant-set-Jordan-2"].exists)
     XCTAssertFalse(app.buttons["participant-set-Alex-3"].exists)
     XCTAssertFalse(app.buttons["participant-set-Jordan-3"].exists)
+  }
+
+  func testLoadAndRepValuesHighlightWhenChangedFromLatestExerciseHistory() {
+    app.terminate()
+    app.launchArguments = [
+      "-basicWorkoutFixture", "-crossRoutineHistoryFixture", "-activeWorkoutFixture",
+      "-activeWorkoutTwoPersonFixture",
+    ]
+    app.launch()
+
+    let alexWeight = app.textFields["Pounds for Alex"]
+    let alexReps = app.textFields["Base reps for Alex"]
+    let jordanWeight = app.textFields["Pounds for Jordan"]
+    let jordanReps = app.textFields["Base reps for Jordan"]
+    XCTAssertTrue(alexWeight.waitForExistence(timeout: 5))
+    XCTAssertTrue(jordanWeight.exists)
+    XCTAssertTrue(jordanReps.exists)
+    XCTAssertEqual(alexWeight.value as? String, "140")
+    XCTAssertEqual(alexReps.value as? String, "6")
+    XCTAssertFalse(app.textFields["measurement-value-Alex-updated"].exists)
+    XCTAssertFalse(app.textFields["base-reps-value-Alex-updated"].exists)
+
+    app.buttons["measurement-plus-Alex"].tap()
+    XCTAssertEqual(alexWeight.value as? String, "145")
+    XCTAssertTrue(app.textFields["measurement-value-Alex-updated"].exists)
+    XCTAssertFalse(app.textFields["base-reps-value-Alex-updated"].exists)
+    XCTAssertFalse(app.textFields["measurement-value-Jordan-updated"].exists)
+
+    app.buttons["base-reps-plus-Alex"].tap()
+    XCTAssertEqual(alexReps.value as? String, "7")
+    XCTAssertTrue(app.textFields["base-reps-value-Alex-updated"].exists)
+    XCTAssertTrue(app.textFields["measurement-value-Alex-updated"].exists)
+    XCTAssertFalse(app.textFields["base-reps-value-Jordan-updated"].exists)
+
+    let screenshot = XCTAttachment(screenshot: app.screenshot())
+    screenshot.name = "active-workout-values-changed-from-history"
+    screenshot.lifetime = .keepAlways
+    add(screenshot)
+
+    app.buttons["measurement-minus-Alex"].tap()
+    XCTAssertEqual(alexWeight.value as? String, "140")
+    XCTAssertFalse(app.textFields["measurement-value-Alex-updated"].exists)
+    app.buttons["base-reps-minus-Alex"].tap()
+    XCTAssertEqual(alexReps.value as? String, "6")
+    XCTAssertFalse(app.textFields["base-reps-value-Alex-updated"].exists)
   }
 
   func testLegacyIDLessExerciseHistorySeedsAcrossRoutines() {
