@@ -36,6 +36,8 @@
 		A10000000000000000000017 /* ProgressWidgetShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000017 /* ProgressWidgetShared.swift */; };
 		A10000000000000000000018 /* ProgressWidgetPublisher.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000018 /* ProgressWidgetPublisher.swift */; };
 		A10000000000000000000019 /* ProgressSummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000019 /* ProgressSummary.swift */; };
+		A10000000000000000000021 /* LiftCoach.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000021 /* LiftCoach.swift */; };
+		A10000000000000000000022 /* WeeklyCoachingNotifications.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000022 /* WeeklyCoachingNotifications.swift */; };
 		A1000000000000000000001A /* KidsWatchSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000001A /* KidsWatchSnapshot.swift */; };
 		A1000000000000000000001B /* KidsWatchCloudStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000001B /* KidsWatchCloudStore.swift */; };
 		A1000000000000000000001C /* KidsWatchShareSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000001C /* KidsWatchShareSheet.swift */; };
@@ -116,6 +118,8 @@
 		D20000000000000000000002 /* KidsWatch.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = KidsWatch.entitlements; sourceTree = "<group>"; };
 		D20000000000000000000003 /* KidsWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = KidsWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A20000000000000000000019 /* ProgressSummary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressSummary.swift; sourceTree = "<group>"; };
+		A20000000000000000000021 /* LiftCoach.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiftCoach.swift; sourceTree = "<group>"; };
+		A20000000000000000000022 /* WeeklyCoachingNotifications.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyCoachingNotifications.swift; sourceTree = "<group>"; };
 		C20000000000000000000006 /* ProgressWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressWidget.swift; sourceTree = "<group>"; };
 		D17400000000000000000002 /* WorkoutConfettiView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutConfettiView.swift; sourceTree = "<group>"; };
 		D17400000000000000000004 /* WorkoutConfetti.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = WorkoutConfetti.metal; sourceTree = "<group>"; };
@@ -172,6 +176,8 @@
 				A20000000000000000000020 /* PairedWatchWorkoutSync.swift */,
 				A20000000000000000000018 /* ProgressWidgetPublisher.swift */,
 				A20000000000000000000019 /* ProgressSummary.swift */,
+				A20000000000000000000021 /* LiftCoach.swift */,
+				A20000000000000000000022 /* WeeklyCoachingNotifications.swift */,
 				C20000000000000000000001 /* LiveActivityAttributes.swift */,
 				C20000000000000000000002 /* LiveActivityManager.swift */,
 				A2000000000000000000000B /* Assets.xcassets */,
@@ -339,6 +345,8 @@
 				A10000000000000000000017 /* ProgressWidgetShared.swift in Sources */,
 				A10000000000000000000018 /* ProgressWidgetPublisher.swift in Sources */,
 				A10000000000000000000019 /* ProgressSummary.swift in Sources */,
+				A10000000000000000000021 /* LiftCoach.swift in Sources */,
+				A10000000000000000000022 /* WeeklyCoachingNotifications.swift in Sources */,
 				A1000000000000000000001A /* KidsWatchSnapshot.swift in Sources */,
 				A1000000000000000000001B /* KidsWatchCloudStore.swift in Sources */,
 				A1000000000000000000001C /* KidsWatchShareSheet.swift in Sources */,

@@ -7,6 +7,12 @@
 - `jq` for catalog validation.
 - No package installation or API key is required.
 
+## Lift Coach
+
+Weekly reports calculate workout count, completed sets, pounds × reps, workout duration, routine counts, and daily volume locally, then store the structured report with the SwiftData store. Choose **On-device model** for Foundation Models on supported iOS 26+ devices. To use **OpenAI API**, add a personal API key in Settings → Lift Coach and explicitly enable cloud context sharing; the key is stored in Keychain and is not included in app builds. The request includes bounded workout summaries and eligible reviewed progression choices, but not participant names, local database IDs, or private notes. Review OpenAI's current data policies before enabling the provider. Rest guidance uses configured rest, RPE, and target performance; exact rest intervals are not recorded, so the report says when those signals are insufficient.
+
+The optional weekly reminder is configured in Settings → Weekly report and asks for notification permission only when enabled. Tapping it opens Progress at Lift Coach. Debug builds also include sample Progress states under Settings → Developer Menu; those previews do not save reports or make provider calls.
+
 ## Apple Health
 
 Apple Health recording is off by default. In Settings, turn on **Record Workouts in Apple Health** to request workout write permission. When enabled, explicitly completing a workout with at least one completed set attempts to save one traditional strength-training workout. Lift Chase requests no Health reads and adds no energy or other measurements. Export uses the session's explicit start and end and is omitted for invalid timing or sessions longer than 24 hours. Health access or save errors do not affect the local workout. Turning the setting off stops future exports; it does not delete records already in Apple Health. Group sessions are represented by one record in the device owner's Health data.

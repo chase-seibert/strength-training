@@ -108,6 +108,7 @@ struct StrengthLogApp: App {
   init() {
     let schema = Schema([
       PersonProfile.self,
+      WeeklyCoachingReport.self,
       Exercise.self,
       Routine.self,
       RoutineExercise.self,
@@ -372,6 +373,9 @@ struct RootView: View {
         .tag(4)
     }
     .tint(Theme.coral)
+    .onReceive(NotificationCenter.default.publisher(for: .openWeeklyCoachingReport)) { _ in
+      selectedTab = 3
+    }
     .fullScreenCover(item: $celebrationSummary) { summary in
       WorkoutCelebrationView(
         summary: summary,
@@ -379,6 +383,9 @@ struct RootView: View {
     }
     .onAppear {
       PairedWatchWorkoutSync.activate()
+      if UserDefaults.standard.bool(forKey: WeeklyCoachingNotificationCoordinator.pendingRouteKey) {
+        selectedTab = 3
+      }
       if activeSessions.isEmpty { publishKidsWatchProgress() }
       guard !didRestoreActiveWorkout else { return }
       didRestoreActiveWorkout = true

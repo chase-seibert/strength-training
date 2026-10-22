@@ -1,13 +1,42 @@
 import CloudKit
 import UIKit
+import UserNotifications
 
-final class KidsWatchShareApplicationDelegate: NSObject, UIApplicationDelegate {
+final class KidsWatchShareApplicationDelegate: NSObject, UIApplicationDelegate,
+  UNUserNotificationCenterDelegate
+{
   func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
   ) -> Bool {
     PairedWatchWorkoutSync.activate()
+    UNUserNotificationCenter.current().delegate = self
     return true
+  }
+
+  func userNotificationCenter(
+    _ center: UNUserNotificationCenter,
+    didReceive response: UNNotificationResponse,
+    withCompletionHandler completionHandler: @escaping () -> Void
+  ) {
+    if response.notification.request.content.userInfo["destination"] as? String
+      == "weekly-coaching-report"
+    {
+      UserDefaults.standard.set(
+        true, forKey: WeeklyCoachingNotificationCoordinator.pendingRouteKey)
+      DispatchQueue.main.async {
+        NotificationCenter.default.post(name: .openWeeklyCoachingReport, object: nil)
+      }
+    }
+    completionHandler()
+  }
+
+  func userNotificationCenter(
+    _ center: UNUserNotificationCenter,
+    willPresent notification: UNNotification,
+    withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+  ) {
+    completionHandler([.banner, .sound, .badge])
   }
 
   func application(

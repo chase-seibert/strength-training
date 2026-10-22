@@ -772,6 +772,36 @@ final class WorkoutNavigationUITests: XCTestCase {
     XCTAssertFalse(app.staticTexts["Workout complete"].exists)
   }
 
+  func testDeveloperMenuShowsBothLiftCoachProgressPreviews() {
+    app.terminate()
+    app.launchArguments = ["-basicWorkoutFixture", "-emptyWorkoutHistoryFixture"]
+    app.launch()
+    openDeveloperMenu()
+
+    let learningPreview = app.buttons["developer-preview-progress-learning"]
+    XCTAssertTrue(learningPreview.waitForExistence(timeout: 5))
+    learningPreview.tap()
+    XCTAssertTrue(
+      app.staticTexts["Lift Coach is learning your habits"].waitForExistence(timeout: 5))
+    XCTAssertTrue(app.descendants(matching: .any)["progress-volume-chart"].exists)
+    XCTAssertTrue(app.staticTexts["Recent workouts"].exists)
+    let learningScreenshot = XCTAttachment(screenshot: app.screenshot())
+    learningScreenshot.name = "developer-progress-learning-preview"
+    learningScreenshot.lifetime = .keepAlways
+    add(learningScreenshot)
+
+    app.navigationBars.buttons["Developer"].tap()
+    let generatedPreview = app.buttons["developer-preview-progress-generated"]
+    XCTAssertTrue(generatedPreview.waitForExistence(timeout: 5))
+    generatedPreview.tap()
+    XCTAssertTrue(app.staticTexts["Incline Dumbbell Press"].waitForExistence(timeout: 5))
+    XCTAssertTrue(app.buttons["Preview workout"].exists)
+    let generatedScreenshot = XCTAttachment(screenshot: app.screenshot())
+    generatedScreenshot.name = "developer-progress-generated-preview"
+    generatedScreenshot.lifetime = .keepAlways
+    add(generatedScreenshot)
+  }
+
   private func openDeveloperMenu() {
     app.tabBars.buttons["Settings"].tap()
     let menu = app.buttons["Developer Menu"]

@@ -16,7 +16,7 @@ DEVICE_ID ?= 00008150-000E41422E40401C
 WATCH_DEVICE_ID := 00008310-000A18983C40E01E
 DEVELOPMENT_TEAM ?= 96NAC4VTEN
 
-.PHONY: metal-setup watch-build watch-deploy confetti-ui-test workout-profile workout-profile-graph rep-counting-ui-test exercise-unit-ui-test exercise-timer-ui-test cross-routine-history-ui-test pr-sticker-ui-test progress-widget-check setup build run format lint test catalog-check exercise-images-check bundle-exercise-images hevy-import-check sim-build sim-launch workout-navigation-ui-test active-workout-regression-ui-test active-workout-performance-ui-test phone-build phone-install phone-launch phone-deploy clean
+.PHONY: metal-setup watch-build watch-deploy confetti-ui-test lift-coach-ui-test workout-profile workout-profile-graph rep-counting-ui-test exercise-unit-ui-test exercise-timer-ui-test cross-routine-history-ui-test pr-sticker-ui-test progress-widget-check setup build run format lint test catalog-check exercise-images-check bundle-exercise-images hevy-import-check sim-build sim-launch workout-navigation-ui-test active-workout-regression-ui-test active-workout-performance-ui-test phone-build phone-install phone-launch phone-deploy clean
 
 setup: catalog-check exercise-images-check
 
@@ -141,6 +141,18 @@ confetti-ui-test:
 	  -only-testing:StrengthLogUITests/WorkoutNavigationUITests/testDeveloperMenuReplaysLatestCompletedWorkoutCelebration \
 	  -only-testing:StrengthLogUITests/WorkoutNavigationUITests/testDeveloperMenuCelebrationPreviewWithoutCompletedWorkout \
 	  -only-testing:StrengthLogUITests/WorkoutNavigationUITests/testCompletingWorkoutShowsCelebrationSummary \
+	  test
+
+lift-coach-ui-test:
+	xcodebuild \
+	  -project $(PROJECT) \
+	  -scheme $(SCHEME) \
+	  -configuration $(CONFIGURATION) \
+	  -destination '$(SIM_DESTINATION)' \
+	  -derivedDataPath $(UI_DERIVED_DATA) \
+	  CODE_SIGNING_ALLOWED=NO \
+	  -parallel-testing-enabled NO \
+	  -only-testing:StrengthLogUITests/WorkoutNavigationUITests/testDeveloperMenuShowsBothLiftCoachProgressPreviews \
 	  test
 
 workout-navigation-ui-test:

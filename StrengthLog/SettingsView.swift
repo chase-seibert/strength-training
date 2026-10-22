@@ -16,10 +16,22 @@ struct SettingsView: View {
   private var restTimerNotificationsEnabled = false
   @AppStorage(HealthKitWorkoutRecorder.recordingEnabledKey)
   private var healthKitWorkoutRecordingEnabled = false
+  @AppStorage("liftCoachProvider") private var liftCoachProvider = LiftCoachProvider.deterministic
+    .rawValue
+  @AppStorage("liftCoachOpenAIConsent") private var liftCoachOpenAIConsent = false
+  @AppStorage(WeeklyCoachingNotificationCoordinator.enabledKey) private
+    var weeklyCoachReminderEnabled = false
+  @AppStorage(WeeklyCoachingNotificationCoordinator.weekdayKey) private
+    var weeklyCoachReminderWeekday = 2
+  @AppStorage(WeeklyCoachingNotificationCoordinator.hourKey) private var weeklyCoachReminderHour = 9
+  @AppStorage(WeeklyCoachingNotificationCoordinator.minuteKey) private
+    var weeklyCoachReminderMinute = 0
   @State private var showingNewPerson = false
   @State private var showingHevyImporter = false
   @State private var isRequestingHealthAuthorization = false
   @State private var healthAuthorizationMessage: String?
+  @State private var openAIKeyInput = ""
+  @State private var liftCoachSettingsMessage: String?
 
   var body: some View {
     List {
@@ -41,6 +53,89 @@ struct SettingsView: View {
       } footer: {
         Text(
           "Choose who appears each time you start a routine. Names on past sessions stay unchanged."
+        )
+      }
+
+      Section {
+        Picker("Coaching provider", selection: $liftCoachProvider) {
+          ForEach(LiftCoachProvider.allCases) { provider in
+            Text(provider.title).tag(provider.rawValue)
+          }
+        }
+        .accessibilityIdentifier("lift-coach-provider-picker")
+        if liftCoachProvider == LiftCoachProvider.openAI.rawValue {
+          SecureField("OpenAI API key", text: $openAIKeyInput)
+            .textInputAutocapitalization(.never)
+            .autocorrectionDisabled()
+          HStack {
+            Button("Save key") { saveLiftCoachKey() }.disabled(
+              openAIKeyInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            if LiftCoachKeychain.read() != nil {
+              Button("Remove key", role: .destructive) {
+                LiftCoachKeychain.remove()
+                liftCoachSettingsMessage = "Saved key removed from this device."
+              }
+            }
+          }
+          Toggle("Allow OpenAI to receive coaching context", isOn: $liftCoachOpenAIConsent)
+          Text(
+            "When you generate a report, the app sends weekly workout totals plus routine and exercise names. It excludes participant names and private notes. Review the provider’s data policies before enabling."
+          )
+          .font(.footnote).foregroundStyle(.secondary)
+        }
+        if let liftCoachSettingsMessage {
+          Text(liftCoachSettingsMessage).font(.footnote).foregroundStyle(.secondary)
+        }
+      } header: {
+        Text("Lift Coach")
+      } footer: {
+        Text(
+          "Facts are calculated on this device. On-device model support requires iOS 26 and an available Apple Intelligence model. OpenAI is optional and uses the key stored in Keychain."
+        )
+      }
+
+      Section {
+        Toggle(
+          "Weekly Progress reminder",
+          isOn: Binding(
+            get: { weeklyCoachReminderEnabled },
+            set: { enabled in
+              Task {
+                do { try await WeeklyCoachingNotificationCoordinator.setEnabled(enabled) } catch {
+                  liftCoachSettingsMessage =
+                    "Couldn’t schedule the reminder: \(error.localizedDescription)"
+                }
+              }
+            }))
+        if weeklyCoachReminderEnabled {
+          Picker("Day", selection: $weeklyCoachReminderWeekday) {
+            ForEach(1...7, id: \.self) { weekday in
+              Text(Calendar.current.weekdaySymbols[weekday - 1]).tag(weekday)
+            }
+          }
+          DatePicker(
+            "Time",
+            selection: Binding(
+              get: {
+                Calendar.current.date(
+                  from: DateComponents(
+                    hour: weeklyCoachReminderHour, minute: weeklyCoachReminderMinute)) ?? .now
+              },
+              set: {
+                weeklyCoachReminderHour = Calendar.current.component(.hour, from: $0)
+                weeklyCoachReminderMinute = Calendar.current.component(.minute, from: $0)
+                Task { try? await WeeklyCoachingNotificationCoordinator.schedule() }
+              }
+            ), displayedComponents: .hourAndMinute)
+        }
+        Button("Open Progress") {
+          NotificationCenter.default.post(name: .openWeeklyCoachingReport, object: nil)
+        }
+      } header: {
+        Text("Weekly report")
+      } footer: {
+        Text(
+          "The reminder opens Progress at your weekly report. If notifications are denied, enable them for Lift Chase in iOS Settings."
         )
       }
 
@@ -126,7 +221,12 @@ struct SettingsView: View {
       #endif
     }
     .navigationTitle("Settings")
-    .onAppear(perform: refreshHealthAuthorizationMessage)
+    .onAppear {
+      refreshHealthAuthorizationMessage()
+      if weeklyCoachReminderEnabled {
+        Task { try? await WeeklyCoachingNotificationCoordinator.schedule() }
+      }
+    }
     .sheet(isPresented: $showingNewPerson) { NewPersonSheet() }
     .fileImporter(
       isPresented: $showingHevyImporter,
@@ -196,6 +296,16 @@ struct SettingsView: View {
         "Workout access is off in Apple Health. Allow Lift Chase to add workouts there to resume saving, or turn off recording here."
     }
   }
+
+  private func saveLiftCoachKey() {
+    let key = openAIKeyInput.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard LiftCoachKeychain.save(key) else {
+      liftCoachSettingsMessage = "Couldn’t save the key to Keychain."
+      return
+    }
+    openAIKeyInput = ""
+    liftCoachSettingsMessage = "OpenAI key saved to this device’s Keychain."
+  }
 }
 
 #if DEBUG
@@ -214,6 +324,21 @@ struct SettingsView: View {
 
     var body: some View {
       List {
+        Section {
+          NavigationLink("Preview Progress before coaching") {
+            ProgressView(previewMode: .learning)
+          }
+          .accessibilityIdentifier("developer-preview-progress-learning")
+          NavigationLink("Preview generated Lift Coach") { ProgressView(previewMode: .generated) }
+            .accessibilityIdentifier("developer-preview-progress-generated")
+        } header: {
+          Text("Lift Coach previews")
+        } footer: {
+          Text(
+            "Sample screens are read-only and never save reports, call a provider, or request notification permission."
+          )
+        }
+
         Section {
           Button("Preview Workout Celebration", systemImage: "party.popper.fill") {
             previewLatestWorkoutCelebration()

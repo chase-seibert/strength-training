@@ -40,6 +40,7 @@ enum PersonalRecords {
     let setID: UUID
     let exerciseName: String
     let personName: String
+    let personID: UUID?
     let value: Double
   }
 
@@ -59,7 +60,8 @@ enum PersonalRecords {
         let exerciseKey = key(for: exercise)
         for participant in exercise.participants
         where session.isParticipantActive(participant.participantName) {
-          let personKey = participant.participantName.lowercased()
+          let personKey =
+            participant.personID?.uuidString ?? participant.participantName.lowercased()
           let recordKey = "\(exerciseKey)|\(personKey)"
           for set in participant.sets where set.isCompleted && !set.isSkipped {
             guard let value = value(for: set, participant: participant, unit: exercise.unit),
@@ -76,6 +78,7 @@ enum PersonalRecords {
               setID: set.id,
               exerciseName: exercise.exerciseName,
               personName: participant.participantName,
+              personID: participant.personID,
               value: value)
             // Keep one icon per person/exercise in a workout even if several sets
             // progressively improve the record.
@@ -94,6 +97,25 @@ enum PersonalRecords {
 
   static func count(for session: WorkoutSession, in sessions: [WorkoutSession]) -> Int {
     achievements(in: sessions).filter { $0.sessionID == session.id }.count
+  }
+
+  static func counts(
+    for person: PersonProfile, people: [PersonProfile], in sessions: [WorkoutSession]
+  )
+    -> [UUID: Int]
+  {
+    let mayUseLegacyName =
+      people.filter {
+        $0.name.caseInsensitiveCompare(person.name) == .orderedSame
+      }.count == 1
+    return Dictionary(
+      grouping: achievements(in: sessions).filter { achievement in
+        achievement.personID == person.id
+          || (achievement.personID == nil && mayUseLegacyName
+            && achievement.personName.caseInsensitiveCompare(person.name) == .orderedSame)
+      },
+      by: \.sessionID
+    ).mapValues(\.count)
   }
 
   static func isRecord(
@@ -177,6 +199,50 @@ final class PersonProfile {
     self.colorHex = colorHex
     self.isArchived = isArchived
     self.sortOrder = sortOrder
+  }
+}
+
+/// A saved, regenerable weekly coaching report. Workout history remains authoritative.
+@Model
+final class WeeklyCoachingReport {
+  var id: UUID
+  var personID: UUID
+  var weekStart: Date
+  var weekEnd: Date
+  var createdAt: Date
+  var workoutCount: Int
+  var completedSetCount: Int
+  var poundsVolume: Double
+  var narrative: String?
+  var factsJSON: String?
+  var structuredCoachingJSON: String?
+  var provider: String
+  var modelName: String
+  var inputFingerprint: String
+  var schemaVersion: Int
+
+  init(
+    personID: UUID, weekStart: Date, weekEnd: Date, workoutCount: Int,
+    completedSetCount: Int, poundsVolume: Double, narrative: String? = nil,
+    factsJSON: String? = nil, structuredCoachingJSON: String? = nil,
+    provider: String = "deterministic", modelName: String = "",
+    inputFingerprint: String = "", schemaVersion: Int = 1
+  ) {
+    id = UUID()
+    self.personID = personID
+    self.weekStart = weekStart
+    self.weekEnd = weekEnd
+    createdAt = .now
+    self.workoutCount = workoutCount
+    self.completedSetCount = completedSetCount
+    self.poundsVolume = poundsVolume
+    self.narrative = narrative
+    self.factsJSON = factsJSON
+    self.structuredCoachingJSON = structuredCoachingJSON
+    self.provider = provider
+    self.modelName = modelName
+    self.inputFingerprint = inputFingerprint
+    self.schemaVersion = schemaVersion
   }
 }
 
@@ -1246,6 +1312,11 @@ struct StarterRoutineTemplate: Identifiable {
 
 enum Theme {
   static let navy = Color(red: 0.05, green: 0.08, blue: 0.14)
+  static let coachBackground = Color(.systemGroupedBackground)
+  static let coachCard = Color(.secondarySystemGroupedBackground)
+  static let coachInset = Color(.tertiarySystemGroupedBackground)
+  static let coachSecondary = Color.secondary
+  static let coachGrid = Color(.separator).opacity(0.65)
   static let coral = Color(red: 1.0, green: 0.31, blue: 0.21)
   static let prYellow = Color(red: 1.0, green: 0.78, blue: 0.0)
   static let mint = Color(red: 0.27, green: 0.82, blue: 0.66)

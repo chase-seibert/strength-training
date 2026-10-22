@@ -8,6 +8,41 @@ struct ProgressVolumePoint: Identifiable {
 }
 
 enum ProgressSummaryBuilder {
+  static func primaryPersonVolumePoints(
+    person: PersonProfile, people: [PersonProfile], sessions: [WorkoutSession],
+    calendar: Calendar = .current
+  ) -> [ProgressVolumePoint] {
+    let legacyNameIsUnique =
+      people.filter {
+        $0.name.caseInsensitiveCompare(person.name) == .orderedSame
+      }.count == 1
+    var buckets: [Date: Double] = [:]
+    for session in sessions.sorted(by: { $0.startedAt < $1.startedAt }) {
+      let weekStart =
+        calendar.dateInterval(of: .weekOfYear, for: session.startedAt)?.start
+        ?? calendar.startOfDay(for: session.startedAt)
+      for exercise in session.exercises where exercise.unit == .pounds {
+        for participant in exercise.participants
+        where session.isParticipantActive(participant.participantName)
+          && (participant.personID == person.id
+            || (participant.personID == nil && legacyNameIsUnique
+              && participant.participantName.caseInsensitiveCompare(person.name) == .orderedSame))
+        {
+          let multiplier = exercise.repCountingMode == .perSide ? 2.0 : 1.0
+          let volume = participant.sets.filter { $0.isCompleted && !$0.isSkipped }.reduce(0.0) {
+            $0 + Double($1.reps) * multiplier * ($1.measurement ?? participant.measurement)
+          }
+          buckets[weekStart, default: 0] += volume
+        }
+      }
+    }
+    return buckets.map { start, volume in
+      ProgressVolumePoint(
+        id: "\(start.timeIntervalSinceReferenceDate)|\(person.id.uuidString)",
+        personName: person.name, weekStart: start, volume: volume)
+    }.sorted { $0.weekStart < $1.weekStart }
+  }
+
   static func participantNames(in sessions: [WorkoutSession], people: [PersonProfile]) -> [String] {
     var names: [String] = []
     for session in sessions {
