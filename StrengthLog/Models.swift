@@ -832,6 +832,25 @@ final class WorkoutSession {
   }
 }
 
+enum DeletedWorkoutRetention {
+  static let retentionInterval: TimeInterval = 5 * 24 * 60 * 60
+
+  @discardableResult
+  static func purgeExpired(in context: ModelContext, now: Date = .now) throws -> Int {
+    let cutoff = now.addingTimeInterval(-retentionInterval)
+    let descriptor = FetchDescriptor<WorkoutSession>(
+      predicate: #Predicate<WorkoutSession> { $0.deletedAt != nil })
+    let expiredSessions = try context.fetch(descriptor).filter { session in
+      guard !session.isActive, let deletedAt = session.deletedAt else { return false }
+      return deletedAt <= cutoff
+    }
+    guard !expiredSessions.isEmpty else { return 0 }
+    for session in expiredSessions { context.delete(session) }
+    try context.save()
+    return expiredSessions.count
+  }
+}
+
 @Model
 final class ExerciseLog {
   var id: UUID

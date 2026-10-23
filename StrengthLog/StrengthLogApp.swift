@@ -102,6 +102,7 @@ struct StrengthLogApp: App {
   @UIApplicationDelegateAdaptor(KidsWatchShareApplicationDelegate.self) private var appDelegate
   @State private var importCoordinator = HevyImportCoordinator()
   @State private var storageError: String?
+  @State private var retentionError: String?
   @State private var widgetError: String?
   private let container: ModelContainer
 
@@ -214,6 +215,16 @@ struct StrengthLogApp: App {
         } message: {
           Text(widgetError ?? "")
         }
+        .alert(
+          "Couldn’t delete expired workouts",
+          isPresented: Binding(
+            get: { retentionError != nil }, set: { if !$0 { retentionError = nil } }
+          )
+        ) {
+          Button("OK") { retentionError = nil }
+        } message: {
+          Text(retentionError ?? "")
+        }
         .task {
           do {
             #if DEBUG
@@ -225,6 +236,22 @@ struct StrengthLogApp: App {
             #endif
           } catch {
             storageError = error.localizedDescription
+          }
+          #if DEBUG
+            let arguments = ProcessInfo.processInfo.arguments
+            let usesFixtureStore =
+              arguments.contains("-basicWorkoutFixture")
+              || arguments.contains("-diskWorkoutPerformanceFixture")
+              || arguments.contains("-repCountingMigrationFixture")
+          #else
+            let usesFixtureStore = false
+          #endif
+          if !usesFixtureStore {
+            do {
+              _ = try DeletedWorkoutRetention.purgeExpired(in: container.mainContext)
+            } catch {
+              retentionError = error.localizedDescription
+            }
           }
           ProgressWidgetPublication.schedule()
           #if DEBUG
@@ -250,6 +277,7 @@ struct AppRootView: View {
   @Environment(\.modelContext) private var context
   @Environment(\.scenePhase) private var scenePhase
   @Environment(HevyImportCoordinator.self) private var importCoordinator
+  @State private var retentionError: String?
   @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
   @AppStorage("hasInitializedOnboardingState") private var hasInitializedOnboardingState = false
   @Query private var people: [PersonProfile]
@@ -279,7 +307,10 @@ struct AppRootView: View {
       hasInitializedOnboardingState = true
     }
     .onChange(of: scenePhase) { _, phase in
-      if phase == .active { ProgressWidgetPublication.schedule() }
+      if phase == .active {
+        purgeExpiredDeletedWorkouts()
+        ProgressWidgetPublication.schedule()
+      }
     }
     .sheet(item: $importCoordinator.document) { document in
       HevyImportView(
@@ -293,6 +324,26 @@ struct AppRootView: View {
       Alert(
         title: Text(notice.title), message: Text(notice.message),
         dismissButton: .default(Text("OK")))
+    }
+    .alert(
+      "Couldn’t delete expired workouts",
+      isPresented: Binding(
+        get: { retentionError != nil }, set: { if !$0 { retentionError = nil } }
+      )
+    ) {
+      Button("OK") { retentionError = nil }
+    } message: {
+      Text(retentionError ?? "")
+    }
+  }
+
+  private func purgeExpiredDeletedWorkouts() {
+    do {
+      if try DeletedWorkoutRetention.purgeExpired(in: context) > 0 {
+        ProgressWidgetPublication.schedule()
+      }
+    } catch {
+      retentionError = error.localizedDescription
     }
   }
 
