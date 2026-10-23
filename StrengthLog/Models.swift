@@ -658,13 +658,12 @@ final class WorkoutSession {
     }
   }
 
-  /// Saves an active session's order to both its independent logs and the owning routine.
-  /// Baseline child identities reject drafts that became stale while the reorder screen was open.
+  /// Saves an active session's order and makes its visible exercise list authoritative for the
+  /// owning routine. Routine-only entries are hidden so their prescriptions remain recoverable.
   func saveExerciseOrder(
     _ exerciseIDs: [UUID],
     to routine: Routine,
     expectedSessionOrder: [UUID],
-    expectedRoutineOrder: [UUID],
     in context: ModelContext,
     saveOperation: (() throws -> Void)? = nil
   ) throws {
@@ -675,34 +674,60 @@ final class WorkoutSession {
       Set(exerciseIDs) == Set(sessionByID.keys)
     else { throw ExerciseOrderError.exercisesChanged }
 
-    // A Save with no movement must not overwrite a routine changed elsewhere.
-    if exerciseIDs == expectedSessionOrder { return }
-
     guard routine.modelContext === context,
       routine.deletedAt == nil,
       routine.id == self.routineID
     else { throw ExerciseOrderError.routineUnavailable }
 
     let currentSessionOrder = exercises.sorted { $0.sortOrder < $1.sortOrder }.map(\.id)
-    let routineEntries = routine.exercises.sorted { $0.sortOrder < $1.sortOrder }
-    let currentRoutineOrder = routineEntries.map(\.id)
+    let routineEntries = routine.visibleExercises.sorted { $0.sortOrder < $1.sortOrder }
     guard currentSessionOrder == expectedSessionOrder,
-      currentRoutineOrder == expectedRoutineOrder,
-      Set(expectedSessionOrder).count == expectedSessionOrder.count,
-      Set(expectedRoutineOrder).count == expectedRoutineOrder.count
+      Set(expectedSessionOrder).count == expectedSessionOrder.count
     else { throw ExerciseOrderError.exercisesChanged }
 
-    guard routineEntries.count == exercises.count else {
-      throw ExerciseOrderError.routineMembershipChanged
+    let originalRoutineEntries = routine.exercises
+    let originalRoutineState = routine.exercises.map { ($0, $0.sortOrder, $0.isHidden) }
+    let originalRoutineMembership = Set(routine.exercises.map(\.id))
+    var routineByLogID: [UUID: RoutineExercise] = [:]
+    var matchedEntries = Set<UUID>()
+    for log in exercises {
+      let candidates = routineEntries.filter { entry in
+        if let logID = log.exerciseID, let entryID = entry.exerciseID {
+          return logID == entryID
+        }
+        return log.exerciseName.caseInsensitiveCompare(entry.exerciseName) == .orderedSame
+      }
+      guard candidates.count <= 1 else {
+        throw ExerciseOrderError.routineMembershipChanged
+      }
+      if let entry = candidates.first {
+        guard matchedEntries.insert(entry.id).inserted else {
+          throw ExerciseOrderError.routineMembershipChanged
+        }
+        routineByLogID[log.id] = entry
+      } else {
+        let entry = RoutineExercise(
+          exerciseName: log.exerciseName, unit: log.unit, sortOrder: 0,
+          exerciseID: log.exerciseID)
+        routine.exercises.append(entry)
+        routineByLogID[log.id] = entry
+      }
     }
 
-    let routineByLogID = try Self.uniqueRoutineMapping(
-      logs: exercises, entries: routineEntries)
     let originalSessionOrder = exercises.map { ($0, $0.sortOrder) }
-    let originalRoutineOrder = routineEntries.map { ($0, $0.sortOrder) }
+    let addedEntries = routine.exercises.filter { !originalRoutineMembership.contains($0.id) }
     for (index, id) in exerciseIDs.enumerated() {
       sessionByID[id]?.sortOrder = index
       routineByLogID[id]?.sortOrder = index
+    }
+    let matchedIDs = Set(routineByLogID.values.map(\.id))
+    for entry in routineEntries where !matchedIDs.contains(entry.id) {
+      entry.isHidden = true
+    }
+    for (offset, entry) in routine.exercises.filter(\.isHiddenFromRoutine)
+      .sorted(by: { $0.sortOrder < $1.sortOrder }).enumerated()
+    {
+      entry.sortOrder = exerciseIDs.count + offset
     }
     do {
       if let saveOperation {
@@ -712,32 +737,14 @@ final class WorkoutSession {
       }
     } catch {
       for (log, sortOrder) in originalSessionOrder { log.sortOrder = sortOrder }
-      for (entry, sortOrder) in originalRoutineOrder { entry.sortOrder = sortOrder }
+      routine.exercises = originalRoutineEntries
+      for (entry, sortOrder, isHidden) in originalRoutineState {
+        entry.sortOrder = sortOrder
+        entry.isHidden = isHidden
+      }
+      for entry in addedEntries { context.delete(entry) }
       throw error
     }
-  }
-
-  private static func uniqueRoutineMapping(
-    logs: [ExerciseLog], entries: [RoutineExercise]
-  ) throws -> [UUID: RoutineExercise] {
-    var mapping: [UUID: RoutineExercise] = [:]
-    var matchedEntries = Set<UUID>()
-    for log in logs {
-      let candidates = entries.filter { entry in
-        if let logID = log.exerciseID, let entryID = entry.exerciseID {
-          return logID == entryID
-        }
-        return log.exerciseName.caseInsensitiveCompare(entry.exerciseName) == .orderedSame
-      }
-      guard candidates.count == 1, let entry = candidates.first,
-        matchedEntries.insert(entry.id).inserted
-      else { throw ExerciseOrderError.routineMembershipChanged }
-      mapping[log.id] = entry
-    }
-    guard matchedEntries.count == entries.count else {
-      throw ExerciseOrderError.routineMembershipChanged
-    }
-    return mapping
   }
 
   private enum ExerciseOrderError: LocalizedError {
@@ -752,7 +759,7 @@ final class WorkoutSession {
       case .routineUnavailable:
         "This routine is no longer available. Reopen the workout before saving its order."
       case .routineMembershipChanged:
-        "This workout and routine no longer contain the same exercises. Update the routine, then reopen Reorder."
+        "The routine has ambiguous exercise matches. Review duplicate exercises, then try again."
       }
     }
   }

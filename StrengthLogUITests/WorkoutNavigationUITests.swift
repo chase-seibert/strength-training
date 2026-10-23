@@ -1568,7 +1568,7 @@ final class WorkoutNavigationUITests: XCTestCase {
     XCTAssertFalse(app.scrollViews["sticky-participant-picker"].exists)
     XCTAssertTrue(
       app.staticTexts[
-        "Saved order applies to this workout and future workouts from this routine."
+        "Saving makes this workout’s exercises and order the routine for future workouts."
       ].exists)
     let screenshot = XCTAttachment(screenshot: app.screenshot())
     screenshot.name = "compact-workout-reorder"

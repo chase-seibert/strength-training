@@ -560,14 +560,13 @@
         context.insert(otherRoutine)
         try context.save()
 
-        let baselineRoutineOrder = entries.sorted { $0.sortOrder < $1.sortOrder }.map(\.id)
         let firstSet = logs[0].participants[0].sets[0]
         firstSet.reps = 19
         var rejectedPersistence = false
         do {
           try session.saveExerciseOrder(
             newSessionOrder, to: routine, expectedSessionOrder: originalSessionOrder,
-            expectedRoutineOrder: baselineRoutineOrder, in: context,
+            in: context,
             saveOperation: { throw SmokeError.exerciseOrder })
         } catch {
           rejectedPersistence = true
@@ -582,28 +581,22 @@
         firstSet.reps = 8
         try context.save()
 
-        entries[0].sortOrder = 1
-        entries[1].sortOrder = 0
-        var rejectedStaleDraft = false
-        do {
-          try session.saveExerciseOrder(
-            newSessionOrder, to: routine, expectedSessionOrder: originalSessionOrder,
-            expectedRoutineOrder: baselineRoutineOrder, in: context)
-        } catch {
-          rejectedStaleDraft = true
-        }
-        guard rejectedStaleDraft else { throw SmokeError.exerciseOrder }
-        entries[0].sortOrder = 0
-        entries[1].sortOrder = 1
+        entries[0].isHidden = true
+        let routineOnlyEntry = RoutineExercise(
+          exerciseName: "Routine-only Exercise", unit: .pounds,
+          sortOrder: routine.exercises.count, exerciseID: UUID())
+        routine.exercises.append(routineOnlyEntry)
         try context.save()
         try session.saveExerciseOrder(
           newSessionOrder, to: routine, expectedSessionOrder: originalSessionOrder,
-          expectedRoutineOrder: baselineRoutineOrder, in: context)
+          in: context)
         guard
           session.exercises.sorted(by: { $0.sortOrder < $1.sortOrder }).map(\.id)
             == newSessionOrder,
-          routine.exercises.sorted(by: { $0.sortOrder < $1.sortOrder }).map(\.id)
-            == [entryIDs[2], entryIDs[0], entryIDs[1]]
+          routine.visibleExercises.sorted(by: { $0.sortOrder < $1.sortOrder })
+            .compactMap(\.exerciseID) == [exerciseIDs[2], exerciseIDs[0], exerciseIDs[1]],
+          routineOnlyEntry.isHiddenFromRoutine,
+          entries[0].isHiddenFromRoutine
         else { throw SmokeError.exerciseOrder }
       }
 
@@ -615,8 +608,8 @@
         let routine = routines.first(where: { $0.id == routineID }),
         session.exercises.sorted(by: { $0.sortOrder < $1.sortOrder }).map(\.id)
           == newSessionOrder,
-        routine.exercises.sorted(by: { $0.sortOrder < $1.sortOrder }).map(\.id)
-          == [entryIDs[2], entryIDs[0], entryIDs[1]],
+        routine.visibleExercises.sorted(by: { $0.sortOrder < $1.sortOrder })
+          .compactMap(\.exerciseID) == [exerciseIDs[2], exerciseIDs[0], exerciseIDs[1]],
         let otherRoutine = routines.first(where: { $0.name == "Other Order Test" }),
         otherRoutine.exercises.sorted(by: { $0.sortOrder < $1.sortOrder })
           .compactMap(\.exerciseID) == exerciseIDs

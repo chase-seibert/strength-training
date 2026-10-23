@@ -1411,7 +1411,6 @@ private struct WorkoutExerciseReorderView: View {
   let session: WorkoutSession
   let routine: Routine?
   private let initialSessionOrder: [UUID]
-  private let initialRoutineOrder: [UUID]
   @State private var rows: [Row]
   @State private var saveError: String?
 
@@ -1419,7 +1418,6 @@ private struct WorkoutExerciseReorderView: View {
     self.session = session
     self.routine = routine
     initialSessionOrder = session.exercises.sorted { $0.sortOrder < $1.sortOrder }.map(\.id)
-    initialRoutineOrder = routine?.exercises.sorted { $0.sortOrder < $1.sortOrder }.map(\.id) ?? []
     _rows = State(
       initialValue: session.exercises.sorted { $0.sortOrder < $1.sortOrder }.map {
         Row(id: $0.id, name: $0.exerciseName)
@@ -1454,7 +1452,7 @@ private struct WorkoutExerciseReorderView: View {
         Text("\(rows.count) exercises · Drag handles to reorder")
           .textCase(nil)
       } footer: {
-        Text("Saved order applies to this workout and future workouts from this routine.")
+        Text("Saving makes this workout’s exercises and order the routine for future workouts.")
       }
     }
     .listStyle(.plain)
@@ -1487,10 +1485,6 @@ private struct WorkoutExerciseReorderView: View {
 
   private func save() {
     let order = rows.map(\.id)
-    guard order != initialSessionOrder else {
-      dismiss()
-      return
-    }
     do {
       guard let routine else {
         throw NSError(
@@ -1501,8 +1495,7 @@ private struct WorkoutExerciseReorderView: View {
           ])
       }
       try session.saveExerciseOrder(
-        order, to: routine, expectedSessionOrder: initialSessionOrder,
-        expectedRoutineOrder: initialRoutineOrder, in: context)
+        order, to: routine, expectedSessionOrder: initialSessionOrder, in: context)
       dismiss()
     } catch {
       saveError = error.localizedDescription
