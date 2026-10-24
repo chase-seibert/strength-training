@@ -1,3 +1,4 @@
+import AppIntents
 import HealthKit
 import SwiftData
 import SwiftUI
@@ -154,6 +155,9 @@ struct StrengthLogApp: App {
     } catch {
       fatalError("Unable to create StrengthLog data store: \(error)")
     }
+    RoutineShortcutIntegration.modelContainer = container
+    StrengthLogAppShortcuts.updateAppShortcutParameters()
+    RoutineShortcutIntegration.refreshQuickActions(in: container.mainContext)
     let usesIsolatedStorageFixture =
       usesBasicWorkoutFixture
       || ProcessInfo.processInfo.arguments.contains("-diskWorkoutPerformanceFixture")
@@ -310,6 +314,8 @@ struct AppRootView: View {
       if phase == .active {
         purgeExpiredDeletedWorkouts()
         ProgressWidgetPublication.schedule()
+      } else if phase == .background {
+        RoutineShortcutIntegration.refreshQuickActions(in: context)
       }
     }
     .sheet(item: $importCoordinator.document) { document in
@@ -381,6 +387,7 @@ struct RootView: View {
   @State private var selectedTab = 0
   @State private var didRestoreActiveWorkout = false
   @State private var celebrationSummary: WorkoutCelebrationSummary?
+  @State private var routineShortcutError: String?
 
   var body: some View {
     TabView(selection: $selectedTab) {
@@ -427,13 +434,32 @@ struct RootView: View {
     .onReceive(NotificationCenter.default.publisher(for: .openWeeklyCoachingReport)) { _ in
       selectedTab = 3
     }
+    .onReceive(
+      NotificationCenter.default.publisher(
+        for: RoutineShortcutIntegration.startRoutineNotification
+      )
+    ) { _ in
+      handlePendingRoutineShortcut()
+    }
     .fullScreenCover(item: $celebrationSummary) { summary in
       WorkoutCelebrationView(
         summary: summary,
         onDone: { celebrationSummary = nil })
     }
+    .alert(
+      "Can’t start routine",
+      isPresented: Binding(
+        get: { routineShortcutError != nil }, set: { if !$0 { routineShortcutError = nil } }
+      )
+    ) {
+      Button("OK") { routineShortcutError = nil }
+    } message: {
+      Text(routineShortcutError ?? "")
+    }
     .onAppear {
       PairedWatchWorkoutSync.activate()
+      RoutineShortcutIntegration.refreshQuickActions(in: context)
+      handlePendingRoutineShortcut()
       if UserDefaults.standard.bool(forKey: WeeklyCoachingNotificationCoordinator.pendingRouteKey) {
         selectedTab = 3
       }
@@ -445,7 +471,29 @@ struct RootView: View {
       }
     }
     .onChange(of: activeSessions.count) { _, count in
-      if count == 0 { publishKidsWatchProgress() }
+      if count == 0 {
+        publishKidsWatchProgress()
+      } else if let activeSession = activeSessions.first {
+        presentActiveWorkout(activeSession)
+      }
+    }
+    .onChange(
+      of: routines.map {
+        "\($0.id.uuidString):\($0.name):\($0.visibleExercises.count):\($0.deletedAt != nil)"
+      }
+    ) { _, _ in
+      RoutineShortcutIntegration.refreshQuickActions(in: context)
+    }
+  }
+
+  private func handlePendingRoutineShortcut() {
+    guard let result = RoutineShortcutIntegration.consumePendingQuickAction(in: context) else {
+      return
+    }
+    if let session = result.0 {
+      presentActiveWorkout(session)
+    } else {
+      routineShortcutError = result.1
     }
   }
 

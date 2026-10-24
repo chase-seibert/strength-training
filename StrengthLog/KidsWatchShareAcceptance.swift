@@ -14,6 +14,14 @@ final class KidsWatchShareApplicationDelegate: NSObject, UIApplicationDelegate,
     return true
   }
 
+  func application(
+    _ application: UIApplication,
+    performActionFor shortcutItem: UIApplicationShortcutItem,
+    completionHandler: @escaping (Bool) -> Void
+  ) {
+    completionHandler(RoutineShortcutIntegration.receiveQuickAction(shortcutItem))
+  }
+
   func userNotificationCenter(
     _ center: UNUserNotificationCenter,
     didReceive response: UNNotificationResponse,
@@ -67,6 +75,17 @@ final class KidsWatchShareSceneDelegate: UIResponder, UIWindowSceneDelegate {
     if let metadata = connectionOptions.cloudKitShareMetadata {
       accept(metadata)
     }
+    if let shortcutItem = connectionOptions.shortcutItem {
+      _ = RoutineShortcutIntegration.receiveQuickAction(shortcutItem)
+    }
+  }
+
+  func windowScene(
+    _ windowScene: UIWindowScene,
+    performActionFor shortcutItem: UIApplicationShortcutItem,
+    completionHandler: @escaping (Bool) -> Void
+  ) {
+    completionHandler(RoutineShortcutIntegration.receiveQuickAction(shortcutItem))
   }
 
   private func accept(_ metadata: CKShare.Metadata) {
