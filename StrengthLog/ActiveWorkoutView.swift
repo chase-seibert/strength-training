@@ -2902,6 +2902,7 @@ private struct ExerciseHistoryPoint: Identifiable {
   let personName: String
   let date: Date
   let measurement: Double
+  let volume: Double
   let reps: Int
   let value: Double
   let isPR: Bool
@@ -2945,14 +2946,18 @@ struct ExerciseGroupHistoryView: View {
         let completed = participant.sets.filter { $0.isCompleted && !$0.isSkipped }
         guard !completed.isEmpty else { return nil }
         let selectedSet: WorkoutSet
+        let volume =
+          usesWeightedPR
+          ? completed.reduce(0.0) {
+            $0 + (PersonalRecords.value(for: $1, participant: participant, unit: unit) ?? 0)
+          }
+          : 0
         if usesWeightedPR {
-          guard
-            let bestSet = completed.max(by: { lhs, rhs in
-              (PersonalRecords.value(for: lhs, participant: participant, unit: unit) ?? 0)
-                < (PersonalRecords.value(for: rhs, participant: participant, unit: unit) ?? 0)
-            })
-          else { return nil }
-          selectedSet = bestSet
+          selectedSet =
+            completed.max { lhs, rhs in
+              (lhs.measurement ?? participant.measurement)
+                < (rhs.measurement ?? participant.measurement)
+            } ?? completed[0]
         } else {
           selectedSet =
             completed.max { $0.target(for: unit) < $1.target(for: unit) } ?? completed[0]
@@ -2981,6 +2986,7 @@ struct ExerciseGroupHistoryView: View {
           personName: personName,
           date: session.startedAt,
           measurement: measurement,
+          volume: volume,
           reps: reps,
           value: value,
           isPR: isPR)
@@ -3020,9 +3026,15 @@ struct ExerciseGroupHistoryView: View {
               }
               if usesWeightedPR {
                 historyChart(
-                  title: unit == .kilograms ? "kg·reps" : "lb·reps",
-                  value: { $0.value },
+                  title: "Weight (\(unit == .kilograms ? "kg" : "lb"))",
+                  value: { $0.measurement },
+                  identifier: "weight",
                   showsSelection: true)
+                historyChart(
+                  title: "Volume (\(unit == .kilograms ? "kg" : "lb") × reps)",
+                  value: { $0.volume },
+                  identifier: "volume",
+                  showsPR: false)
               } else if unit.usesMeasurement {
                 historyChart(
                   title: unit.title,
@@ -3054,7 +3066,9 @@ struct ExerciseGroupHistoryView: View {
   private func historyChart(
     title: String,
     value: @escaping (ExerciseHistoryPoint) -> Double,
-    showsSelection: Bool = false
+    identifier: String? = nil,
+    showsSelection: Bool = false,
+    showsPR: Bool = true
   ) -> some View {
     VStack(alignment: .leading, spacing: 8) {
       Text(title).font(.headline)
@@ -3087,13 +3101,13 @@ struct ExerciseGroupHistoryView: View {
           .accessibilityLabel(
             "\(point.personName), \(point.measurement.tidy) \(unit == .kilograms ? "kilograms" : "pounds"), \(point.reps) reps"
           )
-          .accessibilityValue("\(point.value.tidy) \(title)")
+          .accessibilityValue("\(value(point).tidy) \(title)")
           PointMark(
             x: .value("Date", point.date),
             y: .value(title, value(point))
           )
           .foregroundStyle(Color(hex: colors[point.personName] ?? "FF5A45"))
-          if point.isPR {
+          if point.isPR && showsPR {
             PointMark(
               x: .value("Date", point.date),
               y: .value(title, value(point))
@@ -3110,7 +3124,7 @@ struct ExerciseGroupHistoryView: View {
         }
       }
       .frame(height: 150)
-      .accessibilityIdentifier("exercise-history-chart-\(title)")
+      .accessibilityIdentifier("exercise-history-chart-\(identifier ?? title)")
       .chartOverlay { proxy in
         if showsSelection {
           GeometryReader { geometry in

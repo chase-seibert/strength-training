@@ -1732,12 +1732,15 @@ final class WorkoutNavigationUITests: XCTestCase {
     XCTAssertTrue(historyButton.waitForExistence(timeout: 8))
     historyButton.tap()
 
-    let chartTitle = app.staticTexts["lb·reps"]
+    let chartTitle = app.staticTexts["Weight (lb)"]
     XCTAssertTrue(chartTitle.waitForExistence(timeout: 5))
+    XCTAssertTrue(app.staticTexts["Volume (lb × reps)"].exists)
     XCTAssertFalse(app.staticTexts["Pounds"].exists)
     XCTAssertFalse(app.staticTexts["Best reps"].exists)
-    let chart = app.descendants(matching: .any)["exercise-history-chart-lb·reps"].firstMatch
+    let chart = app.descendants(matching: .any)["exercise-history-chart-weight"].firstMatch
     XCTAssertTrue(chart.waitForExistence(timeout: 3), app.debugDescription)
+    XCTAssertTrue(
+      app.descendants(matching: .any)["exercise-history-chart-volume"].firstMatch.exists)
     XCTAssertTrue(chart.isHittable)
     let chartScreenshot = XCTAttachment(screenshot: app.screenshot())
     chartScreenshot.name = "active-workout-weighted-history-chart"
@@ -1748,7 +1751,7 @@ final class WorkoutNavigationUITests: XCTestCase {
     let selectedPoint = app.staticTexts["exercise-history-selected-point"]
     XCTAssertTrue(selectedPoint.waitForExistence(timeout: 3), app.debugDescription)
     XCTAssertTrue(
-      selectedPoint.label.contains("15 pounds, 12 reps"), selectedPoint.debugDescription)
+      selectedPoint.label.contains("20 pounds, 7 reps"), selectedPoint.debugDescription)
     XCTAssertNotNil(
       selectedPoint.label.range(
         of: #"[A-Z][a-z]{2} \d{1,2}, \d{4}"#, options: .regularExpression),
