@@ -64,6 +64,28 @@ final class WorkoutNavigationUITests: XCTestCase {
       ].exists)
   }
 
+  func testRoutineOrderIsSharedBetweenQuickStartAndRoutines() {
+    let basicRoutine = app.buttons["start-routine-Basic Workout"]
+    let lowerRoutine = app.buttons["start-routine-Lower Body"]
+    XCTAssertTrue(basicRoutine.waitForExistence(timeout: 5))
+    XCTAssertTrue(lowerRoutine.exists)
+    basicRoutine.press(forDuration: 1.0, thenDragTo: lowerRoutine)
+
+    app.tabBars.buttons["Routines"].tap()
+    let lowerRow = app.buttons["routine-row-Lower Body"]
+    let basicRow = app.buttons["routine-row-Basic Workout"]
+    XCTAssertTrue(lowerRow.waitForExistence(timeout: 5))
+    XCTAssertTrue(basicRow.exists)
+    XCTAssertLessThan(lowerRow.frame.minY, basicRow.frame.minY)
+
+    app.buttons["Edit"].tap()
+    basicRow.press(forDuration: 1.0, thenDragTo: lowerRow)
+    app.tabBars.buttons["Workout"].tap()
+    XCTAssertLessThan(
+      app.buttons["start-routine-Basic Workout"].frame.minY,
+      app.buttons["start-routine-Lower Body"].frame.minY)
+  }
+
   func testLiveWorkoutHeaderShowsRestTimer() {
     app.terminate()
     app.launchArguments = [

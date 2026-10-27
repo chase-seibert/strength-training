@@ -110,6 +110,7 @@
         try verifyCoordinatedExerciseOrderPersistence(schema: schema)
         return
       }
+      try verifyRoutineOrderPersistence(schema: schema)
       try verifyMasterUnitPersistence(schema: schema)
       try verifyCatalogDefaultsAndCorrections(schema: schema)
       try verifyCoordinatedExerciseOrderPersistence(schema: schema)
@@ -117,6 +118,45 @@
       try verifySideTotalRepsReminderDefaults(schema: schema)
       try verifyWorkoutDurations()
       try verifyPerDumbbellLoadSummary()
+    }
+
+    private static func verifyRoutineOrderPersistence(schema: Schema) throws {
+      let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("RoutineOrderSmoke-\(UUID().uuidString)", isDirectory: true)
+      defer { try? FileManager.default.removeItem(at: directory) }
+      try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+      let storeURL = directory.appendingPathComponent("routines.sqlite")
+      let configuration = ModelConfiguration(
+        "RoutineOrderSmoke", schema: schema, url: storeURL, cloudKitDatabase: .none)
+      let container = try ModelContainer(for: schema, configurations: [configuration])
+      let context = container.mainContext
+      let first = Routine(name: "First", sortOrder: 0)
+      let deleted = Routine(name: "Deleted", deletedAt: .now, sortOrder: 0)
+      let third = Routine(name: "Third", sortOrder: 0)
+      first.createdAt = Date(timeIntervalSince1970: 100)
+      deleted.createdAt = Date(timeIntervalSince1970: 200)
+      third.createdAt = Date(timeIntervalSince1970: 300)
+      [first, deleted, third].forEach(context.insert)
+      try context.save()
+      try RoutineOrder.normalizeLegacyRoutines(in: context)
+      try RoutineOrder.saveActiveOrder([third, first], in: context)
+      deleted.deletedAt = nil
+      try context.save()
+      let reopened = try ModelContainer(for: schema, configurations: [configuration])
+      let ordered = try reopened.mainContext.fetch(FetchDescriptor<Routine>()).sorted {
+        $0.sortOrder < $1.sortOrder
+      }
+      guard ordered.map(\.name) == ["Third", "Deleted", "First"],
+        Set(ordered.map(\.sortOrder)).count == ordered.count
+      else { throw SmokeError.routineOrderPersistence }
+      let appended = Routine(name: "Appended")
+      try RoutineOrder.append(appended, in: reopened.mainContext)
+      reopened.mainContext.insert(appended)
+      try reopened.mainContext.save()
+      let finalOrder = try reopened.mainContext.fetch(FetchDescriptor<Routine>()).sorted {
+        $0.sortOrder < $1.sortOrder
+      }
+      guard finalOrder.last?.id == appended.id else { throw SmokeError.routineOrderPersistence }
     }
 
     private static func verifyPerDumbbellLoadSummary() throws {
@@ -710,6 +750,7 @@
     case exerciseOrder
     case repCounting
     case dumbbellLoadFormatting
+    case routineOrderPersistence
 
     var errorDescription: String? {
       switch self {
@@ -731,6 +772,8 @@
         "Master rep-counting defaults, live resolution, volume, or disk persistence failed."
       case .dumbbellLoadFormatting:
         "Dumbbell load summaries did not preserve per-dumbbell meaning or ordinary load wording."
+      case .routineOrderPersistence:
+        "Routine ordering failed legacy normalization, deletion retention, or disk persistence."
       }
     }
   }

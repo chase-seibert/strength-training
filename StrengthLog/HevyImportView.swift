@@ -666,6 +666,7 @@ enum HevyImporter {
         exercises: routineExercises,
         externalID: "\(source)|routine|\(importedName.lowercased())",
         notes: latestWorkout.description)
+      try RoutineOrder.append(routine, in: context)
       context.insert(routine)
       routinesBySourceKey[sourceKey] = routine
       createdRoutineCount += 1

@@ -446,6 +446,7 @@ final class Routine {
   var name: String
   var symbol: String
   var colorHex: String
+  var sortOrder: Int = 0
   /// A shared pause after each completed set. Nil or zero disables the rest timer.
   // Optional keeps the new field lightweight-migration safe for existing stores.
   var restDurationSeconds: Int?
@@ -463,7 +464,7 @@ final class Routine {
     name: String, symbol: String = "dumbbell.fill", colorHex: String = "FF5A45",
     exercises: [RoutineExercise] = [],
     externalID: String? = nil, notes: String? = nil,
-    deletedAt: Date? = nil, restDurationSeconds: Int = 0
+    deletedAt: Date? = nil, restDurationSeconds: Int = 0, sortOrder: Int = 0
   ) {
     id = UUID()
     self.externalID = externalID
@@ -471,6 +472,7 @@ final class Routine {
     self.name = name
     self.symbol = symbol
     self.colorHex = colorHex
+    self.sortOrder = sortOrder
     self.restDurationSeconds = max(0, restDurationSeconds)
     createdAt = .now
     self.deletedAt = deletedAt
@@ -508,6 +510,50 @@ final class Routine {
     exercises.append(
       RoutineExercise.make(exercise: exercise, sortOrder: exercises.count))
     return true
+  }
+}
+
+enum RoutineOrder {
+  static func normalizeLegacyRoutines(in context: ModelContext) throws {
+    let routines = try context.fetch(FetchDescriptor<Routine>())
+    guard Set(routines.map(\.sortOrder)).count != routines.count else { return }
+    for (index, routine) in routines.sorted(by: {
+      if $0.createdAt != $1.createdAt { return $0.createdAt < $1.createdAt }
+      return $0.id.uuidString < $1.id.uuidString
+    }).enumerated() {
+      routine.sortOrder = index
+    }
+    try context.save()
+  }
+
+  static func append(_ routine: Routine, in context: ModelContext) throws {
+    let routines = try context.fetch(FetchDescriptor<Routine>())
+    routine.sortOrder = (routines.map(\.sortOrder).max() ?? -1) + 1
+  }
+
+  /// Replaces active slots while leaving deleted routines at their existing relative slot.
+  static func saveActiveOrder(_ activeOrder: [Routine], in context: ModelContext) throws {
+    let all = try context.fetch(FetchDescriptor<Routine>())
+    let previous = Dictionary(uniqueKeysWithValues: all.map { ($0.id, $0.sortOrder) })
+    let activeIDs = Set(activeOrder.map(\.id))
+    var ordered = all.sorted {
+      if $0.sortOrder != $1.sortOrder { return $0.sortOrder < $1.sortOrder }
+      if $0.createdAt != $1.createdAt { return $0.createdAt < $1.createdAt }
+      return $0.id.uuidString < $1.id.uuidString
+    }
+    var activeIterator = activeOrder.makeIterator()
+    ordered = ordered.map { routine in
+      routine.deletedAt == nil && activeIDs.contains(routine.id) ? activeIterator.next()! : routine
+    }
+    for (index, routine) in ordered.enumerated() { routine.sortOrder = index }
+    do {
+      try context.save()
+    } catch {
+      for routine in all {
+        if let oldOrder = previous[routine.id] { routine.sortOrder = oldOrder }
+      }
+      throw error
+    }
   }
 }
 

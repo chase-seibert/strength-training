@@ -155,6 +155,11 @@ struct StrengthLogApp: App {
     } catch {
       fatalError("Unable to create StrengthLog data store: \(error)")
     }
+    do {
+      try RoutineOrder.normalizeLegacyRoutines(in: container.mainContext)
+    } catch {
+      fatalError("Unable to initialize routine order: \(error)")
+    }
     RoutineShortcutIntegration.modelContainer = container
     StrengthLogAppShortcuts.updateAppShortcutParameters()
     RoutineShortcutIntegration.refreshQuickActions(in: container.mainContext)
@@ -175,6 +180,7 @@ struct StrengthLogApp: App {
           try BasicWorkoutFixture.verifyMigrationSnapshot(
             in: container.mainContext, storeURL: configuration.url)
           try SeedData.initializeRepCountingModes(in: container.mainContext)
+          try RoutineOrder.normalizeLegacyRoutines(in: container.mainContext)
           try BasicWorkoutFixture.verifyMigrationSnapshot(
             in: container.mainContext, storeURL: configuration.url)
           try "Rep-counting migration verified".write(
@@ -185,6 +191,11 @@ struct StrengthLogApp: App {
         }
       } else if usesBasicWorkoutFixture {
         BasicWorkoutFixture.install(in: container.mainContext)
+        do {
+          try RoutineOrder.normalizeLegacyRoutines(in: container.mainContext)
+        } catch {
+          fatalError("Unable to initialize fixture routine order: \(error)")
+        }
       }
     #endif
   }

@@ -251,7 +251,9 @@ struct OnboardingView: View {
     }
     for template in StarterRoutineTemplate.all
     where selectedStarterIDs.contains(template.id) && !existingStarterIDs.contains(template.id) {
-      context.insert(template.makeRoutine())
+      let routine = template.makeRoutine()
+      do { try RoutineOrder.append(routine, in: context) } catch { continue }
+      context.insert(routine)
     }
     _ = saveAndRefreshProgressWidget(context)
     hasCompletedOnboarding = true

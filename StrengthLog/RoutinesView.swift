@@ -39,7 +39,7 @@ private func restDurationTitle(_ seconds: Int) -> String {
 
 struct RoutinesView: View {
   @Environment(\.modelContext) private var context
-  @Query(filter: #Predicate<Routine> { $0.deletedAt == nil }, sort: \Routine.createdAt)
+  @Query(filter: #Predicate<Routine> { $0.deletedAt == nil }, sort: \Routine.sortOrder)
   private var routines: [Routine]
   @Query(filter: #Predicate<Routine> { $0.deletedAt != nil })
   private var deletedRoutines: [Routine]
@@ -47,6 +47,8 @@ struct RoutinesView: View {
   private var people: [PersonProfile]
   @State private var showingNewRoutine = false
   @State private var showingStarterRoutines = false
+  @State private var editMode: EditMode = .inactive
+  @State private var routineOrderError: String?
   let onOpenWorkout: (WorkoutSession) -> Void
 
   init(onOpenWorkout: @escaping (WorkoutSession) -> Void = { _ in }) {
@@ -88,7 +90,9 @@ struct RoutinesView: View {
             }
             .padding(.vertical, 4)
           }
+          .accessibilityIdentifier("routine-row-\(routine.name)")
         }
+        .onMove(perform: moveRoutines)
         .onDelete(perform: deleteRoutines)
       }
 
@@ -105,8 +109,12 @@ struct RoutinesView: View {
       }
     }
     .listStyle(.insetGrouped)
+    .environment(\.editMode, $editMode)
     .navigationTitle("Routines")
     .toolbar {
+      ToolbarItem(placement: .navigationBarLeading) {
+        if !routines.isEmpty { EditButton() }
+      }
       ToolbarItem(placement: .primaryAction) {
         Menu {
           Button("Create My Own", systemImage: "square.and.pencil") {
@@ -120,6 +128,16 @@ struct RoutinesView: View {
         }
       }
     }
+    .alert(
+      "Couldn’t reorder routines",
+      isPresented: Binding(
+        get: { routineOrderError != nil }, set: { if !$0 { routineOrderError = nil } }
+      )
+    ) {
+      Button("OK") { routineOrderError = nil }
+    } message: {
+      Text(routineOrderError ?? "")
+    }
     .sheet(isPresented: $showingNewRoutine) { NewRoutineSheet() }
     .sheet(isPresented: $showingStarterRoutines) {
       StarterRoutinePicker(
@@ -132,6 +150,16 @@ struct RoutinesView: View {
   private func deleteRoutines(at offsets: IndexSet) {
     for offset in offsets { routines[offset].deletedAt = .now }
     _ = saveAndRefreshProgressWidget(context)
+  }
+
+  private func moveRoutines(from source: IndexSet, to destination: Int) {
+    var newOrder = routines
+    newOrder.move(fromOffsets: source, toOffset: destination)
+    do {
+      try RoutineOrder.saveActiveOrder(newOrder, in: context)
+    } catch {
+      routineOrderError = error.localizedDescription
+    }
   }
 }
 
@@ -232,6 +260,7 @@ struct StarterRoutinePicker: View {
   let people: [PersonProfile]
   let existingRoutineNames: Set<String>
   @State private var selectedIDs: Set<String>
+  @State private var addError: String?
 
   init(people: [PersonProfile], existingRoutineNames: Set<String>) {
     self.people = people
@@ -281,6 +310,16 @@ struct StarterRoutinePicker: View {
         }
       }
     }
+    .alert(
+      "Couldn’t add routines",
+      isPresented: Binding(
+        get: { addError != nil }, set: { if !$0 { addError = nil } }
+      )
+    ) {
+      Button("OK") { addError = nil }
+    } message: {
+      Text(addError ?? "")
+    }
   }
 
   private func toggle(_ id: String) {
@@ -293,7 +332,14 @@ struct StarterRoutinePicker: View {
 
   private func addSelected() {
     for template in availableTemplates where selectedIDs.contains(template.id) {
-      context.insert(template.makeRoutine())
+      let routine = template.makeRoutine()
+      do {
+        try RoutineOrder.append(routine, in: context)
+      } catch {
+        addError = error.localizedDescription
+        return
+      }
+      context.insert(routine)
     }
     _ = saveAndRefreshProgressWidget(context)
     dismiss()
@@ -307,6 +353,7 @@ struct NewRoutineSheet: View {
   @State private var symbol = "dumbbell.fill"
   @State private var colorHex = "FF5A45"
   @State private var restDurationSeconds = 0
+  @State private var creationError: String?
 
   var body: some View {
     NavigationStack {
@@ -343,16 +390,32 @@ struct NewRoutineSheet: View {
         ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
         ToolbarItem(placement: .confirmationAction) {
           Button("Create") {
-            context.insert(
-              Routine(
-                name: name.trimmingCharacters(in: .whitespacesAndNewlines), symbol: symbol,
-                colorHex: colorHex, restDurationSeconds: restDurationSeconds))
+            let routine = Routine(
+              name: name.trimmingCharacters(in: .whitespacesAndNewlines), symbol: symbol,
+              colorHex: colorHex, restDurationSeconds: restDurationSeconds)
+            do {
+              try RoutineOrder.append(routine, in: context)
+            } catch {
+              creationError = error.localizedDescription
+              return
+            }
+            context.insert(routine)
             _ = saveAndRefreshProgressWidget(context)
             dismiss()
           }
           .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
         }
       }
+    }
+    .alert(
+      "Couldn’t create routine",
+      isPresented: Binding(
+        get: { creationError != nil }, set: { if !$0 { creationError = nil } }
+      )
+    ) {
+      Button("OK") { creationError = nil }
+    } message: {
+      Text(creationError ?? "")
     }
   }
 }

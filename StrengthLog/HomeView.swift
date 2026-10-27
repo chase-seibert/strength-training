@@ -6,8 +6,9 @@ struct HomeView: View {
   let isCoveredByActiveWorkout: Bool
   let onOpenWorkout: (WorkoutSession) -> Void
   let onReturnHome: () -> Void
-  @Query(filter: #Predicate<Routine> { $0.deletedAt == nil }, sort: \Routine.createdAt)
+  @Query(filter: #Predicate<Routine> { $0.deletedAt == nil }, sort: \Routine.sortOrder)
   private var routines: [Routine]
+  @State private var routineOrderError: String?
   @Query private var allRoutines: [Routine]
   @Query(filter: #Predicate<WorkoutSession> { $0.isActive && $0.deletedAt == nil })
   private var activeSessions: [WorkoutSession]
@@ -60,6 +61,16 @@ struct HomeView: View {
     .background(Color(.systemGroupedBackground))
     .navigationTitle("Workout")
     .toolbarTitleDisplayMode(.large)
+    .alert(
+      "Couldn’t reorder routines",
+      isPresented: Binding(
+        get: { routineOrderError != nil }, set: { if !$0 { routineOrderError = nil } }
+      )
+    ) {
+      Button("OK") { routineOrderError = nil }
+    } message: {
+      Text(routineOrderError ?? "")
+    }
   }
 
   private func recentlyCompletedSessions(at now: Date) -> [WorkoutSession] {
@@ -166,6 +177,11 @@ struct HomeView: View {
         NavigationLink("All routines") { RoutinesView(onOpenWorkout: onOpenWorkout) }
           .font(.subheadline.weight(.semibold))
       }
+      if !routines.isEmpty {
+        Text("Hold and drag to reorder")
+          .font(.caption)
+          .foregroundStyle(.secondary)
+      }
       if routines.isEmpty {
         NavigationLink {
           RoutinesView(onOpenWorkout: onOpenWorkout)
@@ -211,6 +227,9 @@ struct HomeView: View {
                   .font(.subheadline).foregroundStyle(.secondary)
               }
               Spacer()
+              Image(systemName: "line.3.horizontal")
+                .font(.body.weight(.semibold))
+                .foregroundStyle(.tertiary)
               Image(systemName: "play.fill")
                 .foregroundStyle(.white)
                 .padding(11)
@@ -220,10 +239,37 @@ struct HomeView: View {
             .background(.background, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
           }
           .buttonStyle(.plain)
-          .disabled(routine.visibleExercises.isEmpty)
+          .draggable(routine.id.uuidString)
+          .dropDestination(for: String.self) { items, _ in
+            guard let sourceID = items.first, let sourceUUID = UUID(uuidString: sourceID),
+              sourceUUID != routine.id
+            else { return false }
+            reorderVisibleRoutine(sourceID: sourceUUID, before: routine.id)
+            return true
+          }
           .accessibilityIdentifier("start-routine-\(routine.name)")
+          .accessibilityHint(
+            routine.visibleExercises.isEmpty
+              ? "Add exercises to this routine before starting a workout. Hold and drag to reorder."
+              : "Hold and drag to reorder this routine.")
         }
       }
+    }
+  }
+
+  private func reorderVisibleRoutine(sourceID: UUID, before targetID: UUID) {
+    let visible = Array(routines.prefix(3))
+    guard let source = visible.firstIndex(where: { $0.id == sourceID }),
+      let target = visible.firstIndex(where: { $0.id == targetID })
+    else { return }
+    var newVisible = visible
+    let moved = newVisible.remove(at: source)
+    newVisible.insert(moved, at: target)
+    let newOrder = newVisible + Array(routines.dropFirst(visible.count))
+    do {
+      try RoutineOrder.saveActiveOrder(newOrder, in: context)
+    } catch {
+      routineOrderError = error.localizedDescription
     }
   }
 
