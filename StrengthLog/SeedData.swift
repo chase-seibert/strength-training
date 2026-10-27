@@ -124,7 +124,7 @@ enum SeedData {
   static func correctReviewedCatalogUnits(
     in context: ModelContext, defaults: UserDefaults = .standard
   ) throws {
-    let key = "didCorrectReviewedCatalogUnitsV1"
+    let key = "didCorrectReviewedCatalogUnitsV2"
     guard !defaults.bool(forKey: key) else { return }
     let corrections: [(String, TrackingUnit, TrackingUnit)] = [
       ("Balance_Board", .pounds, .seconds),
@@ -136,6 +136,23 @@ enum SeedData {
       ("Superman", .seconds, .repetitions),
       ("Toe_Touchers", .seconds, .repetitions),
       ("Ankle_Circles", .seconds, .repetitions),
+      ("Backward_Medicine_Ball_Throw", .repetitions, .pounds),
+      ("Catch_and_Overhead_Throw", .repetitions, .pounds),
+      ("Chest_Push_from_3_point_stance", .repetitions, .pounds),
+      ("Chest_Push_multiple_response", .repetitions, .pounds),
+      ("Chest_Push_single_response", .repetitions, .pounds),
+      ("Chest_Push_with_Run_Release", .repetitions, .pounds),
+      ("Medicine_Ball_Chest_Pass", .repetitions, .pounds),
+      ("Medicine_Ball_Full_Twist", .repetitions, .pounds),
+      ("Medicine_Ball_Scoop_Throw", .repetitions, .pounds),
+      ("Overhead_Slam", .repetitions, .pounds),
+      ("Return_Push_from_Stance", .repetitions, .pounds),
+      ("Standing_Two-Arm_Overhead_Throw", .repetitions, .pounds),
+      ("Supine_Chest_Throw", .repetitions, .pounds),
+      ("Supine_One-Arm_Overhead_Throw", .repetitions, .pounds),
+      ("Supine_Two-Arm_Overhead_Throw", .repetitions, .pounds),
+      ("Dumbbell_Seated_Box_Jump", .repetitions, .pounds),
+      ("Vertical_Swing", .repetitions, .pounds),
     ]
     for (sourceID, previousUnit, correctedUnit) in corrections {
       let descriptor = FetchDescriptor<Exercise>(

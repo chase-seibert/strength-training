@@ -428,7 +428,7 @@
     "category": "plyometrics",
     "equipment": "medicine ball",
     "primaryMuscle": "shoulders",
-    "unit": "repetitions",
+    "unit": "pounds",
     "instructions": "This exercise is best done with a partner. If you lack a partner, the ball can be thrown and retrieved or thrown against a wall. Begin standing a few meters in front of your partner, both facing the same direction. Begin holding the ball between your legs. Squat down and then forcefully reverse direction, coming to full extension and you toss the ball over your head to your partner. Your partner can then roll the ball back to you. Repeat for the desired number of repetitions.",
     "imagePaths": [
       "Backward_Medicine_Ball_Throw/0.jpg",
@@ -1912,7 +1912,7 @@
     "category": "plyometrics",
     "equipment": "medicine ball",
     "primaryMuscle": "lats",
-    "unit": "repetitions",
+    "unit": "pounds",
     "instructions": "Begin standing while facing a wall or a partner. Using both hands, position the ball behind your head, stretching as much as possible, and forcefully throw the ball forward. Ensure that you follow your throw through, being prepared to receive your rebound from your throw. If you are throwing against the wall, make sure that you stand close enough to the wall to receive the rebound, and aim a little higher than you would with a partner.",
     "imagePaths": [
       "Catch_and_Overhead_Throw/0.jpg",
@@ -2020,7 +2020,7 @@
     "category": "plyometrics",
     "equipment": "medicine ball",
     "primaryMuscle": "chest",
-    "unit": "repetitions",
+    "unit": "pounds",
     "instructions": "Begin in a three point stance, squatted down with your back flat and one hand on the ground. Place the medicine ball directly in front of you. To begin, take your first step as you pull the ball to your chest, positioning both hands to prepare for the throw. As you execute the second step, explosively release the ball forward as hard as possible.",
     "imagePaths": [
       "Chest_Push_from_3_point_stance/0.jpg",
@@ -2033,7 +2033,7 @@
     "category": "plyometrics",
     "equipment": "medicine ball",
     "primaryMuscle": "chest",
-    "unit": "repetitions",
+    "unit": "pounds",
     "instructions": "Begin in a kneeling position facing a wall or utilize a partner. Hold the ball with both hands tight into the chest. Execute the pass by exploding forward and outward with the hips while pushing the ball as hard as possible. Follow through by falling forward, catching yourself with your hands. Immediately return to an upright position. Repeat for the desired number of repetitions.",
     "imagePaths": [
       "Chest_Push_multiple_response/0.jpg",
@@ -2046,7 +2046,7 @@
     "category": "plyometrics",
     "equipment": "medicine ball",
     "primaryMuscle": "chest",
-    "unit": "repetitions",
+    "unit": "pounds",
     "instructions": "Begin in a kneeling position holding the medicine ball with both hands tightly into the chest. Execute the pass by exploding forward and outward with the hips while pushing the ball as far as possible. Follow through by falling forward, catching yourself with your hands.",
     "imagePaths": [
       "Chest_Push_single_response/0.jpg",
@@ -2059,7 +2059,7 @@
     "category": "plyometrics",
     "equipment": "medicine ball",
     "primaryMuscle": "chest",
-    "unit": "repetitions",
+    "unit": "pounds",
     "instructions": "Begin in an athletic stance with the knees bent, hips back, and back flat. Hold the medicine ball near your legs. This will be your starting position. While taking your first step draw the medicine ball into your chest. As you take the second step, explosively push the ball forward, immediately sprinting for 10 yards after the release. If you are really fast, you can catch your own pass!",
     "imagePaths": [
       "Chest_Push_with_Run_Release/0.jpg",
@@ -3173,7 +3173,7 @@
     "category": "plyometrics",
     "equipment": "dumbbell",
     "primaryMuscle": "quadriceps",
-    "unit": "repetitions",
+    "unit": "pounds",
     "instructions": "Position a box a couple feet to the side of a bench. Hold a dumbbell to your chest with both hands and seat yourself on the bench facing the box. This will be your starting position. Plant your feet firmly on the ground as you lean forward, extending through the hips and knees to jump up and forward. Land on the box with both feet, absorbing the impact by allowing the hips and knees to bend. Step down and return to the starting position.",
     "imagePaths": [
       "Dumbbell_Seated_Box_Jump/0.jpg",
@@ -6067,7 +6067,7 @@
     "category": "plyometrics",
     "equipment": "medicine ball",
     "primaryMuscle": "chest",
-    "unit": "repetitions",
+    "unit": "pounds",
     "instructions": "You will need a partner for this exercise. Lacking one, this movement can be performed against a wall. Begin facing your partner holding the medicine ball at your torso with both hands. Pull the ball to your chest, and reverse the motion by extending through the elbows. For sports applications, you can take a step as you throw. Your partner should catch the ball, and throw it back to you. Receive the throw with both hands at chest height.",
     "imagePaths": [
       "Medicine_Ball_Chest_Pass/0.jpg",
@@ -6080,7 +6080,7 @@
     "category": "plyometrics",
     "equipment": "medicine ball",
     "primaryMuscle": "abdominals",
-    "unit": "repetitions",
+    "unit": "pounds",
     "instructions": "For this exercise you will need a medicine ball and a partner. Stand back to back with your partner, spaced 2-3 feet apart. This will be your starting position. Hold the ball in front of the trunk. Open the hips and turn the shoulders at the same time as your partner. For full rotation, you and your partner should twist in the same direction, i.e. counter-clockwise. Pass the ball to your partner, and both of you can now twist in the opposite direction to repeat the procedure.",
     "imagePaths": [
       "Medicine_Ball_Full_Twist/0.jpg",
@@ -6093,7 +6093,7 @@
     "category": "plyometrics",
     "equipment": "medicine ball",
     "primaryMuscle": "shoulders",
-    "unit": "repetitions",
+    "unit": "pounds",
     "instructions": "Assume a semisquat stance with a medicine ball in your hands. Your arms should hang so the ball is near your feet. Begin by thrusting the hips forward as you extend through the legs, jumping up. As you do, swing your arms up and over your head, keeping them extended, releasing the ball at the peak of your movement. The goal is to throw the ball the greatest distance behind you.",
     "imagePaths": [
       "Medicine_Ball_Scoop_Throw/0.jpg",
@@ -6900,7 +6900,7 @@
     "category": "plyometrics",
     "equipment": "medicine ball",
     "primaryMuscle": "lats",
-    "unit": "repetitions",
+    "unit": "pounds",
     "instructions": "Hold a medine ball with both hands and stand with your feet at shoulder width. This will be your starting position. Initiate the countermovement by raising the ball above your head and fully extending your body. Reverse the motion, slamming the ball into the ground directly in front of you as hard as you can. Receive the ball with both hands on the bounce and repeat the movement.",
     "imagePaths": [
       "Overhead_Slam/0.jpg",
@@ -7655,7 +7655,7 @@
     "category": "plyometrics",
     "equipment": "medicine ball",
     "primaryMuscle": "shoulders",
-    "unit": "repetitions",
+    "unit": "pounds",
     "instructions": "You will need a partner for this drill. Begin in an athletic 2 or 3 point stance. At the signal, move into a position to receive the pass from your partner. Catch the medicine ball with both hands and immediately throw it back to your partner. You can modify this drill by running different routes.",
     "imagePaths": [
       "Return_Push_from_Stance/0.jpg",
@@ -10400,7 +10400,7 @@
     "category": "plyometrics",
     "equipment": "medicine ball",
     "primaryMuscle": "shoulders",
-    "unit": "repetitions",
+    "unit": "pounds",
     "instructions": "Stand with your feet shoulder width apart holding a medicine ball in both hands. To begin, reach the medicine ball deep behind your head as you bend the knees slightly and lean back. Violently throw the ball forward, flexing at the hip and using your whole body to complete the movement. The medicine ball can be thrown to a partner or to a wall, receiving it as it bounces back.",
     "imagePaths": [
       "Standing_Two-Arm_Overhead_Throw/0.jpg",
@@ -10622,7 +10622,7 @@
     "category": "plyometrics",
     "equipment": "medicine ball",
     "primaryMuscle": "triceps",
-    "unit": "repetitions",
+    "unit": "pounds",
     "instructions": "This drill is great for chest passes when you lack a partner or a wall of sufficient strength. Lay on the ground on your back with your knees bent. Begin with the ball on your chest, held with both hands on the bottom. Explode up, extending through the elbow to throw the ball directly above you as high as possible. Catch the ball with both hands as it comes down.",
     "imagePaths": [
       "Supine_Chest_Throw/0.jpg",
@@ -10635,7 +10635,7 @@
     "category": "plyometrics",
     "equipment": "medicine ball",
     "primaryMuscle": "abdominals",
-    "unit": "repetitions",
+    "unit": "pounds",
     "instructions": "Lay on the ground on your back with your knees bent. Hold the ball with one hand, extending the arm fully behind your head. This will be your starting position. Initiate the movement at the shoulder, throwing the ball directly forward of you as you sit up, attempting to go for maximum distance. The ball can be thrown to a partner or bounced off of a wall.",
     "imagePaths": [
       "Supine_One-Arm_Overhead_Throw/0.jpg",
@@ -10648,7 +10648,7 @@
     "category": "plyometrics",
     "equipment": "medicine ball",
     "primaryMuscle": "abdominals",
-    "unit": "repetitions",
+    "unit": "pounds",
     "instructions": "Lay on the ground on your back with your knees bent. Hold the ball with both hands, extending the arms fully behind your head. This will be your starting position. Initiate the movement at the shoulder, throwing the ball directly forward of you as you sit up, attempting to go for maximum distance. The ball can be thrown to a partner or bounced off of a wall.",
     "imagePaths": [
       "Supine_Two-Arm_Overhead_Throw/0.jpg",
@@ -11163,7 +11163,7 @@
     "category": "plyometrics",
     "equipment": "dumbbell",
     "primaryMuscle": "hamstrings",
-    "unit": "repetitions",
+    "unit": "pounds",
     "instructions": "Allow the dumbbell to hang at arms length between your legs, holding it with both hands. Keep your back straight and your head up. Swing the dumbbell between your legs, flexing at the hips and bending the knees slightly. Powerfully reverse the motion by extending at the hips, knees, and ankles to propel yourself upward, swinging the dumbell over your head. As you land, absorb the impact through your legs and draw the dumbbell to your torso before the next repetition.",
     "imagePaths": [
       "Vertical_Swing/0.jpg",

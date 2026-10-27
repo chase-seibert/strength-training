@@ -106,6 +106,10 @@
       guard routineNames == Set(["Core", "Core (2)", "Core (3)"]) else {
         throw SmokeError.routineCollision
       }
+      if ProcessInfo.processInfo.arguments.contains("-validateCatalogDefaultsOnly") {
+        try verifyCatalogDefaultsAndCorrections(schema: schema)
+        return
+      }
       if ProcessInfo.processInfo.arguments.contains("-validateCoordinatedExerciseOrderOnly") {
         try verifyCoordinatedExerciseOrderPersistence(schema: schema)
         return
@@ -378,6 +382,23 @@
         ("Superman", .seconds, .repetitions, 12),
         ("Toe_Touchers", .seconds, .repetitions, 12),
         ("Ankle_Circles", .seconds, .repetitions, 12),
+        ("Backward_Medicine_Ball_Throw", .repetitions, .pounds, 12),
+        ("Catch_and_Overhead_Throw", .repetitions, .pounds, 12),
+        ("Chest_Push_from_3_point_stance", .repetitions, .pounds, 12),
+        ("Chest_Push_multiple_response", .repetitions, .pounds, 12),
+        ("Chest_Push_single_response", .repetitions, .pounds, 12),
+        ("Chest_Push_with_Run_Release", .repetitions, .pounds, 12),
+        ("Medicine_Ball_Chest_Pass", .repetitions, .pounds, 12),
+        ("Medicine_Ball_Full_Twist", .repetitions, .pounds, 12),
+        ("Medicine_Ball_Scoop_Throw", .repetitions, .pounds, 12),
+        ("Overhead_Slam", .repetitions, .pounds, 12),
+        ("Return_Push_from_Stance", .repetitions, .pounds, 12),
+        ("Standing_Two-Arm_Overhead_Throw", .repetitions, .pounds, 12),
+        ("Supine_Chest_Throw", .repetitions, .pounds, 12),
+        ("Supine_One-Arm_Overhead_Throw", .repetitions, .pounds, 12),
+        ("Supine_Two-Arm_Overhead_Throw", .repetitions, .pounds, 12),
+        ("Dumbbell_Seated_Box_Jump", .repetitions, .pounds, 12),
+        ("Vertical_Swing", .repetitions, .pounds, 12),
         ("Stomach_Vacuum", .seconds, .seconds, 20),
         ("One_Handed_Hang", .seconds, .seconds, 20),
         ("Shoulder_Stretch", .seconds, .seconds, 30),
@@ -398,6 +419,8 @@
       let suite = "catalog-default-test-\(UUID().uuidString)"
       let defaults = UserDefaults(suiteName: suite)!
       defer { defaults.removePersistentDomain(forName: suite) }
+      // Existing installs may already have run V1 before these catalog corrections ship.
+      defaults.set(true, forKey: "didCorrectReviewedCatalogUnitsV1")
       let configuration = ModelConfiguration(
         schema: schema, url: directory.appendingPathComponent("catalog.store"),
         cloudKitDatabase: .none)
@@ -425,8 +448,9 @@
           master.name = "Renamed \(sourceID)"
           context.insert(master)
           exerciseIDs.append(master.id)
+          let hasHistoricalLoad = sourceID != "Backward_Medicine_Ball_Throw"
           let set = WorkoutSet(
-            sortOrder: 0, reps: 17, isCompleted: true, measurement: 42,
+            sortOrder: 0, reps: 17, isCompleted: true, measurement: hasHistoricalLoad ? 42 : nil,
             durationSeconds: previousUnit == .seconds ? 17 : nil)
           setIDs.append(set.id)
           logs.append(
@@ -434,7 +458,9 @@
               exerciseID: master.id, exerciseName: master.name, unit: previousUnit,
               sortOrder: index,
               participants: [
-                ParticipantLog(participantName: "Tester", measurement: 42, sets: [set])
+                ParticipantLog(
+                  participantName: "Tester", measurement: hasHistoricalLoad ? 42 : 0,
+                  sets: [set])
               ]))
         }
         let history = WorkoutSession(
@@ -496,10 +522,19 @@
         guard let log = history.exercises.first(where: { $0.sortOrder == index }),
           log.exerciseID == exerciseIDs[index],
           log.unit == (index == 0 ? .pounds : test.2), log.unitRaw == test.1.rawValue,
-          let set = log.participants.first?.sets.first,
-          set.id == setIDs[index], set.reps == 17, set.measurement == 42, set.isCompleted,
+          let participant = log.participants.first,
+          let set = participant.sets.first,
+          set.id == setIDs[index], set.reps == 17,
+          set.measurement == (test.0 == "Backward_Medicine_Ball_Throw" ? nil : 42),
+          participant.measurement == (test.0 == "Backward_Medicine_Ball_Throw" ? 0 : 42),
+          set.isCompleted,
           set.durationSeconds == (test.1 == .seconds ? 17 : nil)
         else { throw SmokeError.catalogDefaults }
+        if test.0 == "Backward_Medicine_Ball_Throw",
+          set.summary(participant: participant, unit: log.unit) != "17 reps"
+        {
+          throw SmokeError.catalogDefaults
+        }
       }
       // Every bundled seconds default resolves independently of the rep preference.
       for entry in entries where entry.unit == .seconds {
@@ -511,6 +546,8 @@
       customTimer.sourceID = nil
       customTimer.originalName = "New custom timer"
       guard customTimer.defaultTarget == 30 else { throw SmokeError.catalogDefaults }
+
+      if ProcessInfo.processInfo.arguments.contains("-validateCatalogDefaultsOnly") { return }
 
       // Reorder the existing disk-backed history without replacing its logs or recorded sets.
       let oldOrder = history.exercises.sorted { $0.sortOrder < $1.sortOrder }.map(\.id)
