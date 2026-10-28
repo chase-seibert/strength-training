@@ -20,6 +20,7 @@ xcuserdata/
 # Swift Package Manager
 .build/
 .swiftpm/xcode/package.xcworkspace/xcuserdata/
+Config/AnalyticsConfig.local.xcconfig
 
 # Local editor settings
 .idea/

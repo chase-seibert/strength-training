@@ -1,0 +1,9 @@
+// Copy to AnalyticsConfig.local.xcconfig after the server provisions LiftChase.
+// Then set ANALYTICS_ENABLED = YES. Never commit the local file.
+ANALYTICS_ENABLED = YES
+// Break the URL scheme so xcconfig does not treat // as a comment.
+ANALYTICS_BASE_URL = https:/$()/example.lambda-url.us-west-2.on.aws/liftchase
+ANALYTICS_APP_NAME = liftchase
+ANALYTICS_AUDIENCE = debug
+ANALYTICS_KEY_ID = liftchase
+ANALYTICS_SECRET = replace-with-a-provisioned-namespace-key

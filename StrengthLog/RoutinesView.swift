@@ -349,6 +349,7 @@ struct StarterRoutinePicker: View {
 struct NewRoutineSheet: View {
   @Environment(\.dismiss) private var dismiss
   @Environment(\.modelContext) private var context
+  @Environment(AnalyticsClient.self) private var analyticsClient
   @State private var name = ""
   @State private var symbol = "dumbbell.fill"
   @State private var colorHex = "FF5A45"
@@ -400,7 +401,11 @@ struct NewRoutineSheet: View {
               return
             }
             context.insert(routine)
-            _ = saveAndRefreshProgressWidget(context)
+            if saveAndRefreshProgressWidget(context) {
+              analyticsClient.track(
+                .routineCreated,
+                ["exercise_count": .number(0), "routine_name": .string(routine.name)])
+            }
             dismiss()
           }
           .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
@@ -520,6 +525,7 @@ struct RoutineAppearanceEditor: View {
 struct RoutineDetailView: View {
   @Environment(\.dismiss) private var dismiss
   @Environment(\.modelContext) private var context
+  @Environment(AnalyticsClient.self) private var analyticsClient
   @Query(filter: #Predicate<PersonProfile> { !$0.isArchived }, sort: \PersonProfile.sortOrder)
   private var people: [PersonProfile]
   @Query private var catalog: [Exercise]
@@ -678,7 +684,8 @@ struct RoutineDetailView: View {
       } else {
         Button {
           if let session = WorkoutSessionStarter.start(
-            routine: routine, people: people, sessions: sessions, catalog: catalog, in: context)
+            routine: routine, people: people, sessions: sessions, catalog: catalog, in: context,
+            source: "routine_detail", analytics: analyticsClient)
           {
             onOpenWorkout(session)
           }
@@ -780,7 +787,14 @@ struct RoutineDetailView: View {
         RoutineExercise.make(
           exercise: exercise, sortOrder: lastSortOrder + 1))
     } else if routine.add(exercise) {
-      _ = saveAndRefreshProgressWidget(context)
+      if saveAndRefreshProgressWidget(context) {
+        analyticsClient.track(
+          .routineEdited,
+          [
+            "exercise_count": .number(routine.visibleExercises.count),
+            "routine_name": .string(routine.name),
+          ])
+      }
     }
   }
 
@@ -810,7 +824,15 @@ struct RoutineDetailView: View {
     routine.exercises = (routine.exercises.filter(\.isHiddenFromRoutine) + draftExercises)
       .sorted(by: { $0.sortOrder < $1.sortOrder })
     deleted.forEach(context.delete)
-    _ = saveAndRefreshProgressWidget(context)
+    let saved = saveAndRefreshProgressWidget(context)
+    if saved {
+      analyticsClient.track(
+        .routineEdited,
+        [
+          "exercise_count": .number(draftExercises.count),
+          "routine_name": .string(routine.name),
+        ])
+    }
     draftExercises = []
     editMode = .inactive
   }
@@ -974,7 +996,9 @@ enum WorkoutSessionStarter {
     people: [PersonProfile],
     sessions: [WorkoutSession],
     catalog: [Exercise],
-    in context: ModelContext
+    in context: ModelContext,
+    source: String = "home",
+    analytics: AnalyticsClient = .shared
   ) -> WorkoutSession? {
     if let activeSession = sessions.first(where: \.isActive) {
       return activeSession
@@ -1042,6 +1066,21 @@ enum WorkoutSessionStarter {
     do {
       try context.save()
       ProgressWidgetPublication.schedule()
+      let routineKind =
+        StarterRoutineTemplate.all.contains {
+          $0.name.caseInsensitiveCompare(routine.name) == .orderedSame
+        } ? "built_in" : "custom"
+      analytics.track(
+        .routineStarted,
+        [
+          "source": .string(source),
+          "routine_kind": .string(routineKind),
+          "routine_name": .string(routine.name),
+          "exercise_ids": .strings(
+            routineExercises.compactMap { item in
+              catalog.first(where: { $0.id == item.exerciseID })?.sourceID
+            }),
+        ])
       return session
     } catch {
       return nil

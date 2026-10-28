@@ -8,6 +8,18 @@
 	<string>Lift Chase saves workouts you complete here to Apple Health so they appear alongside your other workouts.</string>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
+	<key>analyticsEnabled</key>
+	<string>$(ANALYTICS_ENABLED)</string>
+	<key>analyticsBaseUrl</key>
+	<string>$(ANALYTICS_BASE_URL)</string>
+	<key>appName</key>
+	<string>$(ANALYTICS_APP_NAME)</string>
+	<key>audience</key>
+	<string>$(ANALYTICS_AUDIENCE)</string>
+	<key>analyticsKeyId</key>
+	<string>$(ANALYTICS_KEY_ID)</string>
+	<key>analyticsSecret</key>
+	<string>$(ANALYTICS_SECRET)</string>
 	<key>CFBundleDocumentTypes</key>
 	<array>
 		<dict>

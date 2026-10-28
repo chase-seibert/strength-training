@@ -102,6 +102,7 @@ enum HealthKitWorkoutRecorder {
 struct StrengthLogApp: App {
   @UIApplicationDelegateAdaptor(KidsWatchShareApplicationDelegate.self) private var appDelegate
   @State private var importCoordinator = HevyImportCoordinator()
+  @State private var analyticsClient = AnalyticsClient.shared
   @State private var storageError: String?
   @State private var retentionError: String?
   @State private var widgetError: String?
@@ -204,6 +205,7 @@ struct StrengthLogApp: App {
     WindowGroup {
       AppRootView()
         .environment(importCoordinator)
+        .environment(analyticsClient)
         .onOpenURL { importCoordinator.open($0) }
         .onReceive(NotificationCenter.default.publisher(for: .progressWidgetPublicationFailed)) {
           notification in
@@ -384,6 +386,8 @@ struct RootView: View {
   }
 
   @Environment(\.modelContext) private var context
+  @Environment(AnalyticsClient.self) private var analyticsClient
+  @Environment(\.scenePhase) private var scenePhase
   @Query(
     filter: #Predicate<WorkoutSession> { $0.isActive && $0.deletedAt == nil },
     sort: \WorkoutSession.startedAt,
@@ -467,6 +471,9 @@ struct RootView: View {
     } message: {
       Text(routineShortcutError ?? "")
     }
+    .task {
+      if scenePhase == .active { analyticsClient.track(.appOpen) }
+    }
     .onAppear {
       PairedWatchWorkoutSync.activate()
       RoutineShortcutIntegration.refreshQuickActions(in: context)
@@ -480,6 +487,9 @@ struct RootView: View {
       if let activeSession = activeSessions.first {
         presentActiveWorkout(activeSession)
       }
+    }
+    .onChange(of: scenePhase) { _, phase in
+      if phase == .active { analyticsClient.track(.appOpen) }
     }
     .onChange(of: activeSessions.count) { _, count in
       if count == 0 {
@@ -538,6 +548,22 @@ struct RootView: View {
 
   private func completeAndDismiss(_ session: WorkoutSession) {
     let didSaveCompletion = close(session)
+    if didSaveCompletion {
+      let exerciseCount = session.exercises.count
+      let setLogs = session.exercises.flatMap(\.participants).flatMap(\.sets)
+      analyticsClient.track(
+        .workoutCompleted,
+        [
+          "duration_bucket": .string(
+            AnalyticsValue.durationBucket(
+              (session.endedAt ?? .now).timeIntervalSince(session.startedAt))),
+          "exercise_count": .number(exerciseCount),
+          "completed_sets": .number(setLogs.filter(\.isCompleted).count),
+          "skipped_sets": .number(setLogs.filter(\.isSkipped).count),
+          "exercise_ids": .strings(
+            session.exercises.compactMap { $0.masterExercise?.sourceID }),
+        ])
+    }
     if didSaveCompletion, healthKitWorkoutRecordingEnabled,
       let workout = CompletedHealthWorkout(session: session)
     {
@@ -550,7 +576,11 @@ struct RootView: View {
   }
 
   private func deleteAndDismiss(_ session: WorkoutSession) {
-    delete(session)
+    let wasActive = session.isActive
+    let didSaveDelete = delete(session)
+    if wasActive && didSaveDelete {
+      analyticsClient.track(.workoutDiscarded, ["source": .string("active_workout")])
+    }
     dismissActiveWorkout()
   }
 
@@ -585,13 +615,14 @@ struct RootView: View {
       colorHexByName: colors)
   }
 
-  private func delete(_ session: WorkoutSession) {
+  private func delete(_ session: WorkoutSession) -> Bool {
     session.deletedAt = .now
     session.isActive = false
     session.endedAt = session.endedAt ?? .now
     session.restTimerStartedAt = nil
     session.restTimerDurationSeconds = nil
-    _ = saveAndRefreshProgressWidget(context)
+    let didSave = saveAndRefreshProgressWidget(context)
     LiveActivityManager.shared.end()
+    return didSave
   }
 }

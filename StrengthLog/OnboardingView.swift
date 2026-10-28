@@ -3,6 +3,7 @@ import SwiftUI
 
 struct OnboardingView: View {
   @Environment(\.modelContext) private var context
+  @Environment(AnalyticsClient.self) private var analyticsClient
   @Query(sort: \PersonProfile.sortOrder) private var existingPeople: [PersonProfile]
   @Query(filter: #Predicate<Routine> { $0.deletedAt == nil }, sort: \Routine.createdAt)
   private var existingRoutines: [Routine]
@@ -255,7 +256,15 @@ struct OnboardingView: View {
       do { try RoutineOrder.append(routine, in: context) } catch { continue }
       context.insert(routine)
     }
-    _ = saveAndRefreshProgressWidget(context)
+    let didSave = saveAndRefreshProgressWidget(context)
+    if didSave {
+      analyticsClient.track(
+        .onboardingCompleted,
+        [
+          "starter_routines_added": .bool(newSelectedStarterCount > 0),
+          "starter_routine_count": .number(newSelectedStarterCount),
+        ])
+    }
     hasCompletedOnboarding = true
   }
 

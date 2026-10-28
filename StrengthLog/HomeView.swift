@@ -3,6 +3,7 @@ import SwiftUI
 
 struct HomeView: View {
   @Environment(\.modelContext) private var context
+  @Environment(AnalyticsClient.self) private var analyticsClient
   let isCoveredByActiveWorkout: Bool
   let onOpenWorkout: (WorkoutSession) -> Void
   let onReturnHome: () -> Void
@@ -208,7 +209,8 @@ struct HomeView: View {
         ForEach(routines.prefix(3)) { routine in
           Button {
             if let session = WorkoutSessionStarter.start(
-              routine: routine, people: people, sessions: sessions, catalog: catalog, in: context)
+              routine: routine, people: people, sessions: sessions, catalog: catalog, in: context,
+              analytics: analyticsClient)
             {
               onOpenWorkout(session)
             }

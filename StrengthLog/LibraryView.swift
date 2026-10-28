@@ -424,6 +424,7 @@ struct NewExerciseSheet: View {
 private struct ExerciseEditorSheet: View {
   @Environment(\.dismiss) private var dismiss
   @Environment(\.modelContext) private var context
+  @Environment(AnalyticsClient.self) private var analyticsClient
   @Query(filter: #Predicate<Exercise> { $0.deletedAt == nil }) private var exercises: [Exercise]
   private let exercise: Exercise?
   private let duplicateSource: Exercise?
@@ -706,6 +707,7 @@ private struct ExerciseEditorSheet: View {
 
   private func save() {
     do {
+      var createdExercise: Exercise?
       if let exercise {
         let previousName = exercise.name
         if exercise.originalName.isEmpty { exercise.originalName = previousName }
@@ -741,8 +743,23 @@ private struct ExerciseEditorSheet: View {
           additionalImagePaths: Array(source?.imagePaths.dropFirst() ?? []),
           isCustom: true)
         context.insert(newExercise)
+        createdExercise = newExercise
       }
       try context.save()
+      if let createdExercise {
+        analyticsClient.track(
+          .exerciseCreated,
+          [
+            "exercise_name": .string(createdExercise.name),
+            "category": .string(createdExercise.category),
+            "equipment": .string(createdExercise.equipment),
+            "primary_muscle": .string(createdExercise.primaryMuscle),
+            "unit": .string(createdExercise.unit.rawValue),
+            "rep_counting_mode": .string(
+              createdExercise.repCountingMode == .perSide ? "per_side" : "standard"),
+            "duplicated": .bool(duplicateSource != nil),
+          ])
+      }
       ProgressWidgetPublication.schedule()
       dismiss()
     } catch {

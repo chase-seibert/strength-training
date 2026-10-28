@@ -62,6 +62,7 @@ private struct HevyExerciseImportRow: Identifiable {
 
 struct HevyImportView: View {
   @Environment(\.modelContext) private var context
+  @Environment(AnalyticsClient.self) private var analyticsClient
   @Query(filter: #Predicate<PersonProfile> { !$0.isArchived }, sort: \PersonProfile.sortOrder)
   private var people: [PersonProfile]
   @Query(filter: #Predicate<Exercise> { $0.deletedAt == nil }, sort: \Exercise.name)
@@ -410,6 +411,14 @@ struct HevyImportView: View {
         choices: choices,
         catalog: exercises,
         context: context)
+      analyticsClient.track(
+        .hevyImportCompleted,
+        [
+          "routine_count": .number(result.routineCount),
+          "workout_count": .number(result.workoutCount),
+          "mapped_exercises": .number(result.historyExerciseCount),
+          "unmapped_exercises": .number(result.skippedExerciseCount),
+        ])
       isImporting = false
       successfulImport = result
     } catch {

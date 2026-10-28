@@ -95,7 +95,8 @@ enum RoutineShortcutIntegration {
     let sessions = (try? context.fetch(FetchDescriptor<WorkoutSession>())) ?? []
     let catalog = (try? context.fetch(FetchDescriptor<Exercise>())) ?? []
     return WorkoutSessionStarter.start(
-      routine: routine, people: people, sessions: sessions, catalog: catalog, in: context)
+      routine: routine, people: people, sessions: sessions, catalog: catalog, in: context,
+      source: "app_intent", analytics: .shared)
   }
 
   @MainActor

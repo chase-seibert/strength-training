@@ -2,10 +2,12 @@ import CloudKit
 import HealthKit
 import SwiftData
 import SwiftUI
+import UIKit
 import UniformTypeIdentifiers
 
 struct SettingsView: View {
   @Environment(\.modelContext) private var context
+  @Environment(AnalyticsClient.self) private var analyticsClient
   @Environment(HevyImportCoordinator.self) private var importCoordinator
   @Query(sort: \PersonProfile.sortOrder) private var people: [PersonProfile]
   @AppStorage(WorkoutPreferences.defaultSetsKey) private var defaultWorkoutSets =
@@ -253,6 +255,7 @@ struct SettingsView: View {
     guard !isRequestingHealthAuthorization else { return }
     guard enabled else {
       healthKitWorkoutRecordingEnabled = false
+      analyticsClient.track(.healthKitExportSettingChanged, ["enabled": .bool(false)])
       healthAuthorizationMessage = nil
       return
     }
@@ -264,6 +267,7 @@ struct SettingsView: View {
     }
 
     healthKitWorkoutRecordingEnabled = true
+    analyticsClient.track(.healthKitExportSettingChanged, ["enabled": .bool(true)])
     isRequestingHealthAuthorization = true
     healthAuthorizationMessage = nil
     Task {
@@ -364,6 +368,17 @@ struct SettingsView: View {
           Text(
             "Shows FPS, hitch count, and worst-frame duration on the active workout and writes one sample per second to the debug console. Leave this off outside a profiling session."
           )
+        }
+
+        Section {
+          NavigationLink {
+            AnalyticsDiagnosticsView()
+          } label: {
+            Label("Analytics diagnostics", systemImage: "chart.bar.doc.horizontal")
+          }
+          .accessibilityIdentifier("developer-analytics-diagnostics")
+        } footer: {
+          Text("View upload status and a recent, privacy-safe event history.")
         }
 
         Section {
@@ -469,6 +484,102 @@ struct SettingsView: View {
       } catch {
         celebrationPreviewMessage = "Couldn’t load workout history. Try again."
       }
+    }
+  }
+
+  private struct AnalyticsDiagnosticsView: View {
+    @Environment(AnalyticsClient.self) private var analyticsClient
+
+    private var rejectedEventCount: Int {
+      analyticsClient.diagnostics.recent.filter {
+        $0.state == "validation failed" || $0.state.hasPrefix("rejected:")
+      }.count
+    }
+
+    var body: some View {
+      List {
+        Section {
+          LabeledContent(
+            "Configuration", value: analyticsClient.configuration == nil ? "Disabled" : "Loaded")
+          LabeledContent("App", value: analyticsClient.configuration?.appName ?? "—")
+          LabeledContent("Version", value: analyticsClient.configuration?.appVersion ?? "—")
+          LabeledContent("Namespace", value: analyticsClient.configuration?.namespace ?? "—")
+          LabeledContent("Key ID", value: analyticsClient.configuration?.keyID ?? "—")
+          LabeledContent("Audience", value: analyticsClient.configuration?.audience.rawValue ?? "—")
+          LabeledContent("Platform", value: "iOS")
+          LabeledContent(
+            "Uploaded successfully",
+            value: "\(analyticsClient.diagnostics.successfulUploadEventCount)")
+          LabeledContent(
+            "Waiting to upload", value: "\(analyticsClient.diagnostics.events.count) events")
+          LabeledContent(
+            "Rejected recently",
+            value: "\(rejectedEventCount) events")
+          LabeledContent(
+            "Oldest event",
+            value: analyticsClient.diagnostics.events.first?.occurredAt.formatted(
+              date: .abbreviated, time: .shortened) ?? "None")
+          LabeledContent(
+            "Prepared batch", value: analyticsClient.diagnostics.prepared == nil ? "None" : "Ready")
+          LabeledContent(
+            "Redirect", value: analyticsClient.diagnostics.redirectBaseURL?.host ?? "None")
+          LabeledContent("Retry attempt", value: "\(analyticsClient.diagnostics.retryAttempt)")
+          LabeledContent(
+            "Next retry", value: analyticsClient.diagnostics.nextRetryAt?.formatted() ?? "None")
+          LabeledContent(
+            "Upload state",
+            value: analyticsClient.diagnostics.stopLogging
+              ? "Stopped" : analyticsClient.configuration == nil ? "Disabled" : "Available")
+        } header: {
+          Text("Status")
+        }
+
+        Section {
+          if analyticsClient.diagnostics.recent.isEmpty {
+            Text("No analytics events yet.").foregroundStyle(.secondary)
+          } else {
+            ForEach(Array(analyticsClient.diagnostics.recent.suffix(50).reversed())) { event in
+              VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                  Text(event.type.rawValue).font(.caption.monospaced())
+                  Spacer()
+                  Text(event.state).font(.caption).foregroundStyle(.secondary)
+                }
+                HStack(alignment: .firstTextBaseline) {
+                  if !event.safePropertiesSummary.isEmpty {
+                    Text(event.safePropertiesSummary)
+                      .font(.caption2)
+                      .foregroundStyle(.secondary)
+                      .lineLimit(2)
+                  }
+                  Spacer(minLength: 8)
+                  Text(event.occurredAt.formatted(date: .abbreviated, time: .shortened))
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+                    .lineLimit(1)
+                }
+              }
+              .accessibilityElement(children: .combine)
+            }
+          }
+        } header: {
+          Text("Recent events")
+        } footer: {
+          Text("Shows up to 50 recent events, including queued, uploaded, and rejected events.")
+        }
+
+        Section {
+          Button("Refresh") { Task { await analyticsClient.refresh() } }
+          Button("Upload now") { analyticsClient.uploadNow() }
+            .disabled(analyticsClient.configuration == nil)
+          Button("Copy diagnostics summary", systemImage: "doc.on.doc") {
+            UIPasteboard.general.string = analyticsClient.copySummary()
+          }
+        }
+      }
+      .navigationTitle("Analytics diagnostics")
+      .navigationBarTitleDisplayMode(.inline)
+      .task { await analyticsClient.refresh() }
     }
   }
 

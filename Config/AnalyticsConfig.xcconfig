@@ -1,0 +1,8 @@
+ANALYTICS_ENABLED = NO
+ANALYTICS_BASE_URL =
+ANALYTICS_APP_NAME = liftchase
+ANALYTICS_AUDIENCE = debug
+ANALYTICS_KEY_ID =
+ANALYTICS_SECRET =
+
+#include? "AnalyticsConfig.local.xcconfig"
