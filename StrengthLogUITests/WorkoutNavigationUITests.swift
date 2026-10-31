@@ -1389,6 +1389,9 @@ final class WorkoutNavigationUITests: XCTestCase {
     XCTAssertTrue(alexanderPicker.exists)
     XCTAssertTrue(daniellePicker.exists)
     XCTAssertTrue(benjaminPicker.exists)
+    XCTAssertEqual(alexanderPicker.label, "Alexander, included")
+    XCTAssertEqual(daniellePicker.label, "Danielle, included")
+    XCTAssertEqual(benjaminPicker.label, "Benjamin, excluded")
     XCTAssertLessThan(
       abs(alexanderPicker.frame.midX - (alexanderLoad?.frame.midX ?? 0)), 2)
     XCTAssertLessThan(
@@ -1398,6 +1401,9 @@ final class WorkoutNavigationUITests: XCTestCase {
     XCTAssertGreaterThan(alexanderPicker.frame.width, 108)
     XCTAssertGreaterThan(benjaminPicker.frame.minX, app.frame.maxX - 48)
     XCTAssertLessThan(benjaminPicker.frame.minX, app.frame.maxX)
+
+    benjaminPicker.tap()
+    XCTAssertEqual(benjaminPicker.label, "Benjamin, included")
   }
 
   func testSetCompletionControlsWrapByParticipantCount() {

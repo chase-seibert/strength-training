@@ -1165,9 +1165,11 @@ struct ActiveWorkoutView: View {
       .frame(
         maxWidth: usesAlignedParticipantPicker ? .infinity : nil,
         alignment: .leading)
-      Image(systemName: isSelected ? "checkmark" : "plus")
-        .font(.caption.bold())
-        .foregroundStyle(isSelected ? participantColor : .secondary)
+      if !isSelected {
+        Image(systemName: "plus")
+          .font(.caption.bold())
+          .foregroundStyle(.secondary)
+      }
     }
     .padding(.horizontal, usesAlignedParticipantPicker ? 8 : 10)
     .frame(
