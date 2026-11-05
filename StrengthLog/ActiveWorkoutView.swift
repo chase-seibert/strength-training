@@ -1150,32 +1150,40 @@ struct ActiveWorkoutView: View {
     for person: PersonProfile, isSelected: Bool, pillWidth: CGFloat?
   ) -> some View {
     let participantColor = Color(hex: person.colorHex)
-    HStack(spacing: usesAlignedParticipantPicker ? 5 : 6) {
-      InitialBadge(name: person.name, colorHex: person.colorHex, size: 26)
-      Group {
-        if usesAlignedParticipantPicker {
-          DashTruncatedName(name: person.name)
-        } else {
-          Text(person.name)
-            .font(.subheadline.weight(.semibold))
-            .lineLimit(1)
+    let horizontalPadding: CGFloat = usesAlignedParticipantPicker ? 8 : 10
+    let spacing: CGFloat = usesAlignedParticipantPicker ? 5 : 6
+    let nameMaxWidth = pillWidth.map {
+      max(0, $0 - (2 * horizontalPadding) - 26 - spacing - (isSelected ? 0 : 20))
+    }
+    ZStack {
+      HStack(spacing: spacing) {
+        InitialBadge(name: person.name, colorHex: person.colorHex, size: 26)
+        Group {
+          if usesAlignedParticipantPicker {
+            DashTruncatedName(name: person.name)
+          } else {
+            Text(person.name)
+              .font(.subheadline.weight(.semibold))
+              .lineLimit(1)
+              .truncationMode(.tail)
+          }
         }
+        .foregroundStyle(isSelected ? .primary : .secondary)
+        .frame(maxWidth: nameMaxWidth, alignment: .center)
+        .accessibilityIdentifier("participant-picker-name-\(person.name)")
       }
-      .foregroundStyle(isSelected ? .primary : .secondary)
-      .frame(
-        maxWidth: usesAlignedParticipantPicker ? .infinity : nil,
-        alignment: .leading)
+      .frame(maxWidth: .infinity, alignment: .center)
       if !isSelected {
         Image(systemName: "plus")
           .font(.caption.bold())
           .foregroundStyle(.secondary)
+          .frame(maxWidth: .infinity, alignment: .trailing)
+          .padding(.trailing, 2)
       }
     }
-    .padding(.horizontal, usesAlignedParticipantPicker ? 8 : 10)
-    .frame(
-      width: pillWidth,
-      height: 42
-    )
+    .padding(.horizontal, horizontalPadding)
+    .frame(width: pillWidth, height: 42)
+    .frame(minWidth: pillWidth == nil ? (isSelected ? 110 : 126) : nil)
     .background(
       isSelected ? participantColor.opacity(0.10) : Color.secondary.opacity(0.06),
       in: Capsule()

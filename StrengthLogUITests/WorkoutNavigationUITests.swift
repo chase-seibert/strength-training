@@ -1269,12 +1269,20 @@ final class WorkoutNavigationUITests: XCTestCase {
 
     let alexSet = app.buttons["participant-set-Alex-1"]
     let alexPicker = app.buttons["participant-picker-Alex"]
+    let alexName = app.staticTexts["participant-picker-name-Alex"]
     XCTAssertTrue(alexSet.waitForExistence(timeout: 5))
+    XCTAssertTrue(alexName.exists)
+    assertParticipantPickerNameCentered(alexName, in: alexPicker, spacing: 6)
+    let pillScreenshot = XCTAttachment(screenshot: app.screenshot())
+    pillScreenshot.name = "participant-pill-centered-in-simulator"
+    pillScreenshot.lifetime = .keepAlways
+    add(pillScreenshot)
     alexSet.tap()
 
     alexPicker.tap()
     XCTAssertTrue(app.textFields["Base reps for Alex"].waitForNonExistence(timeout: 2))
     XCTAssertEqual(alexPicker.label, "Alex, excluded")
+    assertParticipantPickerNameCentered(alexName, in: alexPicker, spacing: 6)
     XCTAssertFalse(app.buttons["Hide Person"].exists)
     XCTAssertLessThan(app.buttons["participant-picker-Jordan"].frame.minX, alexPicker.frame.minX)
     XCTAssertLessThan(app.buttons["participant-picker-Owen"].frame.minX, alexPicker.frame.minX)
@@ -1386,9 +1394,13 @@ final class WorkoutNavigationUITests: XCTestCase {
     let alexanderPicker = app.buttons["participant-picker-Alexander"]
     let daniellePicker = app.buttons["participant-picker-Danielle"]
     let benjaminPicker = app.buttons["participant-picker-Benjamin"]
+    let alexanderName = app.staticTexts["participant-picker-name-Alexander"]
+    let danielleName = app.staticTexts["participant-picker-name-Danielle"]
     XCTAssertTrue(alexanderPicker.exists)
     XCTAssertTrue(daniellePicker.exists)
     XCTAssertTrue(benjaminPicker.exists)
+    XCTAssertTrue(alexanderName.exists)
+    XCTAssertTrue(danielleName.exists)
     XCTAssertEqual(alexanderPicker.label, "Alexander, included")
     XCTAssertEqual(daniellePicker.label, "Danielle, included")
     XCTAssertEqual(benjaminPicker.label, "Benjamin, excluded")
@@ -1396,6 +1408,8 @@ final class WorkoutNavigationUITests: XCTestCase {
       abs(alexanderPicker.frame.midX - (alexanderLoad?.frame.midX ?? 0)), 2)
     XCTAssertLessThan(
       abs(daniellePicker.frame.midX - (danielleLoad?.frame.midX ?? 0)), 2)
+    assertParticipantPickerNameCentered(alexanderName, in: alexanderPicker)
+    assertParticipantPickerNameCentered(danielleName, in: daniellePicker)
     XCTAssertGreaterThan(
       (danielleLoad?.frame.midX ?? 0) - (alexanderLoad?.frame.midX ?? 0), 140)
     XCTAssertGreaterThan(alexanderPicker.frame.width, 108)
@@ -1404,6 +1418,11 @@ final class WorkoutNavigationUITests: XCTestCase {
 
     benjaminPicker.tap()
     XCTAssertEqual(benjaminPicker.label, "Benjamin, included")
+    benjaminPicker.tap()
+    XCTAssertEqual(benjaminPicker.label, "Benjamin, excluded")
+    let benjaminName = app.staticTexts["participant-picker-name-Benjamin"]
+    XCTAssertTrue(benjaminName.exists)
+    assertParticipantPickerNameCentered(benjaminName, in: benjaminPicker)
   }
 
   func testSetCompletionControlsWrapByParticipantCount() {
@@ -1956,6 +1975,16 @@ final class WorkoutNavigationUITests: XCTestCase {
     XCTAssertEqual(firstSet.label, "Remove completed Bench Press set 1")
     XCTAssertTrue(app.otherElements["live-workout-header"].waitForExistence(timeout: 3))
     XCTAssertTrue(app.buttons["Skip"].exists)
+  }
+
+  private func assertParticipantPickerNameCentered(
+    _ name: XCUIElement,
+    in pill: XCUIElement,
+    spacing: CGFloat = 5
+  ) {
+    let initialLeadingEdge = name.frame.minX - spacing - 26
+    let badgeAndNameCenter = (initialLeadingEdge + name.frame.maxX) / 2
+    XCTAssertLessThan(abs(badgeAndNameCenter - pill.frame.midX), 3)
   }
 
   private func assertParticipantControlAlignment(
