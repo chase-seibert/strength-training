@@ -1771,7 +1771,7 @@ struct ActiveExerciseCard: View {
           } label: {
             Label("Start \(duration.timerDurationLabel) timer", systemImage: "timer")
               .font(.subheadline.weight(.semibold))
-              .frame(maxWidth: .infinity, alignment: .leading)
+              .frame(maxWidth: .infinity, alignment: .center)
               .contentShape(Rectangle())
           }
           .buttonStyle(.bordered)
