@@ -1588,7 +1588,16 @@ struct ActiveExerciseCard: View {
   @State private var showingHistory = false
   @State private var lastSetEditorParticipant: ParticipantLog?
   @State private var isShowingDumbbellTotal = false
-  @State private var isShowingSideTotalReps = true
+
+  private var isShowingSideTotalReps: Binding<Bool> {
+    Binding(
+      get: { catalogExercise?.sideTotalRepsReminderShowsTotal ?? true },
+      set: { newValue in
+        guard let catalogExercise else { return }
+        catalogExercise.sideTotalRepsReminderShowsTotal = newValue
+        try? context.save()
+      })
+  }
 
   private var visibleLogs: [ParticipantLog] {
     visiblePeople.compactMap { name in
@@ -1913,7 +1922,7 @@ struct ActiveExerciseCard: View {
       unit: exercise.unit,
       repCountingMode: exercise.repCountingMode,
       showsSideTotalRepsReminder: exercise.hasSideTotalRepsReminder,
-      isShowingTotalReps: $isShowingSideTotalReps,
+      isShowingTotalReps: isShowingSideTotalReps,
       previousValues: valueBaselines[participant.participantName.lowercased()],
       exerciseName: exercise.exerciseName,
       colorHex: colors[participant.participantName] ?? "FF5A45",

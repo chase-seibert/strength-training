@@ -18,6 +18,7 @@
         WorkoutSet.self,
         ExternalExerciseMapping.self,
       ])
+      try verifySideTotalRepsReminderDisplayPersistence(schema: schema)
       let configuration = ModelConfiguration(
         schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
       let container = try ModelContainer(for: schema, configurations: [configuration])
@@ -120,6 +121,7 @@
       try verifyCoordinatedExerciseOrderPersistence(schema: schema)
       try verifyRepCountingPersistence(schema: schema)
       try verifySideTotalRepsReminderDefaults(schema: schema)
+      try verifySideTotalRepsReminderDisplayPersistence(schema: schema)
       try verifyWorkoutDurations()
       try verifyPerDumbbellLoadSummary()
     }
@@ -359,6 +361,82 @@
       cableTwists.sideTotalRepsReminderEnabled = false
       guard !log.hasSideTotalRepsReminder, log.repCountingMode == .perSide,
         log.completedPoundsVolume() == 2_400, set.reps == 24
+      else { throw SmokeError.repCounting }
+    }
+
+    private static func verifySideTotalRepsReminderDisplayPersistence(schema: Schema) throws {
+      let directory = FileManager.default.temporaryDirectory.appendingPathComponent(
+        UUID().uuidString)
+      try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+      defer { try? FileManager.default.removeItem(at: directory) }
+      let configuration = ModelConfiguration(
+        schema: schema, url: directory.appendingPathComponent("side-reminder.store"),
+        cloudKitDatabase: .none)
+      let exerciseID: UUID
+      let firstSessionID: UUID
+      let secondSessionID: UUID
+      let firstRoutineID = UUID()
+      let secondRoutineID = UUID()
+      do {
+        let container = try ModelContainer(for: schema, configurations: [configuration])
+        let context = container.mainContext
+        let cable = Exercise(
+          sourceID: "Cable_Russian_Twists", name: "Cable Russian Twists", category: "strength",
+          equipment: "cable", primaryMuscle: "abdominals", unit: .pounds,
+          sideTotalRepsReminderEnabled: true, instructions: "Alternate sides.")
+        let other = Exercise(
+          name: "Bench Press", category: "strength", equipment: "barbell",
+          primaryMuscle: "chest", unit: .pounds, instructions: "Press.")
+        context.insert(cable)
+        context.insert(other)
+        let firstSet = WorkoutSet(sortOrder: 0, reps: 24, isCompleted: true)
+        let secondSet = WorkoutSet(sortOrder: 0, reps: 18)
+        let firstSession = WorkoutSession(
+          routineID: firstRoutineID, participantNames: ["Tester"],
+          exercises: [
+            ExerciseLog(
+              exerciseID: cable.id, exerciseName: cable.name, unit: .pounds, sortOrder: 0,
+              participants: [
+                ParticipantLog(
+                  participantName: "Tester", measurement: 20, sets: [firstSet])
+              ])
+          ])
+        let secondSession = WorkoutSession(
+          routineID: secondRoutineID, participantNames: ["Tester"],
+          exercises: [
+            ExerciseLog(
+              exerciseID: cable.id, exerciseName: cable.name, unit: .pounds, sortOrder: 0,
+              participants: [
+                ParticipantLog(
+                  participantName: "Tester", measurement: 20, sets: [secondSet])
+              ])
+          ])
+        context.insert(firstSession)
+        context.insert(secondSession)
+        guard cable.sideTotalRepsReminderShowsTotal == nil,
+          other.sideTotalRepsReminderShowsTotal == nil
+        else { throw SmokeError.repCounting }
+        cable.sideTotalRepsReminderShowsTotal = false
+        try context.save()
+        exerciseID = cable.id
+        firstSessionID = firstSession.id
+        secondSessionID = secondSession.id
+      }
+
+      let reopened = try ModelContainer(for: schema, configurations: [configuration])
+      let context = reopened.mainContext
+      let exercises = try context.fetch(FetchDescriptor<Exercise>())
+      let sessions = try context.fetch(FetchDescriptor<WorkoutSession>())
+      guard let cable = exercises.first(where: { $0.id == exerciseID }),
+        let other = exercises.first(where: { $0.name == "Bench Press" }),
+        cable.sideTotalRepsReminderShowsTotal == false,
+        other.sideTotalRepsReminderShowsTotal == nil,
+        Set(sessions.map(\.id)) == Set([firstSessionID, secondSessionID]),
+        Set(sessions.map(\.routineID)) == Set([firstRoutineID, secondRoutineID]),
+        sessions.first(where: { $0.id == firstSessionID })?.exercises.first?.participants.first?
+          .orderedSets.first?.reps == 24,
+        sessions.first(where: { $0.id == secondSessionID })?.exercises.first?.exerciseID
+          == exerciseID
       else { throw SmokeError.repCounting }
     }
 

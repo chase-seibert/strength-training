@@ -324,6 +324,8 @@ final class Exercise {
   // Nil follows the reviewed per-side catalog defaults. When enabled, the logged rep target
   // remains the total across both sides and the active-workout reminder only changes wording.
   var sideTotalRepsReminderEnabled: Bool?
+  // Nil preserves the original total-reps-first display for existing exercises.
+  var sideTotalRepsReminderShowsTotal: Bool?
   // Optional so existing SwiftData stores can migrate without rewriting exercise history.
   var note: String?
   var instructions: String
@@ -344,6 +346,7 @@ final class Exercise {
     repCountingMode: RepCountingMode = .standard,
     dumbbellLoadReminderEnabled: Bool? = nil,
     sideTotalRepsReminderEnabled: Bool? = nil,
+    sideTotalRepsReminderShowsTotal: Bool? = nil,
     note: String? = nil,
     instructions: String,
     imagePath: String? = nil,
@@ -364,6 +367,7 @@ final class Exercise {
     repCountingModeRaw = repCountingMode.rawValue
     self.dumbbellLoadReminderEnabled = dumbbellLoadReminderEnabled
     self.sideTotalRepsReminderEnabled = sideTotalRepsReminderEnabled
+    self.sideTotalRepsReminderShowsTotal = sideTotalRepsReminderShowsTotal
     self.note = note
     self.instructions = instructions
     self.imagePath = imagePath

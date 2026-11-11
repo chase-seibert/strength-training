@@ -640,6 +640,37 @@ final class WorkoutNavigationUITests: XCTestCase {
     XCTAssertEqual(alexReps.value as? String, "24")
   }
 
+  func testSideTotalRepReminderChoiceSurvivesWorkoutResume() {
+    app.terminate()
+    app.launchArguments = [
+      "-basicWorkoutFixture", "-sideTotalRepsWorkoutFixture",
+    ]
+    app.launch()
+
+    let alexReps = app.textFields["Base total reps for Alex"]
+    let jordanReps = app.textFields["Base total reps for Jordan"]
+    let alexReminder = app.buttons["side-total-reps-reminder-Alex"]
+    let jordanReminder = app.buttons["side-total-reps-reminder-Jordan"]
+    XCTAssertTrue(alexReps.waitForExistence(timeout: 5))
+    XCTAssertEqual(alexReps.value as? String, "24")
+    XCTAssertEqual(jordanReps.value as? String, "24")
+    XCTAssertTrue(alexReminder.label.contains("24 total reps, both sides"))
+
+    alexReminder.tap()
+    XCTAssertTrue(alexReminder.label.contains("12 reps each side"))
+    XCTAssertTrue(jordanReminder.label.contains("12 reps each side"))
+    XCTAssertEqual(alexReps.value as? String, "24")
+    XCTAssertEqual(jordanReps.value as? String, "24")
+
+    app.buttons["close-active-workout"].tap()
+    app.buttons["resume-active-workout"].tap()
+    XCTAssertTrue(alexReminder.waitForExistence(timeout: 5))
+    XCTAssertTrue(alexReminder.label.contains("12 reps each side"))
+    XCTAssertTrue(jordanReminder.label.contains("12 reps each side"))
+    XCTAssertEqual(alexReps.value as? String, "24")
+    XCTAssertEqual(jordanReps.value as? String, "24")
+  }
+
   private func changeRepCounting(to title: String) {
     let edit = app.buttons["Edit"]
     XCTAssertTrue(edit.waitForExistence(timeout: 3))

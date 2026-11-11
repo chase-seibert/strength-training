@@ -85,6 +85,7 @@ Catalog and custom exercise master record. Immutable catalog seed data starts in
 | `unitRaw` | `String` | Raw `TrackingUnit` value; computed `unit` falls back to pounds for unrecognized strings. |
 | `repCountingModeRaw` | `String?` | Raw `RepCountingMode` (`standard` or `perSide`); nil reads as standard. |
 | `dumbbellLoadReminderEnabled`, `sideTotalRepsReminderEnabled` | `Bool?` | Optional per-exercise overrides; nil defers to equipment/catalog-derived defaults. |
+| `sideTotalRepsReminderShowsTotal` | `Bool?` | Saved active-workout callout display choice; nil defaults to showing total reps. Shared by every routine using this exercise. |
 | `note` | `String?` | Optional user note. |
 | `instructions` | `String` | Exercise instructions. |
 | `imagePath` | `String?` | Optional primary bundled image path. |

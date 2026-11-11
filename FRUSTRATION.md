@@ -10,7 +10,17 @@ CloudKit/WatchConnectivity must retain Xcode's simulator signing: forcing
 `CODE_SIGNING_ALLOWED=NO` strips the CloudKit entitlement. Some Xcode installs
 also lack `Simulator.app` even though `simctl` works; `make sim-launch` skips
 opening the GUI in that case and still installs and launches the app through
-`simctl`.
+`simctl`. In a November 11 run, sandboxed simulator UI-test and `simctl` calls
+also reported that CoreSimulatorService had become invalid; the same generic
+simulator build succeeded with host access. Use host access from the start for
+simulator builds, UI tests, and `simctl` queries rather than retrying those
+operations in the restricted shell.
+Keep the app process failure distinct from the simulator-service failure: the
+November 11 `testRepCountingUpdatesRunningWorkout` run with
+`-validatePersistenceFixture` recorded `com.cseibert.StrengthLog crashed`, but
+the result summary did not include the crash cause. Inspect the app crash
+diagnostic before attributing that failure to CoreSimulator or repeating the
+fixture blindly.
 
 ## 2026-10-14 — Metal shaders require Xcode's separate compiler component
 
