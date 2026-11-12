@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7f6f2">
+  <meta name="description" content="Learn how Lift Chase stores workout logs and handles optional Apple Health, product analytics, and private iCloud sharing.">
+  <title>Privacy | Lift Chase</title>
+  <link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header wrap">
+    <a class="brand" href="./" aria-label="Lift Chase home">
+      <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 40 40"><path d="M7 14v12m6-17v22m14-22v22m6-17v12M13 20h14"/></svg></span>
+      <span>Lift Chase</span>
+    </a>
+    <nav aria-label="Main navigation"><a href="./">Home</a><a href="privacy.html" aria-current="page">Privacy</a></nav>
+  </header>
+
+  <main id="main" class="policy wrap">
+    <section class="policy-hero">
+      <p class="eyebrow">Private by default. Clear about the choices.</p>
+      <h1>Privacy, in plain language.</h1>
+      <p class="policy-lede">Your core workout log lives on your iPhone and works offline. Some optional features can send selected data to Apple or another service when you choose to use them; those choices are described below.</p>
+      <div class="policy-meta"><span>Draft for release review</span><span>Last updated November 12, 2026</span></div>
+    </section>
+
+    <div class="policy-layout">
+      <nav class="policy-toc" aria-label="Policy contents">
+        <a href="#overview">At a glance</a>
+        <a href="#local-data">Workout data</a>
+        <a href="#optional-features">Optional features</a>
+        <a href="#sharing">Sharing and services</a>
+        <a href="#retention">Storage and deletion</a>
+        <a href="#contact">Contact</a>
+      </nav>
+      <article class="policy-content">
+        <section id="overview">
+          <h2>At a glance</h2>
+          <ul class="plain-list">
+            <li><strong>No Lift Chase account.</strong> You can create routines and log workouts without signing in.</li>
+            <li><strong>Core logging is offline.</strong> Workout records and the exercise catalog are kept on your device for normal use.</li>
+            <li><strong>Connected features are optional.</strong> Apple Health export and private iCloud sharing for the Kids Watch feature require separate setup or choices.</li>
+          </ul>
+        </section>
+
+        <section id="local-data">
+          <h2>Workout data</h2>
+          <p>Lift Chase stores routines, participant labels, exercise selections, workout history, set values, and progress information in the app’s local data store on your iPhone. The exercise catalog and its form images are bundled with the app. Creating a routine, browsing the catalog, and logging workouts do not create a Lift Chase account.</p>
+          <p>iOS device backup and restore settings are controlled by Apple. A device backup may include app data according to your iPhone settings.</p>
+        </section>
+
+        <section id="optional-features">
+          <h2>Optional features</h2>
+          <h3>Apple Health</h3>
+          <p>Workout recording in Apple Health is off until you enable it and grant Apple Health permission. When enabled, Lift Chase writes a completed strength workout to Apple Health; it does not read Health data. A group session is represented as one workout in the device owner’s Health data. Turning the setting off stops future exports but does not remove workouts already saved in Apple Health.</p>
+
+          <h3>Product analytics</h3>
+          <p>Product analytics are enabled in the production build. Lift Chase sends events such as app opens, onboarding completion, routine starts and edits, workout completion or discard, exercise creation, import totals, and changes to the Apple Health export setting. Some routine names, custom exercise names, selected exercise details, and stable IDs for exercises in the bundled catalog are included. Events do not include participant names, local database IDs, notes, search text, set measurements, workout records, or imported file contents.</p>
+        </section>
+
+        <section id="sharing">
+          <h2>Sharing and services</h2>
+          <p>Lift Chase does not operate an account system or a cloud database for ordinary workout logs. Apple processes data when you use Apple Health or iCloud features under your Apple account.</p>
+          <p>If you set up the Kids Watch sharing feature, selected workout and progress details for a person are stored in your private iCloud CloudKit database and shared with the Apple account you invite. The share is private; it is not publicly discoverable. You choose invitees through Apple’s share sheet and can review or revoke access using Apple’s sharing controls.</p>
+        </section>
+
+        <section id="retention">
+          <h2>Storage and deletion</h2>
+          <p>Your local workout data remains in the app until you delete it in the app or remove Lift Chase from your device. You can delete individual workout records from the app. iOS device backups, Apple Health records, iCloud shares, and any service-side analytics records follow the respective Apple or service controls and retention practices.</p>
+        </section>
+
+        <section id="contact">
+          <h2>Contact</h2>
+          <p>For privacy questions or requests, contact: <strong class="contact-placeholder">Privacy contact email to be added before release.</strong></p>
+          <p class="policy-small">Developer: Chase Seibert. Product name and release details are still being finalized.</p>
+        </section>
+      </article>
+    </div>
+  </main>
+
+  <footer class="site-footer wrap">
+    <a class="brand" href="./"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 40 40"><path d="M7 14v12m6-17v22m14-22v22m6-17v12M13 20h14"/></svg></span><span>Lift Chase</span></a>
+    <p>Strength training, made to share.</p>
+    <nav aria-label="Footer navigation"><a href="./">Home</a></nav>
+    <small>© 2026 Chase Seibert · Draft policy for release review</small>
+  </footer>
+</body>
+</html>

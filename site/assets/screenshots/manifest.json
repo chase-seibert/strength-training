@@ -1,0 +1,77 @@
+[
+  {
+    "attachments": [
+      {
+        "configurationName": "Test Scheme Action",
+        "deviceId": "43995220-E7B8-48C2-A3E1-E43F894C830E",
+        "deviceName": "iPhone 17 Pro",
+        "exportedFileName": "app-store-04-exercise-library-873.png",
+        "isAssociatedWithFailure": false,
+        "suggestedHumanReadableName": "app-store-04-exercise-library-873.png",
+        "timestamp": 1794523843.625
+      }
+    ],
+    "testIdentifier": "AppStoreScreenshotUITests/testCaptureExerciseLibraryCount()",
+    "testIdentifierURL": "test://com.apple.xcode/StrengthLog/StrengthLogUITests/AppStoreScreenshotUITests/testCaptureExerciseLibraryCount"
+  },
+  {
+    "attachments": [
+      {
+        "configurationName": "Test Scheme Action",
+        "deviceId": "43995220-E7B8-48C2-A3E1-E43F894C830E",
+        "deviceName": "iPhone 17 Pro",
+        "exportedFileName": "app-store-01-offline-no-account.png",
+        "isAssociatedWithFailure": false,
+        "suggestedHumanReadableName": "app-store-01-offline-no-account.png",
+        "timestamp": 1794523848.621
+      }
+    ],
+    "testIdentifier": "AppStoreScreenshotUITests/testCaptureOfflineNoAccountWelcome()",
+    "testIdentifierURL": "test://com.apple.xcode/StrengthLog/StrengthLogUITests/AppStoreScreenshotUITests/testCaptureOfflineNoAccountWelcome"
+  },
+  {
+    "attachments": [
+      {
+        "configurationName": "Test Scheme Action",
+        "deviceId": "43995220-E7B8-48C2-A3E1-E43F894C830E",
+        "deviceName": "iPhone 17 Pro",
+        "exportedFileName": "app-store-03-parent-child-workout.png",
+        "isAssociatedWithFailure": false,
+        "suggestedHumanReadableName": "app-store-03-parent-child-workout.png",
+        "timestamp": 1794523854.424
+      }
+    ],
+    "testIdentifier": "AppStoreScreenshotUITests/testCaptureParentAndChildActiveWorkout()",
+    "testIdentifierURL": "test://com.apple.xcode/StrengthLog/StrengthLogUITests/AppStoreScreenshotUITests/testCaptureParentAndChildActiveWorkout"
+  },
+  {
+    "attachments": [
+      {
+        "configurationName": "Test Scheme Action",
+        "deviceId": "43995220-E7B8-48C2-A3E1-E43F894C830E",
+        "deviceName": "iPhone 17 Pro",
+        "exportedFileName": "app-store-05-multi-person-progress.png",
+        "isAssociatedWithFailure": false,
+        "suggestedHumanReadableName": "app-store-05-multi-person-progress.png",
+        "timestamp": 1794523862.693
+      }
+    ],
+    "testIdentifier": "AppStoreScreenshotUITests/testCaptureProgressForMultiplePeople()",
+    "testIdentifierURL": "test://com.apple.xcode/StrengthLog/StrengthLogUITests/AppStoreScreenshotUITests/testCaptureProgressForMultiplePeople"
+  },
+  {
+    "attachments": [
+      {
+        "configurationName": "Test Scheme Action",
+        "deviceId": "43995220-E7B8-48C2-A3E1-E43F894C830E",
+        "deviceName": "iPhone 17 Pro",
+        "exportedFileName": "app-store-02-who-should-we-track.png",
+        "isAssociatedWithFailure": false,
+        "suggestedHumanReadableName": "app-store-02-who-should-we-track.png",
+        "timestamp": 1794523869.117
+      }
+    ],
+    "testIdentifier": "AppStoreScreenshotUITests/testCaptureWhoShouldWeTrack()",
+    "testIdentifierURL": "test://com.apple.xcode/StrengthLog/StrengthLogUITests/AppStoreScreenshotUITests/testCaptureWhoShouldWeTrack"
+  }
+]
