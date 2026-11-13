@@ -17,6 +17,10 @@ struct ProgressView: View {
   @AppStorage("liftCoachProvider") private var providerRaw = LiftCoachProvider.deterministic
     .rawValue
   @AppStorage("liftCoachOpenAIConsent") private var openAIConsent = false
+  #if DEBUG
+    @AppStorage(DeveloperPreferences.hideProgressCoachingSectionKey)
+    private var hideProgressCoachingSection = false
+  #endif
   @State private var pendingDeletion: WorkoutSession?
   @State private var showingDeleteConfirmation = false
   @State private var selectedRange: ProgressRange = .twelveWeeks
@@ -62,8 +66,16 @@ struct ProgressView: View {
         VStack(alignment: .leading, spacing: 16) {
           progressHeader.id("progress-top")
           volumeCard
-          coachingCard
-            .id("weekly-coaching-section")
+          #if DEBUG
+            if !hideProgressCoachingSection
+              && !ProcessInfo.processInfo.arguments.contains("-disableProgressCoachingSection")
+            {
+              coachingCard.id("weekly-coaching-section")
+            }
+          #else
+            coachingCard
+              .id("weekly-coaching-section")
+          #endif
           recentWorkoutsCard
         }
         .padding(.horizontal, 16)

@@ -318,6 +318,8 @@ struct SettingsView: View {
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @AppStorage(DeveloperPreferences.activeWorkoutFrameMonitorEnabledKey)
     private var activeWorkoutFrameMonitorEnabled = false
+    @AppStorage(DeveloperPreferences.hideProgressCoachingSectionKey)
+    private var hideProgressCoachingSection = false
     @Environment(\.scenePhase) private var scenePhase
     @StateObject private var loadHarness = DebugLoadHarness.shared
     @State private var cpuLoadEnabled = false
@@ -341,6 +343,15 @@ struct SettingsView: View {
           Text(
             "Sample screens are read-only and never save reports, call a provider, or request notification permission."
           )
+        }
+
+        Section {
+          Toggle("Hide Lift Coach on Progress", isOn: $hideProgressCoachingSection)
+            .accessibilityIdentifier("developer-hide-progress-coaching-toggle")
+        } header: {
+          Text("Screenshot presentation")
+        } footer: {
+          Text("Hides the Lift Coach section above Recent Workouts on the Progress screen.")
         }
 
         Section {

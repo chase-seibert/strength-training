@@ -14,14 +14,41 @@
           fatalError("Persistence fixture failed: \(error)")
         }
       }
-      let usesLongNames = ProcessInfo.processInfo.arguments.contains(
+      let arguments = ProcessInfo.processInfo.arguments
+      let usesAppStoreScreenshotNames = arguments.contains("-appStoreScreenshotFixture")
+      let usesParentChildAppStoreScreenshotFixture = arguments.contains(
+        "-parentChildAppStoreScreenshotFixture")
+      let usesLongNames = arguments.contains(
         "-activeWorkoutLongNamesFixture")
       let alex = PersonProfile(
-        name: usesLongNames ? "Alexander" : "Alex", colorHex: "FF5A45", sortOrder: 0)
+        name: usesAppStoreScreenshotNames ? "Dad" : (usesLongNames ? "Alexander" : "Alex"),
+        colorHex: "FF5A45", sortOrder: 0)
       let jordan = PersonProfile(
-        name: usesLongNames ? "Danielle" : "Jordan", colorHex: "53C8A6", sortOrder: 1)
+        name: usesAppStoreScreenshotNames ? "Mom" : (usesLongNames ? "Danielle" : "Jordan"),
+        colorHex: usesAppStoreScreenshotNames ? "59A8FA" : "53C8A6", sortOrder: 1)
       let owen = PersonProfile(
-        name: usesLongNames ? "Benjamin" : "Owen", colorHex: "59A8FA", sortOrder: 2)
+        name: usesAppStoreScreenshotNames ? "Mia" : (usesLongNames ? "Benjamin" : "Owen"),
+        colorHex: usesAppStoreScreenshotNames ? "45D1A8" : "59A8FA", sortOrder: 2)
+      let familyKettlebellPass = Exercise(
+        sourceID: "Kettlebell_Pass_Between_The_Legs",
+        name: "Kettlebell Pass Between The Legs",
+        category: "strength",
+        equipment: "kettlebells",
+        primaryMuscle: "abdominals",
+        unit: .pounds,
+        instructions: "Pass a light kettlebell between the legs with a controlled handoff.",
+        imagePath: "Kettlebell_Pass_Between_The_Legs/0.webp",
+        additionalImagePaths: ["Kettlebell_Pass_Between_The_Legs/1.webp"])
+      let familyPlank = Exercise(
+        sourceID: "Plank",
+        name: "Plank",
+        category: "strength",
+        equipment: "body only",
+        primaryMuscle: "abdominals",
+        unit: .seconds,
+        instructions: "Hold a comfortable plank with a steady, neutral position.",
+        imagePath: "Plank/0.webp",
+        additionalImagePaths: ["Plank/1.webp"])
       let usesLargeCelebrationVolume = ProcessInfo.processInfo.arguments.contains(
         "-celebrationFormattingFixture")
       let timedFixtureUnit: TrackingUnit? =
@@ -149,6 +176,14 @@
                   sets: (0..<5).map { SetTemplate(sortOrder: $0, reps: 8) })
               })
           })
+      let familyScreenshotRoutine = Routine(
+        name: "Family Workout",
+        symbol: "figure.strengthtraining.functional",
+        colorHex: "FF5A45",
+        exercises: [
+          RoutineExercise.make(exercise: familyKettlebellPass, sortOrder: 0),
+          RoutineExercise.make(exercise: familyPlank, sortOrder: 1),
+        ])
       let usesActiveWorkoutReorderFixture = ProcessInfo.processInfo.arguments.contains(
         "-activeWorkoutReorderFixture")
       if usesActiveWorkoutReorderFixture {
@@ -355,11 +390,18 @@
       }
 
       context.insert(alex)
-      context.insert(jordan)
+      if !usesParentChildAppStoreScreenshotFixture {
+        context.insert(jordan)
+      }
       context.insert(owen)
       context.insert(benchPress)
       context.insert(squat)
       context.insert(customExercise)
+      if usesParentChildAppStoreScreenshotFixture {
+        context.insert(familyKettlebellPass)
+        context.insert(familyPlank)
+        context.insert(familyScreenshotRoutine)
+      }
       performanceExercises.forEach(context.insert)
       performanceCatalogFillers.forEach(context.insert)
       context.insert(basicRoutine)
@@ -426,16 +468,28 @@
         if ProcessInfo.processInfo.arguments.contains("-activeWorkoutOnePersonFixture") {
           activePeople = [alex]
         } else if ProcessInfo.processInfo.arguments.contains("-activeWorkoutTwoPersonFixture") {
-          activePeople = [alex, jordan]
+          activePeople = usesParentChildAppStoreScreenshotFixture ? [alex, owen] : [alex, jordan]
         } else {
           activePeople = [alex, jordan, owen]
         }
         let activeWorkout = WorkoutSessionStarter.start(
-          routine: basicRoutine,
+          routine: usesParentChildAppStoreScreenshotFixture
+            ? familyScreenshotRoutine : basicRoutine,
           people: activePeople,
           sessions: usesLargeCelebrationVolume ? [] : workoutHistory,
-          catalog: [benchPress, customExercise, squat] + performanceExercises,
+          catalog: [benchPress, customExercise, squat, familyKettlebellPass, familyPlank]
+            + performanceExercises,
           in: context)
+        if usesAppStoreScreenshotNames,
+          let exercise = activeWorkout?.exercises.min(by: { $0.sortOrder < $1.sortOrder })
+        {
+          for (index, participant) in exercise.participants.enumerated() {
+            guard let firstSet = participant.orderedSets.first else { continue }
+            firstSet.isCompleted = index == 0
+            firstSet.completedAt = index == 0 ? .now : nil
+          }
+          try? context.save()
+        }
         if ProcessInfo.processInfo.arguments.contains("-measurementOverrideFixture"),
           let participant = activeWorkout?.exercises.min(by: { $0.sortOrder < $1.sortOrder })?
             .participants.first(where: {

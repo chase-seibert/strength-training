@@ -9,12 +9,25 @@ struct OnboardingView: View {
   private var existingRoutines: [Routine]
   @Binding var hasCompletedOnboarding: Bool
   @State private var step = 0
-  @State private var primaryName = ""
-  @State private var partnerNames = ["Person 2", "Person 3"]
+  @State private var primaryName: String
+  @State private var partnerNames: [String]
   @State private var selectedStarterIDs: Set<String> = []
   @State private var hasLoadedExistingData = false
 
   private let colors = ["FF5A45", "59A8FA", "45D1A8", "A778F5", "F5B942", "E96BA8"]
+
+  init(hasCompletedOnboarding: Binding<Bool>) {
+    _hasCompletedOnboarding = hasCompletedOnboarding
+    #if DEBUG
+      let usesAppStoreFixture = ProcessInfo.processInfo.arguments.contains(
+        "-appStoreOnboardingFixture")
+    #else
+      let usesAppStoreFixture = false
+    #endif
+    _primaryName = State(initialValue: usesAppStoreFixture ? "Dad" : "")
+    _partnerNames = State(
+      initialValue: usesAppStoreFixture ? ["Mom", "Mia"] : ["Person 2", "Person 3"])
+  }
 
   var body: some View {
     ZStack {

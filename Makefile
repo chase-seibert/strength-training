@@ -10,13 +10,16 @@ SIM_DESTINATION ?= platform=iOS Simulator,name=$(SIM_DEVICE_NAME)
 SIMULATOR_APP ?= $(shell xcode-select -p)/Applications/Simulator.app
 UI_TEST_FILTER ?= StrengthLogUITests
 UI_DERIVED_DATA ?= build-ui-tests
+APP_STORE_SCREENSHOT_OUTPUT ?= site/assets/screenshots
+APP_STORE_SCREENSHOT_RESULTS ?= build/app-store-screenshots-$(shell date -u +%Y%m%dT%H%M%SZ).xcresult
+APP_STORE_SCREENSHOT_DESTINATION ?= $(SIM_DESTINATION)
 GENERIC_SIM_DESTINATION := generic/platform=iOS Simulator
 
 DEVICE_ID ?= 00008150-000E41422E40401C
 WATCH_DEVICE_ID := 00008310-000A18983C40E01E
 DEVELOPMENT_TEAM ?= 96NAC4VTEN
 
-.PHONY: metal-setup watch-build watch-deploy confetti-ui-test lift-coach-ui-test workout-profile workout-profile-graph rep-counting-ui-test exercise-unit-ui-test exercise-timer-ui-test cross-routine-history-ui-test pr-sticker-ui-test progress-widget-check setup build run format lint test catalog-check exercise-images-check bundle-exercise-images hevy-import-check sim-build sim-launch workout-navigation-ui-test active-workout-regression-ui-test active-workout-performance-ui-test phone-build phone-install phone-launch phone-deploy clean
+.PHONY: metal-setup watch-build watch-deploy confetti-ui-test lift-coach-ui-test workout-profile workout-profile-graph rep-counting-ui-test exercise-unit-ui-test exercise-timer-ui-test cross-routine-history-ui-test pr-sticker-ui-test app-store-screenshots site-serve progress-widget-check setup build run format lint test catalog-check exercise-images-check bundle-exercise-images hevy-import-check sim-build sim-launch workout-navigation-ui-test active-workout-regression-ui-test active-workout-performance-ui-test phone-build phone-install phone-launch phone-deploy clean
 
 setup: catalog-check exercise-images-check
 
@@ -166,6 +169,29 @@ workout-navigation-ui-test:
 	  -parallel-testing-enabled NO \
 	  -only-testing:$(UI_TEST_FILTER) \
 	  test
+
+app-store-screenshots:
+	@mkdir -p "$(APP_STORE_SCREENSHOT_OUTPUT)"
+	python3 scripts/app-store-screenshots.py clean "$(APP_STORE_SCREENSHOT_OUTPUT)"
+	xcodebuild \
+	  -project $(PROJECT) \
+	  -scheme $(SCHEME) \
+	  -configuration $(CONFIGURATION) \
+	  -destination '$(APP_STORE_SCREENSHOT_DESTINATION)' \
+	  -derivedDataPath $(UI_DERIVED_DATA) \
+	  CODE_SIGNING_ALLOWED=NO \
+	  -parallel-testing-enabled NO \
+	  -resultBundlePath "$(APP_STORE_SCREENSHOT_RESULTS)" \
+	  -only-testing:StrengthLogUITests/AppStoreScreenshotUITests \
+	  test
+	xcrun xcresulttool export attachments \
+	  --path "$(APP_STORE_SCREENSHOT_RESULTS)" \
+	  --output-path "$(APP_STORE_SCREENSHOT_OUTPUT)" \
+	  --filter 'app-store-*.png'
+	python3 scripts/app-store-screenshots.py normalize "$(APP_STORE_SCREENSHOT_OUTPUT)"
+
+site-serve:
+	python3 -m http.server 4173 --directory site
 
 pr-sticker-ui-test:
 	xcodebuild \

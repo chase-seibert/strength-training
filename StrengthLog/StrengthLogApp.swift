@@ -124,8 +124,11 @@ struct StrengthLogApp: App {
       ExternalExerciseMapping.self,
     ])
     #if DEBUG
-      let usesBasicWorkoutFixture = ProcessInfo.processInfo.arguments.contains(
-        "-basicWorkoutFixture")
+      let arguments = ProcessInfo.processInfo.arguments
+      let usesBasicWorkoutFixture =
+        arguments.contains("-basicWorkoutFixture")
+        || arguments.contains("-appStoreOnboardingFixture")
+        || arguments.contains("-appStoreCatalogFixture")
     #else
       let usesBasicWorkoutFixture = false
     #endif
@@ -190,7 +193,10 @@ struct StrengthLogApp: App {
         } catch {
           fatalError("Migration fixture failed: \(error)")
         }
-      } else if usesBasicWorkoutFixture {
+      } else if usesBasicWorkoutFixture
+        && !ProcessInfo.processInfo.arguments.contains("-appStoreOnboardingFixture")
+        && !ProcessInfo.processInfo.arguments.contains("-appStoreCatalogFixture")
+      {
         BasicWorkoutFixture.install(in: container.mainContext)
         do {
           try RoutineOrder.normalizeLegacyRoutines(in: container.mainContext)
@@ -245,7 +251,12 @@ struct StrengthLogApp: App {
         .task {
           do {
             #if DEBUG
-              if !ProcessInfo.processInfo.arguments.contains("-basicWorkoutFixture") {
+              let arguments = ProcessInfo.processInfo.arguments
+              if arguments.contains("-appStoreCatalogFixture") {
+                try await SeedData.seedIfNeeded(in: container.mainContext)
+              } else if !arguments.contains("-basicWorkoutFixture")
+                && !arguments.contains("-appStoreOnboardingFixture")
+              {
                 try await SeedData.seedIfNeeded(in: container.mainContext)
               }
             #else
@@ -258,6 +269,8 @@ struct StrengthLogApp: App {
             let arguments = ProcessInfo.processInfo.arguments
             let usesFixtureStore =
               arguments.contains("-basicWorkoutFixture")
+              || arguments.contains("-appStoreOnboardingFixture")
+              || arguments.contains("-appStoreCatalogFixture")
               || arguments.contains("-diskWorkoutPerformanceFixture")
               || arguments.contains("-repCountingMigrationFixture")
           #else
@@ -301,7 +314,18 @@ struct AppRootView: View {
 
   private var usesBasicWorkoutFixture: Bool {
     #if DEBUG
-      ProcessInfo.processInfo.arguments.contains("-basicWorkoutFixture")
+      let arguments = ProcessInfo.processInfo.arguments
+      return arguments.contains("-basicWorkoutFixture")
+        || arguments.contains("-appStoreOnboardingFixture")
+        || arguments.contains("-appStoreCatalogFixture")
+    #else
+      return false
+    #endif
+  }
+
+  private var showsAppStoreOnboardingFixture: Bool {
+    #if DEBUG
+      ProcessInfo.processInfo.arguments.contains("-appStoreOnboardingFixture")
     #else
       false
     #endif
@@ -310,7 +334,9 @@ struct AppRootView: View {
   var body: some View {
     @Bindable var importCoordinator = importCoordinator
     Group {
-      if hasCompletedOnboarding || usesBasicWorkoutFixture {
+      if showsAppStoreOnboardingFixture {
+        OnboardingView(hasCompletedOnboarding: $hasCompletedOnboarding)
+      } else if hasCompletedOnboarding || usesBasicWorkoutFixture {
         RootView()
       } else {
         OnboardingView(hasCompletedOnboarding: $hasCompletedOnboarding)

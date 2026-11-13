@@ -855,6 +855,35 @@ final class WorkoutNavigationUITests: XCTestCase {
     add(generatedScreenshot)
   }
 
+  func testDeveloperMenuCanHideLiftCoachFromProgress() {
+    app.terminate()
+    app.launchArguments = ["-basicWorkoutFixture", "-emptyWorkoutHistoryFixture"]
+    app.launch()
+    openDeveloperMenu()
+
+    let hideToggle = app.switches["developer-hide-progress-coaching-toggle"]
+    XCTAssertTrue(hideToggle.waitForExistence(timeout: 5))
+    let hideControl = hideToggle.coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5))
+    if hideToggle.value as? String == "1" { hideControl.tap() }
+    hideControl.tap()
+    XCTAssertEqual(hideToggle.value as? String, "1")
+
+    app.tabBars.buttons["Progress"].tap()
+    XCTAssertTrue(app.staticTexts["Progress"].waitForExistence(timeout: 5))
+    let learningCardTitle = app.staticTexts["Lift Coach is learning your habits"]
+    let hiddenExpectation = XCTNSPredicateExpectation(
+      predicate: NSPredicate(format: "exists == false"), object: learningCardTitle)
+    XCTAssertEqual(XCTWaiter.wait(for: [hiddenExpectation], timeout: 5), .completed)
+
+    app.tabBars.buttons["Settings"].tap()
+    openDeveloperMenu()
+    let resetToggle = app.switches["developer-hide-progress-coaching-toggle"]
+    XCTAssertTrue(resetToggle.waitForExistence(timeout: 5))
+    if resetToggle.value as? String == "1" {
+      resetToggle.coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5)).tap()
+    }
+  }
+
   private func openDeveloperMenu() {
     app.tabBars.buttons["Settings"].tap()
     let menu = app.buttons["Developer Menu"]
@@ -2134,4 +2163,81 @@ final class WorkoutNavigationUITests: XCTestCase {
       object: element)
     return XCTWaiter.wait(for: [expectation], timeout: timeout) == .completed
   }
+}
+
+final class AppStoreScreenshotUITests: XCTestCase {
+  private var app: XCUIApplication!
+
+  override func setUpWithError() throws {
+    continueAfterFailure = false
+    app = XCUIApplication()
+  }
+
+  func testCaptureParentAndChildActiveWorkout() {
+    launch([
+      "-basicWorkoutFixture", "-appStoreScreenshotFixture",
+      "-parentChildAppStoreScreenshotFixture", "-activeWorkoutFixture",
+      "-activeWorkoutTwoPersonFixture",
+    ])
+
+    XCTAssertTrue(app.buttons["participant-picker-Dad"].waitForExistence(timeout: 10))
+    XCTAssertTrue(app.buttons["participant-picker-Mia"].exists)
+    XCTAssertFalse(app.buttons["participant-picker-Mom"].exists)
+    XCTAssertTrue(app.staticTexts["Kettlebell Pass Between The Legs"].exists)
+    capture("app-store-03-parent-child-workout")
+  }
+
+  func testCaptureOfflineNoAccountWelcome() {
+    launch(["-appStoreOnboardingFixture"])
+
+    XCTAssertTrue(app.buttons["Get Started"].waitForExistence(timeout: 10))
+    capture("app-store-01-offline-no-account")
+  }
+
+  func testCaptureWhoShouldWeTrack() {
+    launch(["-appStoreOnboardingFixture"])
+    XCTAssertTrue(app.buttons["Get Started"].waitForExistence(timeout: 10))
+    app.buttons["Get Started"].tap()
+
+    XCTAssertTrue(app.staticTexts["Who should we track?"].waitForExistence(timeout: 5))
+    XCTAssertEqual(app.textFields["Your first name"].value as? String, "Dad")
+    XCTAssertEqual(app.textFields["Person 2"].value as? String, "Mom")
+    XCTAssertEqual(app.textFields["Person 3"].value as? String, "Mia")
+    capture("app-store-02-who-should-we-track")
+  }
+
+  func testCaptureExerciseLibraryCount() {
+    launch(["-appStoreCatalogFixture"])
+    app.tabBars.buttons["Exercises"].tap()
+
+    XCTAssertTrue(app.staticTexts["873 exercises"].waitForExistence(timeout: 10))
+    capture("app-store-04-exercise-library-873")
+  }
+
+  func testCaptureProgressForMultiplePeople() {
+    launch([
+      "-basicWorkoutFixture", "-appStoreScreenshotFixture",
+      "-disableProgressCoachingSection",
+    ])
+    app.tabBars.buttons["Progress"].tap()
+
+    XCTAssertTrue(app.staticTexts["Progress"].waitForExistence(timeout: 10))
+    XCTAssertTrue(app.otherElements["progress-volume-chart"].waitForExistence(timeout: 5))
+    XCTAssertFalse(app.staticTexts["Lift Coach is learning your habits"].exists)
+    XCTAssertTrue(app.staticTexts["Recent workouts"].exists)
+    capture("app-store-05-multi-person-progress")
+  }
+
+  private func launch(_ arguments: [String]) {
+    app.launchArguments = arguments
+    app.launch()
+  }
+
+  private func capture(_ name: String) {
+    let screenshot = XCTAttachment(screenshot: app.screenshot())
+    screenshot.name = name
+    screenshot.lifetime = .keepAlways
+    add(screenshot)
+  }
+
 }

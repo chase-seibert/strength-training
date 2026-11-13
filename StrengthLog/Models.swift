@@ -23,6 +23,7 @@ enum WorkoutPreferences {
 #if DEBUG
   enum DeveloperPreferences {
     static let activeWorkoutFrameMonitorEnabledKey = "activeWorkoutFrameMonitorEnabled"
+    static let hideProgressCoachingSectionKey = "hideProgressCoachingSection"
   }
 #endif
 
