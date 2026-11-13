@@ -83,7 +83,10 @@ h3 { font-size: clamp(1.75rem, 3vw, 2.45rem); font-weight: 800; }
 .story-offline { background: #f0f5f1; }
 .story-library { background: #f5f3ec; }
 .story-progress { background: #f3f5f8; }
+.story-watch { background: #f3f1f7; }
 .story-welcome, .story-exercises, .story-chart { width: min(100%, 255px); }
+.story-watch-image { width: min(100%, 250px); }
+.story-watch-image img { border-radius: 25%; }
 .story-photo { width: min(100%, 380px); }
 .story-photo img { aspect-ratio: 4 / 5; max-height: none; object-fit: cover; border: 0; border-radius: 20px; }
 
