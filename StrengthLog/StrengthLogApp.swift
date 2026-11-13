@@ -498,6 +498,7 @@ struct RootView: View {
       Text(routineShortcutError ?? "")
     }
     .task {
+      await WeeklyCoachingNotificationCoordinator.reconcile()
       if scenePhase == .active { analyticsClient.track(.appOpen) }
     }
     .onAppear {

@@ -14,6 +14,7 @@ struct ProgressView: View {
     order: .reverse)
   private var sessions: [WorkoutSession]
   @Query private var reports: [WeeklyCoachingReport]
+  @AppStorage(FeaturePreferences.weeklyReportEnabledKey) private var weeklyReportEnabled = false
   @AppStorage("liftCoachProvider") private var providerRaw = LiftCoachProvider.deterministic
     .rawValue
   @AppStorage("liftCoachOpenAIConsent") private var openAIConsent = false
@@ -33,6 +34,15 @@ struct ProgressView: View {
 
   private var provider: LiftCoachProvider {
     LiftCoachProvider(rawValue: providerRaw) ?? .deterministic
+  }
+  private var showsCoachingSection: Bool {
+    #if DEBUG
+      if previewMode != nil { return true }
+      return weeklyReportEnabled && !hideProgressCoachingSection
+        && !ProcessInfo.processInfo.arguments.contains("-disableProgressCoachingSection")
+    #else
+      false
+    #endif
   }
   private var primaryPerson: PersonProfile? {
     PersonProfile.ordered(people.filter { !$0.isArchived }).first
@@ -66,16 +76,10 @@ struct ProgressView: View {
         VStack(alignment: .leading, spacing: 16) {
           progressHeader.id("progress-top")
           volumeCard
-          #if DEBUG
-            if !hideProgressCoachingSection
-              && !ProcessInfo.processInfo.arguments.contains("-disableProgressCoachingSection")
-            {
-              coachingCard.id("weekly-coaching-section")
-            }
-          #else
+          if showsCoachingSection {
             coachingCard
               .id("weekly-coaching-section")
-          #endif
+          }
           recentWorkoutsCard
         }
         .padding(.horizontal, 16)

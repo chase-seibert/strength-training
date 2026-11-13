@@ -13,9 +13,37 @@ enum WeeklyCoachingNotificationCoordinator {
   static let minuteKey = "weeklyCoachingReminderMinute"
   static let pendingRouteKey = "weeklyCoachingPendingRoute"
 
+  static var weeklyReportEnabled: Bool {
+    #if DEBUG
+      UserDefaults.standard.bool(forKey: FeaturePreferences.weeklyReportEnabledKey)
+    #else
+      false
+    #endif
+  }
+
+  static func setWeeklyReportEnabled(_ enabled: Bool) async throws {
+    UserDefaults.standard.set(enabled, forKey: FeaturePreferences.weeklyReportEnabledKey)
+    guard enabled else {
+      UNUserNotificationCenter.current().removePendingNotificationRequests(
+        withIdentifiers: [requestID])
+      return
+    }
+    if UserDefaults.standard.bool(forKey: enabledKey) { try await schedule() }
+  }
+
+  static func reconcile() async {
+    guard weeklyReportEnabled, UserDefaults.standard.bool(forKey: enabledKey) else {
+      UNUserNotificationCenter.current().removePendingNotificationRequests(
+        withIdentifiers: [requestID])
+      return
+    }
+    try? await schedule()
+  }
+
   static func setEnabled(_ enabled: Bool) async throws {
     let center = UNUserNotificationCenter.current()
     if enabled {
+      guard weeklyReportEnabled else { return }
       let settings = await center.notificationSettings()
       if settings.authorizationStatus == .notDetermined {
         guard try await center.requestAuthorization(options: [.alert, .sound, .badge]) else {
@@ -35,7 +63,7 @@ enum WeeklyCoachingNotificationCoordinator {
   }
 
   static func schedule() async throws {
-    guard UserDefaults.standard.bool(forKey: enabledKey) else { return }
+    guard weeklyReportEnabled, UserDefaults.standard.bool(forKey: enabledKey) else { return }
     var components = DateComponents()
     components.weekday = min(max(UserDefaults.standard.integer(forKey: weekdayKey), 1), 7)
     let storedHour =

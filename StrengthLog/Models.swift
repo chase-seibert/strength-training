@@ -20,6 +20,10 @@ enum WorkoutPreferences {
   }
 }
 
+enum FeaturePreferences {
+  static let weeklyReportEnabledKey = "weeklyReportEnabled"
+}
+
 #if DEBUG
   enum DeveloperPreferences {
     static let activeWorkoutFrameMonitorEnabledKey = "activeWorkoutFrameMonitorEnabled"
