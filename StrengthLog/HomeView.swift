@@ -59,7 +59,7 @@ struct HomeView: View {
         }
       }
     }
-    .background(Color(.systemGroupedBackground))
+    .background(Theme.coachBackground)
     .navigationTitle("Workout")
     .toolbarTitleDisplayMode(.large)
     .alert(
@@ -87,7 +87,7 @@ struct HomeView: View {
         .font(.title3.bold())
       Text("Continue a workout started within the last two hours.")
         .font(.subheadline)
-        .foregroundStyle(.secondary)
+        .foregroundStyle(Theme.coachSecondary)
 
       ForEach(sessions) { session in
         Button {
@@ -96,24 +96,24 @@ struct HomeView: View {
           HStack(spacing: 12) {
             Image(systemName: "arrow.uturn.forward.circle.fill")
               .font(.title3)
-              .foregroundStyle(.white)
+              .foregroundStyle(Theme.primaryActionForeground)
               .frame(width: 44, height: 44)
-              .background(Theme.coral, in: Circle())
+              .background(Theme.primaryAction, in: Circle())
             VStack(alignment: .leading, spacing: 3) {
               Text(routineName(for: session))
                 .font(.headline)
-                .foregroundStyle(.primary)
+                .foregroundStyle(Theme.coachPrimaryText)
               Text(resumeSummary(for: session))
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Theme.coachSecondary)
             }
             Spacer()
             Image(systemName: "chevron.right")
               .font(.caption.bold())
-              .foregroundStyle(.secondary)
+              .foregroundStyle(Theme.coachSecondary)
           }
           .padding(14)
-          .background(Theme.coral.opacity(0.10), in: RoundedRectangle(cornerRadius: 18))
+          .background(Theme.coachCard, in: RoundedRectangle(cornerRadius: 18))
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("resume-completed-workout-\(session.id.uuidString)")
@@ -128,34 +128,34 @@ struct HomeView: View {
       HStack(spacing: 12) {
         Image(systemName: "figure.strengthtraining.traditional")
           .font(.title3)
-          .foregroundStyle(.white)
+          .foregroundStyle(Theme.primaryActionForeground)
           .frame(width: 44, height: 44)
-          .background(Theme.coral, in: Circle())
+          .background(Theme.primaryAction, in: Circle())
         VStack(alignment: .leading, spacing: 3) {
           Text("Active workout")
             .font(.headline)
-            .foregroundStyle(.primary)
+            .foregroundStyle(Theme.coachPrimaryText)
           Text(routineName(for: session))
             .font(.subheadline)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(Theme.coachSecondary)
           if let duration = session.workoutDuration(at: now) {
             Text("Length \(duration.workoutDurationText)")
               .font(.caption)
-              .foregroundStyle(.secondary)
+              .foregroundStyle(Theme.coachSecondary)
           }
           if let remaining = session.restTimerRemaining(at: max(now, .now)) {
             Text("Rest \(Int(ceil(remaining)))s")
               .font(.caption.monospacedDigit().weight(.semibold))
-              .foregroundStyle(Theme.coral)
+              .foregroundStyle(Theme.primaryAction)
           }
         }
         Spacer()
         Image(systemName: "chevron.up")
           .font(.caption.bold())
-          .foregroundStyle(.secondary)
+          .foregroundStyle(Theme.coachSecondary)
       }
       .padding(14)
-      .background(Theme.coral.opacity(0.10), in: RoundedRectangle(cornerRadius: 18))
+      .background(Theme.coachCard, in: RoundedRectangle(cornerRadius: 18))
     }
     .buttonStyle(.plain)
     .accessibilityIdentifier("resume-active-workout")
@@ -167,7 +167,7 @@ struct HomeView: View {
         sessions: sessions, routines: allRoutines, catalog: catalog, onReturnHome: onReturnHome)
     }
     .padding()
-    .background(.background, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+    .background(Theme.coachCard, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
   }
 
   private var routineSection: some View {
@@ -181,7 +181,7 @@ struct HomeView: View {
       if !routines.isEmpty {
         Text("Hold and drag to reorder")
           .font(.caption)
-          .foregroundStyle(.secondary)
+          .foregroundStyle(Theme.coachSecondary)
       }
       if routines.isEmpty {
         NavigationLink {
@@ -190,19 +190,19 @@ struct HomeView: View {
           HStack(spacing: 14) {
             Image(systemName: "plus")
               .font(.title2.bold())
-              .foregroundStyle(Theme.coral)
+              .foregroundStyle(Theme.primaryAction)
               .frame(width: 48, height: 48)
               .background(Theme.coral.opacity(0.12), in: RoundedRectangle(cornerRadius: 14))
             VStack(alignment: .leading, spacing: 4) {
               Text("Create your first routine").font(.headline)
               Text("Add exercises and set up your crew")
-                .font(.subheadline).foregroundStyle(.secondary)
+                .font(.subheadline).foregroundStyle(Theme.coachSecondary)
             }
             Spacer()
-            Image(systemName: "chevron.right").foregroundStyle(.secondary)
+            Image(systemName: "chevron.right").foregroundStyle(Theme.coachSecondary)
           }
           .padding(14)
-          .background(.background, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+          .background(Theme.coachCard, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         }
         .buttonStyle(.plain)
       } else {
@@ -224,21 +224,21 @@ struct HomeView: View {
                   Color(hex: routine.colorHex).opacity(0.12), in: RoundedRectangle(cornerRadius: 14)
                 )
               VStack(alignment: .leading, spacing: 4) {
-                Text(routine.name).font(.headline).foregroundStyle(.primary)
+                Text(routine.name).font(.headline).foregroundStyle(Theme.coachPrimaryText)
                 Text(exerciseCountText(routine.visibleExercises.count))
-                  .font(.subheadline).foregroundStyle(.secondary)
+                  .font(.subheadline).foregroundStyle(Theme.coachSecondary)
               }
               Spacer()
               Image(systemName: "line.3.horizontal")
                 .font(.body.weight(.semibold))
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(Theme.coachSecondary.opacity(0.72))
               Image(systemName: "play.fill")
-                .foregroundStyle(.white)
+                .foregroundStyle(Theme.primaryActionForeground)
                 .padding(11)
-                .background(Theme.coral, in: Circle())
+                .background(Theme.primaryAction, in: Circle())
             }
             .padding(14)
-            .background(.background, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .background(Theme.coachCard, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
           }
           .buttonStyle(.plain)
           .draggable(routine.id.uuidString)
@@ -331,7 +331,7 @@ struct DeletedWorkoutsView: View {
         List(sessions) { session in
           HStack(spacing: 12) {
             Image(systemName: "clock.arrow.circlepath")
-              .foregroundStyle(Theme.navy)
+              .foregroundStyle(Theme.primaryAction)
               .frame(width: 38, height: 38)
               .background(Theme.mint.opacity(0.24), in: Circle())
             VStack(alignment: .leading, spacing: 3) {
@@ -339,7 +339,7 @@ struct DeletedWorkoutsView: View {
               if let deletedAt = session.deletedAt {
                 Text("Deleted \(deletedAt.formatted(date: .abbreviated, time: .omitted))")
                   .font(.caption)
-                  .foregroundStyle(.secondary)
+                  .foregroundStyle(Theme.coachSecondary)
               }
             }
             Spacer()
@@ -352,8 +352,11 @@ struct DeletedWorkoutsView: View {
             Button("Restore", systemImage: "arrow.uturn.backward") { restore(session) }
               .tint(Theme.mint)
           }
+          .listRowBackground(Theme.coachCard)
         }
         .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .background(Theme.coachBackground.ignoresSafeArea())
       }
     }
     .navigationTitle("Deleted Workouts")
@@ -453,7 +456,7 @@ struct ActivityGrid: View {
           .font(.title3.bold())
           Text(periodLabel)
             .font(.caption)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(Theme.coachSecondary)
         }
 
         Spacer()
@@ -486,7 +489,7 @@ struct ActivityGrid: View {
         ForEach(weekdayNames, id: \.full) { weekday in
           Text(weekday.short)
             .font(.caption2.weight(.semibold))
-            .foregroundStyle(.secondary)
+            .foregroundStyle(Theme.coachSecondary)
             .frame(maxWidth: .infinity)
             .accessibilityLabel(weekday.full)
         }
@@ -690,10 +693,10 @@ private struct ActivityDayCell: View {
             Text("+\(personalRecordCount)")
               .font(.system(size: 8, weight: .bold))
           }
-          .foregroundStyle(.black)
+          .foregroundStyle(Theme.prBadgeForeground)
           .padding(.horizontal, 5)
           .padding(.vertical, 2)
-          .background(Theme.prYellow, in: Capsule())
+          .background(Theme.prBadgeBackground, in: Capsule())
           .accessibilityHidden(true)
         }
       }
@@ -758,7 +761,7 @@ private struct DayWorkoutPickerView: View {
       VStack(alignment: .leading, spacing: 2) {
         Text(name)
           .font(.headline)
-          .foregroundStyle(.primary)
+          .foregroundStyle(Theme.coachPrimaryText)
         Group {
           Text(session.startedAt.formatted(date: .omitted, time: .shortened))
           Text("\(peopleCount) \(peopleCount == 1 ? "person" : "people")")
@@ -770,7 +773,7 @@ private struct DayWorkoutPickerView: View {
           }
         }
         .font(.caption)
-        .foregroundStyle(.secondary)
+        .foregroundStyle(Theme.coachSecondary)
       }
     }
     .padding(.vertical, 4)
@@ -935,7 +938,7 @@ private struct DayWorkoutSummaryView: View {
         }
       }
       .font(.subheadline)
-      .foregroundStyle(.secondary)
+      .foregroundStyle(Theme.coachSecondary)
 
       ForEach(Array(exercises.enumerated()), id: \.element.id) { exerciseIndex, exercise in
         Divider()
@@ -964,7 +967,7 @@ private struct DayWorkoutSummaryView: View {
                 }
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                   Text("Set \(index + 1)")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Theme.coachSecondary)
                   Spacer(minLength: 8)
                   Text(setSummary(set, participant: participant, exercise: exercise))
                     .multilineTextAlignment(.trailing)
@@ -983,7 +986,7 @@ private struct DayWorkoutSummaryView: View {
                       Image(systemName: "trophy.fill")
                         .font(.system(size: 9, weight: .bold))
                         .foregroundStyle(Theme.prYellow)
-                        .background(Color(.systemBackground), in: Circle())
+                        .background(Theme.coachCard, in: Circle())
                         .offset(x: 5, y: -5)
                         .accessibilityLabel("Personal record")
                     }
@@ -998,7 +1001,7 @@ private struct DayWorkoutSummaryView: View {
       }
     }
     .padding(14)
-    .background(.background, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+    .background(Theme.coachCard, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
     .padding(.bottom, 4)
   }
 
@@ -1014,7 +1017,7 @@ private struct DayWorkoutSummaryView: View {
     .buttonStyle(.bordered)
     .accessibilityIdentifier("delete-uncompleted-sets")
     .padding(14)
-    .background(.background, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+    .background(Theme.coachCard, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
     .padding(.vertical, 4)
   }
 
@@ -1036,17 +1039,17 @@ private struct DayWorkoutSummaryView: View {
       VStack(alignment: .leading, spacing: 4) {
         Text(name)
           .font(.headline)
-          .foregroundStyle(.primary)
+          .foregroundStyle(Theme.coachPrimaryText)
         Text("\(exerciseCount) exercise\(exerciseCount == 1 ? "" : "s")")
           .font(.subheadline)
-          .foregroundStyle(.secondary)
+          .foregroundStyle(Theme.coachSecondary)
       }
 
       Spacer()
 
     }
     .padding(14)
-    .background(.background, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+    .background(Theme.coachCard, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
     .padding(.vertical, 4)
   }
 

@@ -14,6 +14,8 @@ struct SettingsView: View {
     WorkoutPreferences.fallbackSets
   @AppStorage(WorkoutPreferences.defaultRepsKey) private var defaultWorkoutReps =
     WorkoutPreferences.fallbackReps
+  @AppStorage(AppAppearance.storageKey)
+  private var appearanceRawValue = AppAppearance.defaultValue.rawValue
   @AppStorage(WorkoutPreferences.restTimerNotificationsEnabledKey)
   private var restTimerNotificationsEnabled = false
   @AppStorage(HealthKitWorkoutRecorder.recordingEnabledKey)
@@ -45,6 +47,20 @@ struct SettingsView: View {
           "Choose who appears each time you start a routine. Names on past sessions stay unchanged."
         )
       }
+      .listRowBackground(Theme.coachCard)
+
+      Section {
+        Picker("Appearance", selection: $appearanceRawValue) {
+          ForEach(AppAppearance.allCases) { appearance in
+            Text(appearance.title).tag(appearance.rawValue)
+          }
+        }
+        .pickerStyle(.menu)
+        .accessibilityIdentifier("appearance-picker")
+      } footer: {
+        Text("System follows your iPhone’s appearance setting. Dark is the default.")
+      }
+      .listRowBackground(Theme.coachCard)
 
       if people.contains(where: \.isArchived) {
         Section("Archived") {
@@ -56,6 +72,7 @@ struct SettingsView: View {
             }
           }
         }
+        .listRowBackground(Theme.coachCard)
       }
 
       Section {
@@ -73,6 +90,7 @@ struct SettingsView: View {
           "Used for new exercises and for people without completed-set history. When enabled, Lift Chase can notify you when a rest timer ends."
         )
       }
+      .listRowBackground(Theme.coachCard)
 
       Section {
         Toggle(
@@ -91,11 +109,11 @@ struct SettingsView: View {
         } else if let healthAuthorizationMessage {
           Text(healthAuthorizationMessage)
             .font(.footnote)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(Theme.coachSecondary)
         } else if !HealthKitWorkoutRecorder.isHealthDataAvailable {
           Text("Apple Health is unavailable on this device.")
             .font(.footnote)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(Theme.coachSecondary)
         }
       } header: {
         Text("Apple Health")
@@ -104,18 +122,21 @@ struct SettingsView: View {
           "When enabled, completed workouts with at least one completed set can be saved to Apple Health. Lift Chase only writes workout records and does not read Health data. Turn this off to stop future workout exports."
         )
       }
+      .listRowBackground(Theme.coachCard)
 
       Section("Data") {
         Button("Import Hevy CSV", systemImage: "square.and.arrow.down") {
           showingHevyImporter = true
         }
       }
+      .listRowBackground(Theme.coachCard)
 
       Section("About") {
         LabeledContent("Catalog", value: "Free Exercise DB")
         LabeledContent("Exercises", value: "\(exerciseCount)")
         NavigationLink("Data source notes") { ResearchSummaryView() }
       }
+      .listRowBackground(Theme.coachCard)
 
       #if DEBUG
         Section("Developer") {
@@ -125,8 +146,11 @@ struct SettingsView: View {
             Label("Developer Menu", systemImage: "hammer.fill")
           }
         }
+        .listRowBackground(Theme.coachCard)
       #endif
     }
+    .scrollContentBackground(.hidden)
+    .background(Theme.coachBackground.ignoresSafeArea())
     .navigationTitle("Settings")
     .onAppear {
       refreshHealthAuthorizationMessage()
@@ -264,7 +288,7 @@ struct SettingsView: View {
           )
           .accessibilityIdentifier("developer-weekly-report-feature-toggle")
           Text("Shows weekly coaching on Progress. Off by default for App Store builds.")
-            .font(.footnote).foregroundStyle(.secondary)
+            .font(.footnote).foregroundStyle(Theme.coachSecondary)
           if weeklyReportEnabled {
             Button("Open Progress") {
               NotificationCenter.default.post(name: .openWeeklyCoachingReport, object: nil)
@@ -311,7 +335,7 @@ struct SettingsView: View {
               ), displayedComponents: .hourAndMinute)
           }
           if let liftCoachSettingsMessage {
-            Text(liftCoachSettingsMessage).font(.footnote).foregroundStyle(.secondary)
+            Text(liftCoachSettingsMessage).font(.footnote).foregroundStyle(Theme.coachSecondary)
           }
         } header: {
           Text("Weekly coaching notification")
@@ -346,10 +370,10 @@ struct SettingsView: View {
             Text(
               "When you generate a report, the app sends weekly workout totals plus routine and exercise names. It excludes participant names and private notes. Review the provider’s data policies before enabling."
             )
-            .font(.footnote).foregroundStyle(.secondary)
+            .font(.footnote).foregroundStyle(Theme.coachSecondary)
           }
           if let liftCoachSettingsMessage {
-            Text(liftCoachSettingsMessage).font(.footnote).foregroundStyle(.secondary)
+            Text(liftCoachSettingsMessage).font(.footnote).foregroundStyle(Theme.coachSecondary)
           }
         } header: {
           Text("Lift Coach")
@@ -581,26 +605,26 @@ struct SettingsView: View {
 
         Section {
           if analyticsClient.diagnostics.recent.isEmpty {
-            Text("No analytics events yet.").foregroundStyle(.secondary)
+            Text("No analytics events yet.").foregroundStyle(Theme.coachSecondary)
           } else {
             ForEach(Array(analyticsClient.diagnostics.recent.suffix(50).reversed())) { event in
               VStack(alignment: .leading, spacing: 4) {
                 HStack {
                   Text(event.type.rawValue).font(.caption.monospaced())
                   Spacer()
-                  Text(event.state).font(.caption).foregroundStyle(.secondary)
+                  Text(event.state).font(.caption).foregroundStyle(Theme.coachSecondary)
                 }
                 HStack(alignment: .firstTextBaseline) {
                   if !event.safePropertiesSummary.isEmpty {
                     Text(event.safePropertiesSummary)
                       .font(.caption2)
-                      .foregroundStyle(.secondary)
+                      .foregroundStyle(Theme.coachSecondary)
                       .lineLimit(2)
                   }
                   Spacer(minLength: 8)
                   Text(event.occurredAt.formatted(date: .abbreviated, time: .shortened))
                     .font(.caption2)
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(Theme.coachSecondary.opacity(0.72))
                     .lineLimit(1)
                 }
               }
@@ -770,7 +794,7 @@ struct PersonEditor: View {
           "Create one private link for \(person.name). Their watch shows this person’s current exercise and set details whenever they’re active in a workout."
         )
         .font(.footnote)
-        .foregroundStyle(.secondary)
+        .foregroundStyle(Theme.coachSecondary)
       } header: {
         Text("Kids Watch")
       }

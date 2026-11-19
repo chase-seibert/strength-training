@@ -65,6 +65,8 @@ struct RoutinesView: View {
         } actions: {
           Button("Add Starter Routines") { showingStarterRoutines = true }
             .buttonStyle(.borderedProminent)
+            .tint(Theme.primaryAction)
+            .foregroundStyle(Theme.primaryActionForeground)
           Button("Create My Own") { showingNewRoutine = true }
             .buttonStyle(.bordered)
         }
@@ -85,7 +87,7 @@ struct RoutinesView: View {
               VStack(alignment: .leading, spacing: 4) {
                 Text(routine.name).font(.headline)
                 Text(exerciseCountText(routine.visibleExercises.count))
-                  .font(.subheadline).foregroundStyle(.secondary)
+                  .font(.subheadline).foregroundStyle(Theme.coachSecondary)
               }
             }
             .padding(.vertical, 4)
@@ -94,6 +96,7 @@ struct RoutinesView: View {
         }
         .onMove(perform: moveRoutines)
         .onDelete(perform: deleteRoutines)
+        .listRowBackground(Theme.coachCard)
       }
 
       if !deletedRoutines.isEmpty {
@@ -105,10 +108,13 @@ struct RoutinesView: View {
               "Deleted Routines (\(deletedRoutines.count))",
               systemImage: "trash")
           }
+          .listRowBackground(Theme.coachCard)
         }
       }
     }
     .listStyle(.insetGrouped)
+    .scrollContentBackground(.hidden)
+    .background(Theme.coachBackground.ignoresSafeArea())
     .environment(\.editMode, $editMode)
     .navigationTitle("Routines")
     .toolbar {
@@ -191,7 +197,7 @@ struct DeletedRoutinesView: View {
               if let deletedAt = routine.deletedAt {
                 Text("Deleted \(deletedAt.formatted(date: .abbreviated, time: .omitted))")
                   .font(.caption)
-                  .foregroundStyle(.secondary)
+                  .foregroundStyle(Theme.coachSecondary)
               }
             }
             Spacer()
@@ -203,8 +209,11 @@ struct DeletedRoutinesView: View {
             Button("Restore", systemImage: "arrow.uturn.backward") { restore(routine) }
               .tint(Theme.mint)
           }
+          .listRowBackground(Theme.coachCard)
         }
         .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .background(Theme.coachBackground.ignoresSafeArea())
       }
     }
     .navigationTitle("Deleted Routines")
@@ -234,20 +243,20 @@ struct StarterRoutineCard: View {
         VStack(alignment: .leading, spacing: 4) {
           Text(template.name).font(.headline).foregroundStyle(.primary)
           Text(template.summary)
-            .font(.subheadline).foregroundStyle(.secondary)
+            .font(.subheadline).foregroundStyle(Theme.coachSecondary)
           Text(template.exercises.map(\.name).joined(separator: " · "))
-            .font(.caption).foregroundStyle(.secondary).lineLimit(2)
+            .font(.caption).foregroundStyle(Theme.coachSecondary).lineLimit(2)
         }
         Spacer()
         Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
           .font(.title2)
-          .foregroundStyle(isSelected ? Theme.coral : .secondary)
+          .foregroundStyle(isSelected ? Theme.primaryAction : Theme.coachSecondary)
       }
       .padding(14)
-      .background(.background, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+      .background(Theme.coachCard, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
       .overlay {
         RoundedRectangle(cornerRadius: 18, style: .continuous)
-          .stroke(isSelected ? Theme.coral : .clear, lineWidth: 2)
+          .stroke(isSelected ? Theme.primaryAction : .clear, lineWidth: 2)
       }
     }
     .buttonStyle(.plain)
@@ -286,7 +295,7 @@ struct StarterRoutinePicker: View {
               message: "You can edit those routines or create your own.")
           } else {
             Text("Choose any templates to add. Every routine remains fully editable.")
-              .foregroundStyle(.secondary)
+              .foregroundStyle(Theme.coachSecondary)
               .padding(.bottom, 6)
             ForEach(availableTemplates) { template in
               StarterRoutineCard(
@@ -299,7 +308,7 @@ struct StarterRoutinePicker: View {
         }
         .padding()
       }
-      .background(Color(.systemGroupedBackground))
+      .background(Theme.coachBackground)
       .navigationTitle("Starter Routines")
       .navigationBarTitleDisplayMode(.inline)
       .toolbar {
@@ -382,7 +391,7 @@ struct NewRoutineSheet: View {
           Text(
             "After creating it, add exercises from the catalog and tune sets for each person. Rest starts after every completed set."
           )
-          .foregroundStyle(.secondary)
+          .foregroundStyle(Theme.coachSecondary)
         }
       }
       .navigationTitle("New Routine")
@@ -516,7 +525,7 @@ struct RoutineAppearanceEditor: View {
       }
       .padding()
     }
-    .background(Color(.systemGroupedBackground))
+    .background(Theme.coachBackground)
     .navigationTitle("Routine Appearance")
     .navigationBarTitleDisplayMode(.inline)
   }
@@ -582,7 +591,7 @@ struct RoutineDetailView: View {
                   Color(hex: draftColorHex).opacity(0.12), in: RoundedRectangle(cornerRadius: 9))
               Image(systemName: "chevron.right")
                 .font(.caption.bold())
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(Theme.coachSecondary.opacity(0.72))
             }
           }
           Picker("Rest timer", selection: $draftRestDurationSeconds) {
@@ -594,8 +603,9 @@ struct RoutineDetailView: View {
             "Starts after each completed set and uses the same duration throughout this routine."
           )
           .font(.caption)
-          .foregroundStyle(.secondary)
+          .foregroundStyle(Theme.coachSecondary)
         }
+        .listRowBackground(Theme.coachCard)
       }
 
       if !editMode.isEditing {
@@ -603,6 +613,7 @@ struct RoutineDetailView: View {
           LabeledContent(
             "Rest timer", value: restDurationTitle(routine.restDurationSeconds ?? 0))
         }
+        .listRowBackground(Theme.coachCard)
       }
 
       if !routineSessions.isEmpty {
@@ -613,15 +624,16 @@ struct RoutineDetailView: View {
               y: .value("Volume", poundsVolume(session))
             )
             .interpolationMethod(.catmullRom)
-            .foregroundStyle(Theme.coral)
+            .foregroundStyle(Theme.primaryAction)
             PointMark(
               x: .value("Date", session.startedAt), y: .value("Volume", poundsVolume(session))
             )
-            .foregroundStyle(Theme.coral)
+            .foregroundStyle(Theme.primaryAction)
           }
           .frame(height: 160)
           .chartYAxisLabel("lb × reps")
         }
+        .listRowBackground(Theme.coachCard)
       }
 
       Section {
@@ -629,7 +641,7 @@ struct RoutineDetailView: View {
           VStack(alignment: .leading, spacing: 5) {
             Text(item.exerciseName).font(.headline)
             Text(summary(item))
-              .font(.caption).foregroundStyle(.secondary)
+              .font(.caption).foregroundStyle(Theme.coachSecondary)
           }
           .padding(.vertical, 3)
         }
@@ -646,6 +658,7 @@ struct RoutineDetailView: View {
             : "Exercises define what each set records. Each person's weights, reps, and completed sets are saved with the workout."
         )
       }
+      .listRowBackground(Theme.coachCard)
 
       Section("Manage Routine") {
         Button {
@@ -661,7 +674,11 @@ struct RoutineDetailView: View {
           Label("Delete Routine", systemImage: "trash")
         }
       }
+      .listRowBackground(Theme.coachCard)
     }
+    .listStyle(.insetGrouped)
+    .scrollContentBackground(.hidden)
+    .background(Theme.coachBackground.ignoresSafeArea())
     .navigationTitle(routine.name)
     .toolbar {
       if editMode.isEditing {
@@ -696,9 +713,10 @@ struct RoutineDetailView: View {
             .padding(.vertical, 14)
         }
         .buttonStyle(.borderedProminent)
-        .tint(Theme.coral)
+        .tint(Theme.primaryAction)
+        .foregroundStyle(Theme.primaryActionForeground)
         .padding()
-        .background(.bar)
+        .background(Theme.coachCard)
         .disabled(routine.visibleExercises.isEmpty)
         .accessibilityIdentifier("start-routine-detail")
       }
@@ -889,7 +907,7 @@ struct ManageRoutineExercisesView: View {
               if item.isHidden {
                 Label("Hidden from new workouts", systemImage: "eye.slash")
                   .font(.caption)
-                  .foregroundStyle(.secondary)
+                  .foregroundStyle(Theme.coachSecondary)
               }
             }
             Spacer(minLength: 8)
@@ -905,12 +923,16 @@ struct ManageRoutineExercisesView: View {
         .onMove { source, destination in
           draftExercises.move(fromOffsets: source, toOffset: destination)
         }
+        .listRowBackground(Theme.coachCard)
       } footer: {
         Text(
           "Hidden exercises stay in this routine and its history. They are omitted from new workouts. Drag to reorder, then save your changes."
         )
       }
     }
+    .listStyle(.insetGrouped)
+    .scrollContentBackground(.hidden)
+    .background(Theme.coachBackground.ignoresSafeArea())
     .navigationTitle("Manage Exercises")
     .navigationBarTitleDisplayMode(.inline)
     .toolbar {
@@ -964,7 +986,7 @@ struct AddExerciseToRoutineSheet: View {
             VStack(alignment: .leading, spacing: 3) {
               Text(exercise.name).foregroundStyle(.primary)
               Text("\(exercise.primaryMuscle.capitalized) · \(exercise.unit.title)")
-                .font(.caption).foregroundStyle(.secondary)
+                .font(.caption).foregroundStyle(Theme.coachSecondary)
             }
             Spacer()
             if contains(exercise) {
@@ -974,6 +996,9 @@ struct AddExerciseToRoutineSheet: View {
         }
         .disabled(contains(exercise))
       }
+      .listStyle(.insetGrouped)
+      .scrollContentBackground(.hidden)
+      .background(Theme.coachBackground.ignoresSafeArea())
       .searchable(text: $searchText, prompt: "Exercise name")
       .navigationTitle("Add Exercise")
       .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }

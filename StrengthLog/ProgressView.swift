@@ -116,7 +116,8 @@ struct ProgressView: View {
     }
     .navigationTitle("")
     .navigationBarTitleDisplayMode(.inline)
-    .toolbarBackground(Theme.coachBackground, for: .navigationBar, .tabBar)
+    .toolbarBackground(Theme.coachBackground, for: .navigationBar)
+    .toolbarBackground(Theme.coachCard, for: .tabBar)
     .toolbarBackground(.visible, for: .navigationBar, .tabBar)
     .alert(
       "Delete workout?",
@@ -173,7 +174,7 @@ struct ProgressView: View {
   private var volumeCard: some View {
     VStack(alignment: .leading, spacing: 12) {
       HStack(spacing: 10) {
-        Image(systemName: "chart.bar.fill").foregroundStyle(Theme.coral)
+        Image(systemName: "chart.bar.fill").foregroundStyle(Theme.primaryAction)
         Text("TRAINING VOLUME")
           .font(.headline.weight(.bold)).tracking(1.3)
       }
@@ -256,7 +257,9 @@ struct ProgressView: View {
           .foregroundStyle(by: .value("Person", point.personName))
       }
     }
-    .chartForegroundStyleScale(domain: ["You", "Partner"], range: [Theme.coral, Theme.sky])
+    .chartForegroundStyleScale(
+      domain: ["You", "Partner"], range: [Theme.primaryAction, Theme.sky]
+    )
     .chartLegend(position: .bottom, alignment: .leading)
     .chartYAxis {
       AxisMarks(position: .leading) { _ in
@@ -291,7 +294,8 @@ struct ProgressView: View {
           systemImage: "sparkles"
         ) { Task { await generateReport() } }
         .buttonStyle(.borderedProminent)
-        .tint(Theme.coral)
+        .tint(Theme.primaryAction)
+        .foregroundStyle(Theme.primaryActionForeground)
         .disabled(isGeneratingReport || primaryPerson == nil)
         .accessibilityIdentifier("generate-weekly-coaching-report")
       }
@@ -309,7 +313,7 @@ struct ProgressView: View {
     let facts = LiftCoachReportBuilder.savedFacts(for: report)
     let response = LiftCoachReportBuilder.structuredResponse(for: report)
     HStack(spacing: 9) {
-      Image(systemName: "sparkles").foregroundStyle(Theme.coral)
+      Image(systemName: "sparkles").foregroundStyle(Theme.primaryAction)
       Text("WEEKLY REPORT")
         .font(.headline.weight(.bold)).tracking(1.3).foregroundStyle(.primary)
       Spacer()
@@ -335,7 +339,7 @@ struct ProgressView: View {
           coachSectionTitle("ROUTINES YOU FOLLOWED")
           ForEach(facts.routines) { routine in
             HStack {
-              Image(systemName: "dumbbell.fill").foregroundStyle(Theme.coral)
+              Image(systemName: "dumbbell.fill").foregroundStyle(Theme.primaryAction)
               Text(routine.name).foregroundStyle(.primary)
               Spacer()
               Text("\(routine.workoutCount) \(routine.workoutCount == 1 ? "workout" : "workouts")")
@@ -386,7 +390,7 @@ struct ProgressView: View {
 
   private func reportMetric(_ value: String, label: String, icon: String) -> some View {
     HStack(spacing: 10) {
-      Image(systemName: icon).font(.title3).foregroundStyle(Theme.coral)
+      Image(systemName: icon).font(.title3).foregroundStyle(Theme.primaryAction)
         .frame(width: 34, height: 34)
       VStack(alignment: .leading, spacing: 2) {
         Text(value).font(.headline.weight(.bold)).foregroundStyle(.primary)
@@ -416,7 +420,7 @@ struct ProgressView: View {
             values.first(where: { Calendar.current.isDate($0.day, inSameDayAs: day) })?.poundsVolume
             ?? 0
           BarMark(x: .value("Day", day, unit: .day), y: .value("lb × reps", volume))
-            .foregroundStyle(Theme.coral.gradient)
+            .foregroundStyle(Theme.primaryAction.gradient)
             .cornerRadius(4)
         }
       }
@@ -499,7 +503,8 @@ struct ProgressView: View {
           reportToast =
             "Preview only: \(candidate.routineName) with \(candidate.suggestedExercise) in place of \(candidate.currentExercise). No routine changes were saved."
         }
-        .buttonStyle(.borderedProminent).tint(Theme.coral)
+        .buttonStyle(.borderedProminent).tint(Theme.primaryAction)
+        .foregroundStyle(Theme.primaryActionForeground)
         Text("Suggestion only · not saved").font(.caption).foregroundStyle(Theme.coachSecondary)
       }
       .padding(12)
@@ -545,7 +550,7 @@ struct ProgressView: View {
   private var recentWorkoutsCard: some View {
     VStack(alignment: .leading, spacing: 10) {
       HStack(spacing: 10) {
-        Image(systemName: "clock").font(.title3).foregroundStyle(Theme.coral)
+        Image(systemName: "clock").font(.title3).foregroundStyle(Theme.primaryAction)
         Text("RECENT WORKOUTS").font(.headline.weight(.bold)).tracking(1.4)
           .foregroundStyle(.primary).accessibilityLabel("Recent workouts")
       }
@@ -556,7 +561,7 @@ struct ProgressView: View {
           if index > 0 { Divider().overlay(Theme.coachGrid) }
           HStack(spacing: 12) {
             Image(systemName: "dumbbell.fill")
-              .font(.headline).foregroundStyle(Theme.coral)
+              .font(.headline).foregroundStyle(Theme.primaryAction)
               .frame(width: 48, height: 48)
               .background(Theme.coachCard, in: RoundedRectangle(cornerRadius: 14))
             NavigationLink {
@@ -603,7 +608,7 @@ struct ProgressView: View {
 
   private func sampleWorkoutRow(_ name: String, date: String, sets: String) -> some View {
     HStack(spacing: 12) {
-      Image(systemName: "dumbbell.fill").font(.headline).foregroundStyle(Theme.coral)
+      Image(systemName: "dumbbell.fill").font(.headline).foregroundStyle(Theme.primaryAction)
         .frame(width: 48, height: 48).background(
           Theme.coachCard, in: RoundedRectangle(cornerRadius: 14))
       VStack(alignment: .leading, spacing: 4) {
@@ -661,7 +666,7 @@ struct ProgressView: View {
       learningHabitsContent
     } else {
       HStack(spacing: 9) {
-        Image(systemName: "sparkles").foregroundStyle(Theme.coral)
+        Image(systemName: "sparkles").foregroundStyle(Theme.primaryAction)
         Text("LIFT COACH · SINCE YOUR LAST REPORT")
           .font(.headline.weight(.bold)).tracking(1.3).foregroundStyle(Theme.coachSecondary)
       }
@@ -723,7 +728,7 @@ struct ProgressView: View {
         coachSectionTitle("TRY A NEW EXERCISE")
         VStack(alignment: .leading, spacing: 9) {
           HStack(spacing: 12) {
-            Image(systemName: "dumbbell.fill").font(.title2).foregroundStyle(Theme.coral)
+            Image(systemName: "dumbbell.fill").font(.title2).foregroundStyle(Theme.primaryAction)
               .frame(width: 52, height: 52).background(
                 Theme.coral.opacity(0.12), in: RoundedRectangle(cornerRadius: 13))
             VStack(alignment: .leading, spacing: 4) {
@@ -742,14 +747,15 @@ struct ProgressView: View {
           Button("Preview workout", systemImage: "eye") {
             reportToast = "Preview only. No routine changes were saved."
           }
-          .buttonStyle(.borderedProminent).tint(Theme.coral)
+          .buttonStyle(.borderedProminent).tint(Theme.primaryAction)
+          .foregroundStyle(Theme.primaryActionForeground)
           Text("Suggestion only · not saved").font(.caption).foregroundStyle(Theme.coachSecondary)
         }
       }
       VStack(alignment: .leading, spacing: 8) {
         coachSectionTitle("REST BETWEEN EXERCISES")
         Label("Not enough recovery data yet", systemImage: "questionmark.circle")
-          .font(.headline).foregroundStyle(.secondary)
+          .font(.headline).foregroundStyle(Theme.coachSecondary)
         Text(
           "Your routine has a configured rest timer, but exact rest intervals aren’t recorded. Set RPE helps identify when recovery may need a closer look."
         )
@@ -770,7 +776,8 @@ struct ProgressView: View {
         reportToast = "Sample preview only. No AI request was sent."
       }
       .font(.headline.weight(.bold)).frame(maxWidth: .infinity).padding(.vertical, 14)
-      .buttonStyle(.borderedProminent).tint(Theme.coral)
+      .buttonStyle(.borderedProminent).tint(Theme.primaryAction)
+      .foregroundStyle(Theme.primaryActionForeground)
     }
   }
 
@@ -783,7 +790,7 @@ struct ProgressView: View {
     -> some View
   {
     HStack(spacing: 12) {
-      Image(systemName: icon).font(.title3).foregroundStyle(Theme.coral)
+      Image(systemName: icon).font(.title3).foregroundStyle(Theme.primaryAction)
         .frame(width: 42, height: 42).background(
           Theme.coachInset, in: RoundedRectangle(cornerRadius: 13))
       VStack(alignment: .leading, spacing: 3) {
@@ -968,7 +975,7 @@ extension LiftCoachRestAssessment {
   fileprivate var color: Color {
     switch self {
     case .appearsAdequate: Theme.mint
-    case .considerMoreRest: Theme.coral
+    case .considerMoreRest: Theme.primaryAction
     case .insufficientData: .secondary
     }
   }
@@ -1028,7 +1035,7 @@ struct SessionDetailView: View {
       ForEach(session.exercises.sorted(by: { $0.sortOrder < $1.sortOrder })) { exercise in
         Section(exercise.exerciseName) {
           if let notes = exercise.notes, !notes.isEmpty {
-            Text(notes).font(.caption).foregroundStyle(.secondary)
+            Text(notes).font(.caption).foregroundStyle(Theme.coachSecondary)
           }
           ForEach(exercise.participants.filter { session.isParticipantActive($0.participantName) })
           {
@@ -1048,7 +1055,7 @@ struct SessionDetailView: View {
                 HStack(spacing: 5) {
                   Text(setText(set, participant: participant, exercise: exercise))
                     .font(.caption.monospacedDigit())
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Theme.coachSecondary)
                   if personalRecordSetIDs.contains(set.id) {
                     Image(systemName: "trophy.fill")
                       .font(.caption2)
@@ -1060,8 +1067,12 @@ struct SessionDetailView: View {
             }
           }
         }
+        .listRowBackground(Theme.coachCard)
       }
     }
+    .listStyle(.insetGrouped)
+    .scrollContentBackground(.hidden)
+    .background(Theme.coachBackground.ignoresSafeArea())
     .navigationTitle(routineName)
     .toolbar {
       ToolbarItem(placement: .primaryAction) {

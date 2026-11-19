@@ -1,6 +1,7 @@
 import Foundation
 import SwiftData
 import SwiftUI
+import UIKit
 
 enum WorkoutPreferences {
   static let defaultSetsKey = "defaultWorkoutSets"
@@ -22,6 +23,33 @@ enum WorkoutPreferences {
 
 enum FeaturePreferences {
   static let weeklyReportEnabledKey = "weeklyReportEnabled"
+}
+
+enum AppAppearance: String, CaseIterable, Identifiable {
+  case system
+  case light
+  case dark
+
+  static let storageKey = "appAppearance"
+  static let defaultValue = AppAppearance.dark
+
+  var id: String { rawValue }
+
+  var title: String {
+    switch self {
+    case .system: "System"
+    case .light: "Light"
+    case .dark: "Dark"
+    }
+  }
+
+  var colorScheme: ColorScheme? {
+    switch self {
+    case .system: nil
+    case .light: .light
+    case .dark: .dark
+    }
+  }
 }
 
 #if DEBUG
@@ -641,7 +669,7 @@ final class SetTemplate {
 @Model
 final class WorkoutSession {
   static let resumeWindow: TimeInterval = 2 * 60 * 60
-  static let maximumWorkoutDuration: TimeInterval = 24 * 60 * 60
+  static let maximumWorkoutDuration: TimeInterval = 3 * 60 * 60
 
   var id: UUID
   var externalID: String?
@@ -1392,16 +1420,39 @@ struct StarterRoutineTemplate: Identifiable {
 }
 
 enum Theme {
-  static let navy = Color(red: 0.05, green: 0.08, blue: 0.14)
-  static let coachBackground = Color(.systemGroupedBackground)
-  static let coachCard = Color(.secondarySystemGroupedBackground)
-  static let coachInset = Color(.tertiarySystemGroupedBackground)
-  static let coachSecondary = Color.secondary
-  static let coachGrid = Color(.separator).opacity(0.65)
-  static let coral = Color(red: 1.0, green: 0.31, blue: 0.21)
-  static let prYellow = Color(red: 1.0, green: 0.78, blue: 0.0)
-  static let mint = Color(red: 0.27, green: 0.82, blue: 0.66)
-  static let sky = Color(red: 0.35, green: 0.66, blue: 0.98)
+  static let navy = Color(hex: "010A31")
+  static let teal = Color(hex: "00A7B0")
+  static let coral = Color(hex: "FD4E10")
+  static let canvas = adaptive(light: "AFC9C6", dark: "010A31")
+  static let primaryAction = adaptive(light: "010A31", dark: "FD4E10")
+  static let primaryActionForeground = adaptive(light: "F5F7FA", dark: "010A31")
+  static let coachBackground = canvas
+  static let coachPrimaryText = adaptive(light: "010A31", dark: "F5F7FA")
+  static let coachCard = adaptive(light: "E1EBE9", dark: "111A2E")
+  static let coachInset = adaptive(light: "C5D8D5", dark: "1B2840")
+  static let coachSecondary = adaptive(light: "385056", dark: "B6C0D0")
+  static let coachGrid = adaptive(light: "91AAA6", dark: "34445E").opacity(0.65)
+  static let activeExerciseOutline = adaptive(light: "08767C", dark: "FD4E10")
+  static let workoutAdjustmentBackground = adaptive(light: "C5D8D5", dark: "FD4E10")
+  static let workoutAdjustmentForeground = navy
+  static let prYellow = adaptive(light: "9C5E00", dark: "F2B84B")
+  static let prBadgeBackground = adaptive(light: "F2B84B", dark: "F2B84B")
+  static let prBadgeForeground = adaptive(light: "010A31", dark: "000000")
+  static let mint = adaptive(light: "1D7A57", dark: "00A7B0")
+  static let sky = adaptive(light: "285FAD", dark: "6CB8FF")
+
+  private static func adaptive(light: String, dark: String) -> Color {
+    Color(
+      uiColor: UIColor { traits in
+        let hex = traits.userInterfaceStyle == .dark ? dark : light
+        let value = Int(hex, radix: 16) ?? 0
+        return UIColor(
+          red: CGFloat((value >> 16) & 0xFF) / 255,
+          green: CGFloat((value >> 8) & 0xFF) / 255,
+          blue: CGFloat(value & 0xFF) / 255,
+          alpha: 1)
+      })
+  }
 }
 
 extension Color {

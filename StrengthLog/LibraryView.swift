@@ -36,13 +36,14 @@ struct ExerciseLibraryView: View {
         ForEach(filtered) { exercise in
           ExerciseLibraryRow(exercise: exercise)
         }
+        .listRowBackground(Theme.coachCard)
       } header: {
         HStack {
           Text(exerciseCountText(filtered.count))
           Spacer()
           if selectedFilter != "All" {
             Text(selectedFilter)
-              .foregroundStyle(.secondary)
+              .foregroundStyle(Theme.coachSecondary)
           }
         }
       }
@@ -56,10 +57,13 @@ struct ExerciseLibraryView: View {
               "Deleted Custom Exercises (\(deletedCustomExercises.count))",
               systemImage: "trash")
           }
+          .listRowBackground(Theme.coachCard)
         }
       }
     }
     .listStyle(.insetGrouped)
+    .scrollContentBackground(.hidden)
+    .background(Theme.coachBackground.ignoresSafeArea())
     .searchable(text: $searchText, prompt: "Search exercises")
     .navigationTitle("Exercises")
     .toolbar {
@@ -96,7 +100,7 @@ struct ExerciseLibraryView: View {
       selectedFilter = filter
     } label: {
       if selectedFilter == filter {
-        (Text("✓  ").foregroundStyle(Theme.coral) + Text(filter))
+        (Text("✓  ").foregroundStyle(Theme.primaryAction) + Text(filter))
       } else {
         Text(filter)
       }
@@ -123,10 +127,10 @@ private struct ExerciseLibraryRow: View {
           Text(exercise.name).font(.headline)
           if exercise.name.caseInsensitiveCompare(exercise.canonicalOriginalName) != .orderedSame {
             Text("Originally \(exercise.canonicalOriginalName)")
-              .font(.caption2).foregroundStyle(.tertiary).lineLimit(1)
+              .font(.caption2).foregroundStyle(Theme.coachSecondary.opacity(0.72)).lineLimit(1)
           }
           Text("\(exercise.primaryMuscle.capitalized) · \(exercise.equipment.capitalized)")
-            .font(.caption).foregroundStyle(.secondary).lineLimit(1)
+            .font(.caption).foregroundStyle(Theme.coachSecondary).lineLimit(1)
         }
       }
       .padding(.vertical, 2)
@@ -167,15 +171,15 @@ struct ExerciseDetailView: View {
             .font(.largeTitle.bold())
           if exercise.canonicalID != exercise.id {
             Label("Duplicate of \(exercise.canonicalOriginalName)", systemImage: "square.on.square")
-              .font(.caption).foregroundStyle(.secondary)
+              .font(.caption).foregroundStyle(Theme.coachSecondary)
           } else if exercise.name.caseInsensitiveCompare(exercise.canonicalOriginalName)
             != .orderedSame
           {
             Label("Originally \(exercise.canonicalOriginalName)", systemImage: "link")
-              .font(.caption).foregroundStyle(.secondary)
+              .font(.caption).foregroundStyle(Theme.coachSecondary)
           }
           Text("\(exercise.primaryMuscle.capitalized) · \(exercise.equipment.capitalized)")
-            .foregroundStyle(.secondary)
+            .foregroundStyle(Theme.coachSecondary)
         }
 
         VStack(alignment: .leading, spacing: 10) {
@@ -188,12 +192,12 @@ struct ExerciseDetailView: View {
               .accessibilityValue(exercise.repCountingMode.title)
               .accessibilityIdentifier("exercise-rep-counting")
             Text(exercise.repCountingMode.explanation)
-              .font(.caption).foregroundStyle(.secondary)
+              .font(.caption).foregroundStyle(Theme.coachSecondary)
           }
           Text(
             "Editing these settings updates every routine and workout, including the one in progress."
           )
-          .font(.caption).foregroundStyle(.secondary)
+          .font(.caption).foregroundStyle(Theme.coachSecondary)
         }
         .padding()
         .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 18))
@@ -203,7 +207,7 @@ struct ExerciseDetailView: View {
             Text("Exercise note").font(.headline)
             Text(note)
               .font(.body)
-              .foregroundStyle(.secondary)
+              .foregroundStyle(Theme.coachSecondary)
           }
         }
 
@@ -211,13 +215,13 @@ struct ExerciseDetailView: View {
           VStack(alignment: .leading, spacing: 10) {
             Text("Technique notes").font(.headline)
             Text(exercise.instructions)
-              .font(.body).foregroundStyle(.secondary)
+              .font(.body).foregroundStyle(Theme.coachSecondary)
           }
         }
 
         if !exercise.isCustom {
           Text("Exercise data and imagery: Free Exercise DB (Unlicense)")
-            .font(.caption2).foregroundStyle(.tertiary)
+            .font(.caption2).foregroundStyle(Theme.coachSecondary.opacity(0.72))
         }
       }
       .padding()
@@ -246,7 +250,8 @@ struct ExerciseDetailView: View {
             .padding(.vertical, 13)
         }
         .buttonStyle(.borderedProminent)
-        .tint(Theme.coral)
+        .tint(Theme.primaryAction)
+        .foregroundStyle(Theme.primaryActionForeground)
 
         if exercise.isCustom {
           Button("Delete Custom Exercise", role: .destructive) {
@@ -266,7 +271,7 @@ struct ExerciseDetailView: View {
         }
       }
       .padding()
-      .background(.bar)
+      .background(Theme.coachCard)
     }
     .sheet(isPresented: $showingRoutinePicker) {
       AddExerciseFromLibrarySheet(exercise: exercise)
@@ -323,7 +328,7 @@ struct DeletedCustomExercisesView: View {
               if let deletedAt = exercise.deletedAt {
                 Text("Deleted \(deletedAt.formatted(date: .abbreviated, time: .omitted))")
                   .font(.caption)
-                  .foregroundStyle(.secondary)
+                  .foregroundStyle(Theme.coachSecondary)
               }
             }
             Spacer()
@@ -380,7 +385,7 @@ struct AddExerciseFromLibrarySheet: View {
                   VStack(alignment: .leading, spacing: 3) {
                     Text(routine.name).foregroundStyle(.primary)
                     Text(exerciseCountText(routine.visibleExercises.count))
-                      .font(.caption).foregroundStyle(.secondary)
+                      .font(.caption).foregroundStyle(Theme.coachSecondary)
                   }
                   Spacer()
                   if routine.contains(exercise) {
@@ -399,6 +404,9 @@ struct AddExerciseFromLibrarySheet: View {
           Button("Create New Routine", systemImage: "plus") { showingNewRoutine = true }
         }
       }
+      .listStyle(.insetGrouped)
+      .scrollContentBackground(.hidden)
+      .background(Theme.coachBackground.ignoresSafeArea())
       .navigationTitle("Add to Routine")
       .navigationBarTitleDisplayMode(.inline)
       .toolbar {
@@ -581,7 +589,7 @@ private struct ExerciseEditorSheet: View {
             .accessibilityIdentifier("exercise-dumbbell-reminder-toggle")
             Text("Adds a tappable per-arm and both-arms total reminder during workouts.")
               .font(.caption)
-              .foregroundStyle(.secondary)
+              .foregroundStyle(Theme.coachSecondary)
           }
           if unit.usesReps {
             Toggle(
@@ -598,7 +606,7 @@ private struct ExerciseEditorSheet: View {
                 : "Adds a tappable total-reps and per-side reminder during workouts."
             )
             .font(.caption)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(Theme.coachSecondary)
           }
         } header: {
           Text("Workout logging")

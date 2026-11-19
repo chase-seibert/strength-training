@@ -1,5 +1,6 @@
 import Charts
 import SwiftUI
+import UIKit
 import WidgetKit
 
 private struct ProgressTimelineEntry: TimelineEntry {
@@ -69,7 +70,7 @@ private struct ProgressWidgetView: View {
           detail: "Your workout data stays on your iPhone.")
       }
     }
-    .containerBackground(.background, for: .widget)
+    .containerBackground(ProgressWidgetTheme.canvas, for: .widget)
     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
   }
 
@@ -82,7 +83,7 @@ private struct ProgressWidgetView: View {
         Spacer(minLength: 4)
         Text("Updated \(snapshot.generatedAt, style: .time)")
           .font(.caption2)
-          .foregroundStyle(.secondary)
+          .foregroundStyle(ProgressWidgetTheme.secondary)
           .lineLimit(1)
       }
 
@@ -120,7 +121,7 @@ private struct ProgressWidgetView: View {
               if let volume = value.as(Double.self) {
                 Text(volume.formatted(.number.precision(.fractionLength(0))))
                   .font(.system(size: isLarge ? 10 : 9))
-                  .foregroundStyle(.secondary)
+                  .foregroundStyle(ProgressWidgetTheme.secondary)
               }
             }
           }
@@ -141,7 +142,7 @@ private struct ProgressWidgetView: View {
         } else {
           Text("No workouts in the last 12 weeks")
             .font(.caption)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(ProgressWidgetTheme.secondary)
         }
       }
       Spacer(minLength: 0)
@@ -160,7 +161,8 @@ private struct ProgressWidgetView: View {
         }
       }
       if participants.count > displayed.count {
-        Text("+\(participants.count - displayed.count)").foregroundStyle(.secondary)
+        Text("+\(participants.count - displayed.count)").foregroundStyle(
+          ProgressWidgetTheme.secondary)
       }
     }
     .font(.caption2)
@@ -175,7 +177,7 @@ private struct ProgressWidgetView: View {
           "\(row.startedAt.formatted(date: .abbreviated, time: .omitted)) · \(row.completedSetCount)/\(row.totalSetCount) sets"
         )
         .font(.caption2)
-        .foregroundStyle(.secondary)
+        .foregroundStyle(ProgressWidgetTheme.secondary)
         .lineLimit(1)
       }
       Spacer(minLength: 2)
@@ -199,9 +201,27 @@ private struct ProgressWidgetView: View {
     VStack(alignment: .leading, spacing: 7) {
       Label(message, systemImage: "chart.xyaxis.line")
         .font(.headline)
-      Text(detail).font(.caption).foregroundStyle(.secondary)
+      Text(detail).font(.caption).foregroundStyle(ProgressWidgetTheme.secondary)
     }
     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+  }
+}
+
+private enum ProgressWidgetTheme {
+  static let canvas = adaptive(light: "00A7B0", dark: "010A31")
+  static let secondary = adaptive(light: "102D36", dark: "B6C0D0")
+
+  private static func adaptive(light: String, dark: String) -> Color {
+    Color(
+      uiColor: UIColor { traits in
+        let hex = traits.userInterfaceStyle == .dark ? dark : light
+        let value = Int(hex, radix: 16) ?? 0
+        return UIColor(
+          red: CGFloat((value >> 16) & 0xFF) / 255,
+          green: CGFloat((value >> 8) & 0xFF) / 255,
+          blue: CGFloat(value & 0xFF) / 255,
+          alpha: 1)
+      })
   }
 }
 

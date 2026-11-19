@@ -194,6 +194,7 @@ struct WorkoutCelebrationView: View {
       }
       .buttonStyle(.borderedProminent)
       .tint(Theme.coral)
+      .foregroundStyle(Theme.navy)
       .padding(.horizontal, 20)
       .padding(.vertical, 10)
       .background(.ultraThinMaterial)
@@ -217,7 +218,7 @@ struct WorkoutCelebrationView: View {
           .font(.headline)
         Text(summary.completedAt.formatted(date: .abbreviated, time: .shortened))
           .font(.subheadline)
-          .foregroundStyle(.secondary)
+          .foregroundStyle(Theme.coachSecondary)
       }
       .foregroundStyle(.white)
     }

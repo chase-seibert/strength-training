@@ -115,6 +115,10 @@
         try verifyCoordinatedExerciseOrderPersistence(schema: schema)
         return
       }
+      if ProcessInfo.processInfo.arguments.contains("-validateWorkoutDurationsOnly") {
+        try verifyWorkoutDurations()
+        return
+      }
       try verifyRoutineOrderPersistence(schema: schema)
       try verifyMasterUnitPersistence(schema: schema)
       try verifyCatalogDefaultsAndCorrections(schema: schema)
@@ -187,6 +191,19 @@
     private static func verifyWorkoutDurations() throws {
       let start = Date(timeIntervalSince1970: 1_800_000_000)
       let end = start.addingTimeInterval(90 * 60)
+      let latestActivity = end.addingTimeInterval(2 * 60)
+      let firstSet = WorkoutSet(sortOrder: 0, reps: 8, isCompleted: true, completedAt: end)
+      let latestSet = WorkoutSet(
+        sortOrder: 1, reps: 8, isCompleted: true, completedAt: latestActivity)
+      let participant = ParticipantLog(
+        participantName: "Import Tester", measurement: 0, sets: [firstSet, latestSet])
+      let exercise = ExerciseLog(
+        exerciseName: "Goblet Squat", unit: .pounds, sortOrder: 0, participants: [participant])
+      let sessionWithActivity = WorkoutSession(
+        routineID: UUID(), participantNames: ["Import Tester"], exercises: [exercise],
+        startedAt: start)
+      let maximumEnd = start.addingTimeInterval(WorkoutSession.maximumWorkoutDuration)
+      let beyondMaximumEnd = maximumEnd.addingTimeInterval(1)
       let active = WorkoutSession(
         routineID: UUID(), participantNames: [], exercises: [], startedAt: start, isActive: true)
       let completed = WorkoutSession(
@@ -199,12 +216,14 @@
         active.workoutDuration(at: end) == 90 * 60,
         completed.workoutDuration == 90 * 60,
         completed.workoutDuration(at: end.addingTimeInterval(20 * 60)) == 90 * 60,
+        sessionWithActivity.lastSetCompletedAt == latestActivity,
         missingEnd.workoutDuration == nil,
+        WorkoutSession.maximumWorkoutDuration == 3 * 60 * 60,
+        WorkoutSession.validatedWorkoutDuration(start: start, end: maximumEnd)
+          == WorkoutSession.maximumWorkoutDuration,
+        WorkoutSession.validatedWorkoutDuration(start: start, end: beyondMaximumEnd) == nil,
         WorkoutSession.validatedWorkoutDuration(start: start, end: start) == nil,
         WorkoutSession.validatedWorkoutDuration(start: end, end: start) == nil,
-        WorkoutSession.validatedWorkoutDuration(
-          start: start, end: start.addingTimeInterval(WorkoutSession.maximumWorkoutDuration + 1))
-          == nil,
         WorkoutSession.validatedWorkoutDuration(start: .distantFuture, end: .distantPast) == nil
       else { throw SmokeError.invalidWorkoutDuration }
     }

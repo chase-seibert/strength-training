@@ -310,6 +310,8 @@ struct AppRootView: View {
   @State private var retentionError: String?
   @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
   @AppStorage("hasInitializedOnboardingState") private var hasInitializedOnboardingState = false
+  @AppStorage(AppAppearance.storageKey)
+  private var appearanceRawValue = AppAppearance.defaultValue.rawValue
   @Query private var people: [PersonProfile]
 
   private var usesBasicWorkoutFixture: Bool {
@@ -342,6 +344,9 @@ struct AppRootView: View {
         OnboardingView(hasCompletedOnboarding: $hasCompletedOnboarding)
       }
     }
+    .preferredColorScheme(
+      (AppAppearance(rawValue: appearanceRawValue) ?? AppAppearance.defaultValue).colorScheme
+    )
     .onAppear {
       guard !usesBasicWorkoutFixture else { return }
       normalizeLegacyPeopleOrderIfNeeded()
@@ -471,7 +476,11 @@ struct RootView: View {
         .tabItem { Label("Settings", systemImage: "gearshape.fill") }
         .tag(4)
     }
-    .tint(Theme.coral)
+    .tint(Theme.primaryAction)
+    .background(Theme.canvas.ignoresSafeArea())
+    .scrollContentBackground(.hidden)
+    .toolbarBackground(Theme.coachCard, for: .navigationBar, .tabBar)
+    .toolbarBackground(.visible, for: .navigationBar, .tabBar)
     .onReceive(NotificationCenter.default.publisher(for: .openWeeklyCoachingReport)) { _ in
       selectedTab = 3
     }
@@ -582,8 +591,7 @@ struct RootView: View {
         .workoutCompleted,
         [
           "duration_bucket": .string(
-            AnalyticsValue.durationBucket(
-              (session.endedAt ?? .now).timeIntervalSince(session.startedAt))),
+            session.workoutDuration.map(AnalyticsValue.durationBucket) ?? "invalid"),
           "exercise_count": .number(exerciseCount),
           "completed_sets": .number(setLogs.filter(\.isCompleted).count),
           "skipped_sets": .number(setLogs.filter(\.isSkipped).count),
@@ -613,7 +621,7 @@ struct RootView: View {
 
   private func close(_ session: WorkoutSession) -> Bool {
     guard session.isActive else { return false }
-    session.endedAt = .now
+    session.endedAt = session.lastSetCompletedAt ?? .now
     session.isActive = false
     session.restTimerStartedAt = nil
     session.restTimerDurationSeconds = nil

@@ -3,15 +3,16 @@ import SwiftUI
 import WidgetKit
 
 struct LiftChaseLiveActivityWidget: Widget {
-  private let coral = Color(red: 1.0, green: 0.31, blue: 0.21)
-  private let navy = Color(red: 0.05, green: 0.08, blue: 0.14)
+  private let coral = Color(red: 253.0 / 255, green: 78.0 / 255, blue: 16.0 / 255)
+  private let navy = Color(red: 1.0 / 255, green: 10.0 / 255, blue: 49.0 / 255)
+  private let teal = Color(red: 0, green: 167.0 / 255, blue: 176.0 / 255)
 
   var body: some WidgetConfiguration {
     ActivityConfiguration(for: LiftChaseLiveActivityAttributes.self) { context in
       VStack(alignment: .leading, spacing: 5) {
         Text("Lift Chase")
           .font(.caption.weight(.semibold))
-          .foregroundStyle(.white.opacity(0.75))
+          .foregroundStyle(teal)
         HStack(spacing: 10) {
           Text(context.state.exerciseName)
             .font(.headline)

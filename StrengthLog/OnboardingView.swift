@@ -31,7 +31,7 @@ struct OnboardingView: View {
 
   var body: some View {
     ZStack {
-      Color(.systemGroupedBackground).ignoresSafeArea()
+      Theme.coachBackground.ignoresSafeArea()
       if step == 0 {
         welcome
       } else if step == 1 {
@@ -40,7 +40,7 @@ struct OnboardingView: View {
         starterRoutineSetup
       }
     }
-    .tint(Theme.coral)
+    .tint(Theme.primaryAction)
     .onAppear { loadExistingDataIfNeeded() }
   }
 
@@ -85,6 +85,7 @@ struct OnboardingView: View {
           .padding(.vertical, 14)
       }
       .buttonStyle(.borderedProminent)
+      .foregroundStyle(Theme.primaryActionForeground)
     }
     .padding(22)
   }
@@ -108,7 +109,7 @@ struct OnboardingView: View {
             Text(
               "Start with yourself. Add anyone you regularly train with—you can change this later."
             )
-            .foregroundStyle(.secondary)
+            .foregroundStyle(Theme.coachSecondary)
           }
 
           VStack(spacing: 12) {
@@ -135,6 +136,7 @@ struct OnboardingView: View {
               .padding(.vertical, 14)
           }
           .buttonStyle(.borderedProminent)
+          .foregroundStyle(Theme.primaryActionForeground)
           .disabled(clean(primaryName).isEmpty)
         }
         .padding(22)
@@ -158,7 +160,7 @@ struct OnboardingView: View {
             Text(
               "Use any of these as-is, edit them later, or continue without one and make your own."
             )
-            .foregroundStyle(.secondary)
+            .foregroundStyle(Theme.coachSecondary)
           }
 
           VStack(spacing: 12) {
@@ -174,7 +176,7 @@ struct OnboardingView: View {
                       in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                 }
                 Text("These routines and all workout history will stay exactly as they are.")
-                  .font(.caption).foregroundStyle(.secondary)
+                  .font(.caption).foregroundStyle(Theme.coachSecondary)
               }
               .padding(.bottom, 8)
             }
@@ -210,6 +212,7 @@ struct OnboardingView: View {
             .padding(.vertical, 14)
           }
           .buttonStyle(.borderedProminent)
+          .foregroundStyle(Theme.primaryActionForeground)
           .padding(.top, 14)
         }
         .padding(22)
@@ -240,7 +243,7 @@ struct OnboardingView: View {
       }
     }
     .padding(14)
-    .background(.background, in: RoundedRectangle(cornerRadius: 17, style: .continuous))
+    .background(Theme.coachCard, in: RoundedRectangle(cornerRadius: 17, style: .continuous))
   }
 
   private func completeOnboarding() {

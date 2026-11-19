@@ -193,7 +193,7 @@ struct HevyImportView: View {
               "Finish onboarding before importing history.",
               systemImage: "person.crop.circle.badge.exclamationmark"
             )
-            .foregroundStyle(.secondary)
+            .foregroundStyle(Theme.coachSecondary)
           } else {
             Picker("Import history for", selection: $selectedPersonID) {
               ForEach(people) { person in
@@ -338,11 +338,11 @@ struct HevyImportView: View {
           Text(routineName).foregroundStyle(.primary)
           Text(routineDetails(routineName))
             .font(.caption)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(Theme.coachSecondary)
         }
         Spacer()
         Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-          .foregroundStyle(isSelected ? Theme.mint : Color.secondary)
+          .foregroundStyle(isSelected ? Theme.mint : Theme.coachSecondary)
       }
     }
   }
@@ -360,19 +360,19 @@ struct HevyImportView: View {
           Spacer()
           Text("\(row.frequency)×")
             .font(.caption.monospacedDigit())
-            .foregroundStyle(.secondary)
+            .foregroundStyle(Theme.coachSecondary)
         }
         HStack {
           Text(mappingLabel(for: row.name))
             .font(.caption)
-            .foregroundStyle(isMapped ? Color.secondary : Theme.coral)
+            .foregroundStyle(isMapped ? Theme.coachSecondary : Theme.primaryAction)
           Spacer()
           Text(row.mostRecent, format: .dateTime.month(.abbreviated).day().year())
             .font(.caption)
-            .foregroundStyle(.tertiary)
+            .foregroundStyle(Theme.coachSecondary.opacity(0.72))
           Image(systemName: "chevron.right")
             .font(.caption.bold())
-            .foregroundStyle(.tertiary)
+            .foregroundStyle(Theme.coachSecondary.opacity(0.72))
         }
       }
       .padding(.vertical, 3)
@@ -469,7 +469,7 @@ private struct HevyExerciseMappingPicker: View {
             onSelect(nil)
           } label: {
             Label("Skip this exercise", systemImage: "forward.end.circle")
-              .foregroundStyle(.secondary)
+              .foregroundStyle(Theme.coachSecondary)
           }
           Button {
             onSelect(.createCustom)
@@ -486,7 +486,7 @@ private struct HevyExerciseMappingPicker: View {
                 VStack(alignment: .leading, spacing: 3) {
                   Text(exercise.name).foregroundStyle(.primary)
                   Text("\(exercise.primaryMuscle.capitalized) · \(exercise.equipment.capitalized)")
-                    .font(.caption).foregroundStyle(.secondary)
+                    .font(.caption).foregroundStyle(Theme.coachSecondary)
                 }
                 Spacer()
                 if currentChoice == .exercise(exercise.id) {

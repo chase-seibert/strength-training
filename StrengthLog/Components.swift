@@ -67,7 +67,7 @@ struct SectionEyebrow: View {
     Text(text.uppercased())
       .font(.caption.weight(.bold))
       .tracking(1.2)
-      .foregroundStyle(.secondary)
+      .foregroundStyle(Theme.coachSecondary)
   }
 }
 
@@ -393,7 +393,7 @@ struct MetricTile: View {
         .contentTransition(.numericText())
       Text(label)
         .font(.caption)
-        .foregroundStyle(.secondary)
+        .foregroundStyle(Theme.coachSecondary)
     }
     .frame(maxWidth: .infinity, alignment: .leading)
     .padding()
@@ -526,11 +526,11 @@ struct ExerciseImageSheet: View {
           .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
         Text("Swipe to compare positions")
           .font(.subheadline)
-          .foregroundStyle(.secondary)
+          .foregroundStyle(Theme.coachSecondary)
         Spacer()
       }
       .padding()
-      .background(Color(.systemGroupedBackground))
+      .background(Theme.coachBackground)
       .navigationTitle(exercise.name)
       .navigationBarTitleDisplayMode(.inline)
       .toolbar {

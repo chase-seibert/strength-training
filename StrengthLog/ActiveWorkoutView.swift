@@ -171,7 +171,7 @@ private struct ActiveWorkoutDurationLabel: View {
       Text("Workout length \(text)")
         .monospacedDigit()
         .font(.subheadline.weight(.semibold))
-        .foregroundStyle(.secondary)
+        .foregroundStyle(Theme.coachSecondary)
     }
   }
 }
@@ -187,7 +187,7 @@ private struct ActiveExerciseTimerDisplay: View {
     VStack(spacing: 6) {
       Text(exerciseName)
         .font(.headline)
-        .foregroundStyle(.secondary)
+        .foregroundStyle(Theme.coachSecondary)
       Text(timerInterval: Date.now...endDate, countsDown: true)
         .font(.system(size: timerFontSize, weight: .bold, design: .rounded))
         .monospacedDigit()
@@ -219,7 +219,7 @@ private struct ActiveExerciseTimerPreRollDisplay: View {
     VStack(spacing: 6) {
       Text("Get ready")
         .font(.headline)
-        .foregroundStyle(.secondary)
+        .foregroundStyle(Theme.coachSecondary)
       Text(timerInterval: Date.now...endDate, countsDown: true)
         .font(.system(size: 48, weight: .bold, design: .rounded))
         .monospacedDigit()
@@ -257,12 +257,12 @@ private struct ActiveWorkoutToolbarTitle: View {
           Button("Skip", action: onSkipRest)
             .font(.caption.weight(.semibold))
             .buttonStyle(.bordered)
-            .tint(Theme.coral)
+            .tint(Theme.primaryAction)
             // The timer text expands; reserve the button's full intrinsic width first.
             .fixedSize(horizontal: true, vertical: false)
             .layoutPriority(1)
         }
-        .foregroundStyle(Theme.coral)
+        .foregroundStyle(Theme.primaryAction)
         .font(.headline.weight(.semibold))
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("live-workout-header")
@@ -275,7 +275,7 @@ private struct ActiveWorkoutToolbarTitle: View {
       } else {
         Button(action: onOpenExercise) {
           Text(exerciseName)
-            .foregroundStyle(.primary)
+            .foregroundStyle(Theme.coachPrimaryText)
             .lineLimit(1)
             .font(.headline)
         }
@@ -389,7 +389,8 @@ struct ActiveWorkoutView: View {
               .padding(.vertical, 13)
           }
           .buttonStyle(.borderedProminent)
-          .tint(Theme.coral)
+          .tint(Theme.primaryAction)
+          .foregroundStyle(Theme.primaryActionForeground)
 
           Button("Delete Workout", role: .destructive) {
             showingDeleteConfirmation = true
@@ -420,7 +421,7 @@ struct ActiveWorkoutView: View {
       .listStyle(.plain)
       .scrollContentBackground(.hidden)
       .scrollDismissesKeyboard(.interactively)
-      .background(Color(.systemGroupedBackground))
+      .background(Theme.coachBackground)
       .background(DismissKeyboardOnTap())
       .modifier(
         ActiveWorkoutScrollSelection(
@@ -451,7 +452,7 @@ struct ActiveWorkoutView: View {
             .padding(.bottom, 8)
           }
         }
-        .background(Color(.systemBackground))
+        .background(Theme.coachCard)
         .overlay(alignment: .bottom) { Divider() }
       }
       .onAppear {
@@ -527,7 +528,7 @@ struct ActiveWorkoutView: View {
         } label: {
           Image(systemName: "line.3.horizontal")
             .font(.headline.weight(.semibold))
-            .foregroundStyle(Theme.coral)
+            .foregroundStyle(Theme.primaryAction)
             .frame(minWidth: 44, minHeight: 44)
             .contentShape(Rectangle())
         }
@@ -1176,7 +1177,7 @@ struct ActiveWorkoutView: View {
       if !isSelected {
         Image(systemName: "plus")
           .font(.caption.bold())
-          .foregroundStyle(.secondary)
+          .foregroundStyle(Theme.coachSecondary)
           .frame(maxWidth: .infinity, alignment: .trailing)
           .padding(.trailing, 2)
       }
@@ -1244,15 +1245,15 @@ struct ActiveWorkoutView: View {
           .lineLimit(1)
           .minimumScaleFactor(0.75)
       }
-      .foregroundStyle(Theme.navy)
+      .foregroundStyle(Theme.primaryAction)
       .frame(maxWidth: .infinity)
       .padding(.vertical, 10)
       .background(
-        Color.secondary.opacity(0.06), in: RoundedRectangle(cornerRadius: 13, style: .continuous)
+        Theme.coachInset, in: RoundedRectangle(cornerRadius: 13, style: .continuous)
       )
       .overlay {
         RoundedRectangle(cornerRadius: 13, style: .continuous)
-          .stroke(Color.secondary.opacity(0.12), lineWidth: 1)
+          .stroke(Theme.coachGrid, lineWidth: 1)
       }
     }
     .buttonStyle(.plain)
@@ -1441,7 +1442,7 @@ private struct WorkoutExerciseReorderView: View {
           HStack(spacing: 12) {
             Text("\(index + 1)")
               .font(.subheadline.monospacedDigit().weight(.semibold))
-              .foregroundStyle(Theme.coral)
+              .foregroundStyle(Theme.primaryAction)
               .frame(minWidth: 24)
             Text(row.name)
               .font(.body.weight(.medium))
@@ -1543,9 +1544,9 @@ struct AddExerciseToWorkoutSheet: View {
               .frame(width: 48, height: 48)
               .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
             VStack(alignment: .leading, spacing: 3) {
-              Text(exercise.name).foregroundStyle(.primary)
+              Text(exercise.name).foregroundStyle(Theme.coachPrimaryText)
               Text("\(exercise.primaryMuscle.capitalized) · \(exercise.unit.title)")
-                .font(.caption).foregroundStyle(.secondary)
+                .font(.caption).foregroundStyle(Theme.coachSecondary)
             }
             Spacer()
             if session.contains(exercise) {
@@ -1676,7 +1677,7 @@ struct ActiveExerciseCard: View {
               .font(.title3.bold())
               .lineLimit(2)
               .fixedSize(horizontal: false, vertical: true)
-              .foregroundStyle(.primary)
+              .foregroundStyle(Theme.coachPrimaryText)
           }
           .buttonStyle(.plain)
           .disabled(catalogExercise == nil)
@@ -1684,18 +1685,18 @@ struct ActiveExerciseCard: View {
           .accessibilityHint("Opens exercise details")
           Text("\(position) of \(total) · \(exercise.unit.title)")
             .font(.caption.weight(.semibold))
-            .foregroundStyle(.secondary)
+            .foregroundStyle(Theme.coachSecondary)
           if let exerciseNote {
             Text(exerciseNote)
               .font(.caption2)
-              .foregroundStyle(.secondary)
+              .foregroundStyle(Theme.coachSecondary)
               .fixedSize(horizontal: false, vertical: true)
               .accessibilityIdentifier("exercise-note-\(exercise.exerciseName)")
           }
           if let repGuidance {
             Text(repGuidance)
               .font(.caption2)
-              .foregroundStyle(.secondary)
+              .foregroundStyle(Theme.coachSecondary)
               .fixedSize(horizontal: false, vertical: true)
           }
         }
@@ -1790,7 +1791,7 @@ struct ActiveExerciseCard: View {
         } else if hasDifferentTimedTargets {
           Text("Participants have different timed targets")
             .font(.caption.weight(.semibold))
-            .foregroundStyle(.secondary)
+            .foregroundStyle(Theme.coachSecondary)
             .accessibilityIdentifier("exercise-timer-target-conflict")
         }
       }
@@ -1799,13 +1800,13 @@ struct ActiveExerciseCard: View {
     }
     .padding(12)
     .background(
-      Color(.systemBackground),
+      Theme.coachCard,
       in: RoundedRectangle(cornerRadius: 20, style: .continuous)
     )
     .overlay {
       if isCurrentExercise {
         RoundedRectangle(cornerRadius: 20, style: .continuous)
-          .strokeBorder(Theme.coral, lineWidth: 1)
+          .strokeBorder(Theme.activeExerciseOutline, lineWidth: 1)
       }
     }
     .onAppear(perform: equalizeSetCounts)
@@ -1977,9 +1978,9 @@ struct ActiveExerciseCard: View {
       Button(action: removeLastSetForEveryone) {
         Image(systemName: "minus")
           .font(.caption.weight(.bold))
-          .foregroundStyle(.white)
+          .foregroundStyle(Theme.workoutAdjustmentForeground)
           .frame(width: 30, height: 30)
-          .background(Theme.coral, in: Circle())
+          .background(Theme.workoutAdjustmentBackground, in: Circle())
           .opacity(setCount > 1 ? 1 : 0.45)
       }
       .buttonStyle(.plain)
@@ -1990,10 +1991,10 @@ struct ActiveExerciseCard: View {
       Button(action: onCompleteOneSet) {
         Label("1 set", systemImage: "checkmark")
           .font(.caption.weight(.bold))
-          .foregroundStyle(.white)
+          .foregroundStyle(Theme.primaryActionForeground)
           .padding(.horizontal, 10)
           .frame(height: 30)
-          .background(Theme.coral, in: Capsule())
+          .background(Theme.primaryAction, in: Capsule())
       }
       .buttonStyle(.plain)
       .accessibilityIdentifier("complete-one-set")
@@ -2002,9 +2003,9 @@ struct ActiveExerciseCard: View {
       Button(action: addSetForEveryone) {
         Image(systemName: "plus")
           .font(.caption.weight(.bold))
-          .foregroundStyle(.white)
+          .foregroundStyle(Theme.workoutAdjustmentForeground)
           .frame(width: 30, height: 30)
-          .background(Theme.coral, in: Circle())
+          .background(Theme.workoutAdjustmentBackground, in: Circle())
       }
       .buttonStyle(.plain)
       .accessibilityIdentifier("add-shared-set")
@@ -2018,10 +2019,11 @@ struct ActiveExerciseCard: View {
     return Button(action: onAdvance) {
       Image(systemName: "arrow.down")
         .font(.title3.weight(.semibold))
-        .foregroundStyle(canAdvance ? Color.white : Color.secondary.opacity(0.35))
+        .foregroundStyle(
+          canAdvance ? Theme.primaryActionForeground : Theme.coachSecondary.opacity(0.5))
         .frame(width: 36, height: 36)
         .background(
-          canAdvance ? Theme.coral : Color.secondary.opacity(0.08),
+          canAdvance ? Theme.primaryAction : Theme.coachInset,
           in: Circle()
         )
         .contentShape(Circle())
@@ -2582,7 +2584,7 @@ struct SetCompletionButton: View {
           Image(systemName: "checkmark.circle.fill")
             .font(.system(size: 11, weight: .bold))
             .foregroundStyle(participantColor)
-            .background(Color(.systemBackground), in: Circle())
+            .background(Theme.coachCard, in: Circle())
             .offset(x: 3, y: -3)
         }
       }
@@ -2655,7 +2657,7 @@ struct CompactRepsControl: View {
             "Base \(showsTotalRepsLabel ? "total reps" : unit.targetLabel(repCountingMode: repCountingMode)) for \(participant.participantName)",
           adjustmentPolicy: .additive(step: 1),
           minimumValue: 1,
-          textColor: isValueChanged ? UIColor(Theme.coral) : nil,
+          textColor: isValueChanged ? UIColor(Theme.primaryAction) : nil,
           accessibilityHint: isValueChanged ? "Updated since last time" : nil,
           accessibilityIdentifier:
             "base-reps-value-\(participant.participantName)\(isValueChanged ? "-updated" : "")"
@@ -2677,7 +2679,7 @@ struct CompactRepsControl: View {
           : unit.label
       )
       .font(.system(size: 8, weight: .bold))
-      .foregroundStyle(.secondary)
+      .foregroundStyle(Theme.coachSecondary)
     }
     .foregroundStyle(Color(hex: colorHex))
     .onAppear { text = "\(baseReps)" }
@@ -2753,7 +2755,7 @@ struct LastSetEditorSheet: View {
             "This overrides the base value of \(baseReps) \(unit.targetLabel(repCountingMode: repCountingMode)) for the final set only. It will be remembered next time."
           )
           .font(.subheadline)
-          .foregroundStyle(.secondary)
+          .foregroundStyle(Theme.coachSecondary)
         }
 
         HStack(spacing: 6) {
@@ -2778,7 +2780,7 @@ struct LastSetEditorSheet: View {
           )
           .frame(maxWidth: .infinity, minHeight: 52)
           .overlay(alignment: .bottom) {
-            Rectangle().fill(Theme.coral).frame(height: 2)
+            Rectangle().fill(Theme.primaryAction).frame(height: 2)
           }
 
           Button {
@@ -2848,7 +2850,7 @@ struct MeasurementStepper: View {
           accessibilityLabel: "\(unit.title) for \(participant.participantName)",
           adjustmentPolicy: adjustmentPolicy,
           minimumValue: 0,
-          textColor: isValueChanged ? UIColor(Theme.coral) : nil,
+          textColor: isValueChanged ? UIColor(Theme.primaryAction) : nil,
           accessibilityHint: isValueChanged ? "Updated since last time" : nil,
           accessibilityIdentifier:
             "measurement-value-\(participant.participantName)\(isValueChanged ? "-updated" : "")",
@@ -2866,7 +2868,7 @@ struct MeasurementStepper: View {
       .padding(.top, 4)
       Text(unit.label)
         .font(.system(size: 8, weight: .bold))
-        .foregroundStyle(.secondary)
+        .foregroundStyle(Theme.coachSecondary)
         .accessibilityIdentifier("measurement-unit-\(participant.participantName)")
     }
     .foregroundStyle(Color(hex: colorHex))
@@ -3041,7 +3043,7 @@ struct ExerciseGroupHistoryView: View {
                   systemImage: "trophy.fill"
                 )
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(Theme.coral)
+                .foregroundStyle(Theme.primaryAction)
               }
               if usesWeightedPR {
                 historyChart(
