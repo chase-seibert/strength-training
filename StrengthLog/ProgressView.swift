@@ -51,6 +51,9 @@ struct ProgressView: View {
     guard let primaryPerson else { return [] }
     return filteredSessions.filter { belongsToPrimaryPerson($0, person: primaryPerson) }
   }
+  private var allTimeWorkoutCount: Int {
+    sessions.lazy.filter { !$0.isActive }.count
+  }
   private var currentReport: WeeklyCoachingReport? {
     guard let person = primaryPerson else { return nil }
     let interval = LiftCoachReportBuilder.currentWeek()
@@ -144,9 +147,20 @@ struct ProgressView: View {
 
   private var progressHeader: some View {
     HStack(alignment: .center) {
-      Text("Progress")
-        .font(.largeTitle.weight(.bold))
-        .foregroundStyle(.primary)
+      VStack(alignment: .leading, spacing: 2) {
+        Text("Progress")
+          .font(.largeTitle.weight(.bold))
+          .foregroundStyle(.primary)
+        Text(
+          "\(allTimeWorkoutCount) \(allTimeWorkoutCount == 1 ? "workout" : "workouts") all time"
+        )
+        .font(.subheadline.weight(.medium))
+        .foregroundStyle(Theme.coachSecondary)
+        .accessibilityLabel(
+          "\(allTimeWorkoutCount) total \(allTimeWorkoutCount == 1 ? "workout" : "workouts") all time"
+        )
+        .accessibilityIdentifier("progress-all-time-workout-count")
+      }
       Spacer()
       Menu {
         ForEach(ProgressRange.allCases) { range in

@@ -1809,7 +1809,10 @@ final class WorkoutNavigationUITests: XCTestCase {
     app.tabBars.buttons["Progress"].tap()
 
     let rangeMenu = app.buttons["progress-range-menu"]
+    let allTimeCount = app.staticTexts["progress-all-time-workout-count"]
     XCTAssertTrue(rangeMenu.waitForExistence(timeout: 5))
+    XCTAssertTrue(allTimeCount.exists)
+    XCTAssertTrue(allTimeCount.label.contains("workout"))
     XCTAssertTrue(app.staticTexts["Training volume"].exists)
 
     let progressScreenshot = XCTAttachment(screenshot: app.screenshot())
@@ -1825,6 +1828,21 @@ final class WorkoutNavigationUITests: XCTestCase {
     XCTAssertFalse(app.buttons["All time"].exists)
     XCTAssertFalse(app.staticTexts["Person"].exists)
     XCTAssertFalse(app.staticTexts["Routine"].exists)
+
+    let originalCount = allTimeCount.label
+    app.buttons["1 year"].tap()
+    XCTAssertEqual(allTimeCount.label, originalCount)
+  }
+
+  func testProgressShowsZeroAllTimeWorkoutsForEmptyHistory() {
+    app.terminate()
+    app.launchArguments = ["-basicWorkoutFixture", "-emptyWorkoutHistoryFixture"]
+    app.launch()
+
+    app.tabBars.buttons["Progress"].tap()
+    let allTimeCount = app.staticTexts["progress-all-time-workout-count"]
+    XCTAssertTrue(allTimeCount.waitForExistence(timeout: 5))
+    XCTAssertEqual(allTimeCount.label, "0 total workouts all time")
   }
 
   func testActiveWorkoutWeightedHistoryUsesPRScoreAndShowsSelectedSet() {

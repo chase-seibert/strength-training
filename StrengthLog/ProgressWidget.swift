@@ -208,8 +208,8 @@ private struct ProgressWidgetView: View {
 }
 
 private enum ProgressWidgetTheme {
-  static let canvas = adaptive(light: "00A7B0", dark: "010A31")
-  static let secondary = adaptive(light: "102D36", dark: "B6C0D0")
+  static let canvas = adaptive(light: "FFFFFF", dark: "010A31")
+  static let secondary = adaptive(light: "475569", dark: "B6C0D0")
 
   private static func adaptive(light: String, dark: String) -> Color {
     Color(
